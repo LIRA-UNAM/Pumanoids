@@ -1,0 +1,20 @@
+services:
+  ros2-jazzy:
+    image: ros2_jazzy
+    container_name: ros2_humanoids
+    environment:
+      QT_X11_NO_MITSHM: "1"
+      DISPLAY: ${DISPLAY}
+      NVIDIA_DRIVER_CAPABILITIES: all
+      NVIDIA_VISIBLE_DEVICES: all
+    volumes:
+      - /etc/group:/etc/group:ro
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/shadow:/etc/shadow:ro
+      - /etc/sudoers.d:/etc/sudoers.d:ro
+      - ~/Humanoids:/home/pumas/Humanoids:rw
+      - ~/Volumes/ros2_jazzy:/home/pumas
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /dev/dri:/dev/dri
+    network_mode: "host"
+    user: "1000:1000"

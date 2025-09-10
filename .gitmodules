@@ -1,0 +1,4 @@
+[submodule "colcon_ws/src/examples"]
+	path = colcon_ws/src/examples
+	url = https://github.com/ros2/examples.git
+	branch = jazzy
