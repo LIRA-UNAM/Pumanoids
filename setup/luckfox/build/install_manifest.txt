@@ -1,0 +1,6 @@
+/home/ruth/Humanoids/setup/luckfox/install/luckfox_pico_rtsp_yolov5_demo/luckfox_pico_rtsp_yolov5
+/home/ruth/Humanoids/setup/luckfox/install/luckfox_pico_rtsp_yolov5_demo/model/RK_anchors.txt
+/home/ruth/Humanoids/setup/luckfox/install/luckfox_pico_rtsp_yolov5_demo/model/labels.txt
+/home/ruth/Humanoids/setup/luckfox/install/luckfox_pico_rtsp_yolov5_demo/model/yolov5_ball_goal.rknn
+/home/ruth/Humanoids/setup/luckfox/install/luckfox_pico_rtsp_yolov5_demo/lib/librknnmrt.so
+/home/ruth/Humanoids/setup/luckfox/install/luckfox_pico_rtsp_yolov5_demo/lib/librga.so

@@ -1,0 +1,13 @@
+/home/ruth/Humanoids/setup/luckfox/build/CMakeFiles/luckfox_pico_rtsp_yolov5.dir
+/home/ruth/Humanoids/setup/luckfox/build/CMakeFiles/edit_cache.dir
+/home/ruth/Humanoids/setup/luckfox/build/CMakeFiles/rebuild_cache.dir
+/home/ruth/Humanoids/setup/luckfox/build/CMakeFiles/list_install_components.dir
+/home/ruth/Humanoids/setup/luckfox/build/CMakeFiles/install.dir
+/home/ruth/Humanoids/setup/luckfox/build/CMakeFiles/install/local.dir
+/home/ruth/Humanoids/setup/luckfox/build/CMakeFiles/install/strip.dir
+/home/ruth/Humanoids/setup/luckfox/build/3rdparty.out/CMakeFiles/edit_cache.dir
+/home/ruth/Humanoids/setup/luckfox/build/3rdparty.out/CMakeFiles/rebuild_cache.dir
+/home/ruth/Humanoids/setup/luckfox/build/3rdparty.out/CMakeFiles/list_install_components.dir
+/home/ruth/Humanoids/setup/luckfox/build/3rdparty.out/CMakeFiles/install.dir
+/home/ruth/Humanoids/setup/luckfox/build/3rdparty.out/CMakeFiles/install/local.dir
+/home/ruth/Humanoids/setup/luckfox/build/3rdparty.out/CMakeFiles/install/strip.dir

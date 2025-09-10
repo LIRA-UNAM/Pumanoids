@@ -1,0 +1,23 @@
+#!/bin/sh
+
+static_ip()
+{            
+ifconfig eth0 10.42.0.5 netmask 255.255.255.0
+#route add default gw 10.42.0.2
+#echo "nameserver 114.114.114.114" > /etc/resolv.conf
+ifconfig eth0 up
+}
+
+case $1 in
+        start)
+                echo "start"
+                static_ip
+                ;;
+        stop)
+                echo "stop"
+                ;;
+        *)
+                exit 1
+                ;;
+esac
+
