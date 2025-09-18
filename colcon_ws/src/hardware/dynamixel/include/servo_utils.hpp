@@ -74,13 +74,12 @@ namespace Servo
     class CommHandler
     {
     private:
+        const char * portName;
         dynamixel::PortHandler   *port_h   ; 
         dynamixel::PacketHandler *packet_h ;
         dynamixel::GroupBulkRead  bulk_read_current_position_3pin;
         dynamixel::GroupBulkRead  bulk_read_current_position_4pin;
         dynamixel::GroupSyncWrite sync_write_goal_position ;
-        
-        const char * portName;
         long baudrate {1000000};
 
     public:

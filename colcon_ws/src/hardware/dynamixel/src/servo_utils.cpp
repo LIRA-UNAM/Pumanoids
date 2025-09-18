@@ -140,27 +140,23 @@ namespace Servo
 
     bool CommHandler::shutdownAllServos()
     {
+        bool failed_servo{false};
         uint8_t error;
-	for(auto servo: registered_servos)
-	{
-	    int dxl_comm_result = packet_h->write2ByteTxRx(port_h, servo.id, MX64::TORQUE_ENABLE ,0, &error);
-    	    if(error != 0)
+	    for(auto servo: registered_servos)
 	    {
+	        int dxl_comm_result = packet_h->write2ByteTxRx(port_h, servo.id, MX64::TORQUE_ENABLE ,0, &error);
+    	        if(error != 0)
+	        {
+                failed_servo = true;
                 std::cout << "CM730.-> Status error after turning off servo: " << servo.id << std::endl;
-	    } 
+	        } 
         }
-        int comm_result = packet_h -> write1ByteTxRx(port_h,
-                                                     ID_CM730,
-                                                     MX64::TORQUE_ENABLE,
-                                                     0,
-                                                     &error);
-        if(comm_result == COMM_SUCCESS && error == 0)
+        if(failed_servo)
         {
-            return true;
+            std::cout << "[CommHandler] Failed to send shutdown signal " << "\tError code:" << int(error) << std::endl;
+            return false;
         }
-        std::cout << "[CommHandler] Failed to send shutdown signal " <<
-                   "\tError code:" << int(error) << std::endl;
-        return false; 
+        return true; 
     }
 
     bool CommHandler::registerIDs(std::vector<Servo::servo_t>& servo_list)

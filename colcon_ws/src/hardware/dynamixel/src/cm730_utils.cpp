@@ -4,6 +4,8 @@
 
 #include <algorithm>
 
+using std::placeholders::_1;
+
 uint16_t servos_goal_position[21];  // PENDING TO BE READ
 std::vector<Servo::servo_t> left_arm_servos;
 std::vector<Servo::servo_t> right_arm_servos;
@@ -53,24 +55,24 @@ std::vector<std::string> head_names
 
 namespace CM730
 {
-    CM730Node::CM730Node(std::string port_name): comm{port_name}
-	    {
-        sub_legs_goal_pose          = this->create_subscription<std_msgs::msg::Float32MultiArray>("legs_goal_pose", 10, std::bind(&callback_legs_goal_pose, this, _1));
-        sub_leg_left_goal_pose      = this->subscribe("leg_left_goal_pose",  1, &CM730Node::callback_leg_left_goal_pose,    this);
-        sub_leg_right_goal_pose     = this->subscribe("leg_right_goal_pose", 1, &CM730Node::callback_leg_right_goal_pose,   this);
-        sub_arms_goal_pose          = this->subscribe("arms_goal_pose",      1, &CM730Node::callback_arms_goal_pose,        this);
-        sub_arm_left_goal_pose      = this->subscribe("arm_left_goal_pose",  1, &CM730Node::callback_arm_left_goal_pose,    this);
-        sub_arm_right_goal_pose     = this->subscribe("arm_right_goal_pose", 1, &CM730Node::callback_arm_right_goal_pose,   this);
-        sub_head_goal_pose          = this->subscribe("head_goal_pose",      1, &CM730Node::callback_head_goal_pose,        this);
+    CM730Node::CM730Node(std::string port_name): Node("minimal_subscriber"), comm(port_name);    
+    {
+        sub_legs_goal_pose          = this->create_subscription<std_msgs::msg::Float32MultiArray>("legs_goal_pose",      1, std::bind(&CM730Node::callback_legs_goal_pose,     this, _1));
+        sub_leg_left_goal_pose      = this->create_subscription<std_msgs::msg::Float32MultiArray>("leg_left_goal_pose",  1, std::bind(&CM730Node::callback_leg_left_goal_pose, this, _1));
+        sub_leg_right_goal_pose     = this->create_subscription<std_msgs::msg::Float32MultiArray>("leg_right_goal_pose", 1, std::bind(&CM730Node::callback_leg_right_goal_pose,this, _1));
+        sub_arms_goal_pose          = this->create_subscription<std_msgs::msg::Float32MultiArray>("arms_goal_pose",      1, std::bind(&CM730Node::callback_arms_goal_pose,     this, _1));
+        sub_arm_left_goal_pose      = this->create_subscription<std_msgs::msg::Float32MultiArray>("arm_left_goal_pose",  1, std::bind(&CM730Node::callback_arm_left_goal_pose, this, _1));
+        sub_arm_right_goal_pose     = this->create_subscription<std_msgs::msg::Float32MultiArray>("arm_right_goal_pose", 1, std::bind(&CM730Node::callback_arm_right_goal_pose,this, _1));
+        sub_head_goal_pose          = this->create_subscription<std_msgs::msg::Float32MultiArray>("head_goal_pose",      1, std::bind(&CM730Node::callback_head_goal_pose,     this, _1));
         
-        pub_legs_current_pose       = this->advertise<std_msgs::msg::float32_multi_array>("legs_current_pose",       1);
-        pub_leg_left_current_pose   = this->advertise<std_msgs::msg::float32_multi_array>("leg_left_current_pose",   1);
-        pub_leg_right_current_pose  = this->advertise<std_msgs::msg::float32_multi_array>("leg_right_current_pose",  1);
-        pub_arms_current_pose       = this->advertise<std_msgs::msg::float32_multi_array>("arms_current_pose",       1);
-        pub_arm_left_current_pose   = this->advertise<std_msgs::msg::float32_multi_array>("arm_left_current_pose",   1);
-        pub_arm_right_current_pose  = this->advertise<std_msgs::msg::float32_multi_array>("arm_right_current_pose",  1);
-        pub_head_current_pose       = this->advertise<std_msgs::msg::float32_multi_array>("head_current_pose",       1);
-        pub_joint_current_angles    = this->advertise<std_msgs::msg::float32_multi_array>("joint_current_angles",    1);
+        pub_legs_current_pose       = this->advertise<std_msgs::msg::Float32MultiArray>("legs_current_pose",       1);
+        pub_leg_left_current_pose   = this->advertise<std_msgs::msg::Float32MultiArray>("leg_left_current_pose",   1);
+        pub_leg_right_current_pose  = this->advertise<std_msgs::msg::Float32MultiArray>("leg_right_current_pose",  1);
+        pub_arms_current_pose       = this->advertise<std_msgs::msg::Float32MultiArray>("arms_current_pose",       1);
+        pub_arm_left_current_pose   = this->advertise<std_msgs::msg::Float32MultiArray>("arm_left_current_pose",   1);
+        pub_arm_right_current_pose  = this->advertise<std_msgs::msg::Float32MultiArray>("arm_right_current_pose",  1);
+        pub_head_current_pose       = this->advertise<std_msgs::msg::Float32MultiArray>("head_current_pose",       1);
+        pub_joint_current_angles    = this->advertise<std_msgs::msg::Float32MultiArray>("joint_current_angles",    1);
         pub_joint_states            = this->advertise<sensor_msgs::JointState>("/joint_states", 1);
 
         msg_joint_current_angles.data.resize(21);
@@ -135,7 +137,7 @@ namespace CM730
         }
     }
 
-    void CM730Node::callback_legs_goal_pose(const std_msgs::Float32MultiArray::ConstPtr& msg)
+    void CM730Node::callback_legs_goal_pose(const std_msgs::msg::Float32MultiArray::ConstSharedPtr& msg)
     {
         if(msg->data.size() != 12)
         {
@@ -158,7 +160,7 @@ namespace CM730
         writePositions(legs);
     }
 
-    void CM730Node::callback_leg_left_goal_pose(const std_msgs::Float32MultiArray::ConstPtr& msg)
+    void CM730Node::callback_leg_left_goal_pose(const std_msgs::msg::Float32MultiArray::ConstSharedPtr& msg)
     {
         if(msg->data.size() != 6)
         {
@@ -173,7 +175,7 @@ namespace CM730
         writePositions(left_leg_servos);
     }
 
-    void CM730Node::callback_leg_right_goal_pose(const std_msgs::Float32MultiArray::ConstPtr& msg)
+    void CM730Node::callback_leg_right_goal_pose(const std_msgs::msg::Float32MultiArray::ConstSharedPtr& msg)
     {
         if(msg->data.size() != 6)
         {
@@ -188,7 +190,7 @@ namespace CM730
         writePositions(right_leg_servos);
     }
 
-    void CM730Node::callback_arms_goal_pose(const std_msgs::Float32MultiArray::ConstPtr& msg)
+    void CM730Node::callback_arms_goal_pose(const std_msgs::msg::Float32MultiArray::ConstSharedPtr& msg)
     {
         if(msg->data.size() != 6)
         {
@@ -210,7 +212,7 @@ namespace CM730
         writePositions(arms);
     }
 
-    void CM730Node::callback_arm_left_goal_pose(const std_msgs::Float32MultiArray::ConstPtr& msg)
+    void CM730Node::callback_arm_left_goal_pose(const std_msgs::msg::Float32MultiArray::ConstSharedPtr& msg)
     {
         if(msg->data.size() != 3)
         {
@@ -225,7 +227,7 @@ namespace CM730
         writePositions(left_arm_servos);
     }
 
-    void CM730Node::callback_arm_right_goal_pose(const std_msgs::Float32MultiArray::ConstPtr& msg)
+    void CM730Node::callback_arm_right_goal_pose(const std_msgs::msg::Float32MultiArray::ConstSharedPtr& msg)
     {
         if(msg->data.size() != 3)
         {
@@ -240,7 +242,7 @@ namespace CM730
         writePositions(right_arm_servos);
     }
     
-    void CM730Node::callback_head_goal_pose(const std_msgs::Float32MultiArray::ConstPtr& msg)
+    void CM730Node::callback_head_goal_pose(const std_msgs::msg::Float32MultiArray::ConstSharedPtr& msg)
     {
         if(msg->data.size() != 2)
         {
