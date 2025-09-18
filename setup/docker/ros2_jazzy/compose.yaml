@@ -1,6 +1,6 @@
 services:
   ros2-jazzy:
-    image: ros2_jazzy
+    image: ros2-jazzy
     container_name: ros2_humanoids
     environment:
       QT_X11_NO_MITSHM: "1"
@@ -12,8 +12,8 @@ services:
       - /etc/passwd:/etc/passwd:ro
       - /etc/shadow:/etc/shadow:ro
       - /etc/sudoers.d:/etc/sudoers.d:ro
-      - ~/Humanoids:/home/pumas/Humanoids:rw
-      - ~/Volumes/ros2_jazzy:/home/pumas
+      - ~/Pumanoids:/home/miguel/Pumanoids:rw
+      - ~/Volumes/ros2_jazzy:/home/miguel
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - /dev/dri:/dev/dri
     network_mode: "host"
