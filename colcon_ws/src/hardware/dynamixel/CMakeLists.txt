@@ -14,13 +14,20 @@ find_package(sensor_msgs REQUIRED)
 find_package(tf2_msgs REQUIRED)
 find_package(dynamixel_sdk REQUIRED)
 
-add_executable(cm730_v3_node src/cm730_v3.cpp)
+set(SOURCES
+    src/cm730_utils.cpp
+    src/servo_utils.cpp
+)
+
+add_executable(cm730_v3_node src/cm730_v3.cpp ${SOURCES})
+
 target_include_directories(cm730_v3_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
+
 target_compile_features(cm730_v3_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
-ament_target_dependencies(
-  cm730_v3_node
+
+ament_target_dependencies( cm730_v3_node
   "rclcpp"
   "std_msgs"
   "geometry_msgs"
