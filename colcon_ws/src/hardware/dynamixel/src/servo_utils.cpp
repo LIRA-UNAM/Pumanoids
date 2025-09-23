@@ -145,7 +145,7 @@ namespace Servo
 	    for(auto servo: registered_servos)
 	    {
 	        int dxl_comm_result = packet_h->write2ByteTxRx(port_h, servo.id, MX64::TORQUE_ENABLE ,0, &error);
-    	        if(error != 0)
+    	        if(error != 0 || dxl_comm_result != COMM_SUCCESS)
 	        {
                 failed_servo = true;
                 std::cout << "CM730.-> Status error after turning off servo: " << servo.id << std::endl;

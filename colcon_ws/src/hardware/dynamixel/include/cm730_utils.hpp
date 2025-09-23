@@ -13,7 +13,6 @@ namespace CM730
     class CM730Node: public rclcpp::Node
     {
     private: 
-        rclcpp::TimerBase::SharedPtr timer_;
         rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr sub_legs_goal_pose; 
         rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr sub_leg_left_goal_pose;  
         rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr sub_leg_right_goal_pose;
@@ -31,7 +30,7 @@ namespace CM730
         rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr pub_head_current_pose;
         rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr pub_joint_current_angles;
         rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr pub_joint_states;
-        
+
         sensor_msgs::msg::JointState     msg_joint_states;
         std_msgs::msg::Float32MultiArray msg_joint_current_angles;
 
@@ -41,6 +40,8 @@ namespace CM730
 
         std::vector<uint16_t> present_position; //In Dynamixel bits
         std::vector<uint16_t> goal_position;    //In Dynamixel bits
+        
+        void timer_callback();
 
     public:
         //Constructor
@@ -63,6 +64,8 @@ namespace CM730
         void callback_arm_left_goal_pose(const std_msgs::msg::Float32MultiArray::ConstSharedPtr& msg);
         void callback_arm_right_goal_pose(const std_msgs::msg::Float32MultiArray::ConstSharedPtr& msg);
         void callback_head_goal_pose(const std_msgs::msg::Float32MultiArray::ConstSharedPtr& msg);
+        rclcpp::TimerBase::SharedPtr timer_;
+
     };
 }
 
