@@ -55,7 +55,7 @@ std::vector<std::string> head_names
 
 namespace CM730
 {
-    CM730Node::CM730Node(std::string port_name): Node("minimal_subscriber"), comm(port_name);    
+    CM730Node::CM730Node(std::string port_name): Node("minimal_subscriber"), comm(port_name) 
     {
         sub_legs_goal_pose          = this->create_subscription<std_msgs::msg::Float32MultiArray>("legs_goal_pose",      1, std::bind(&CM730Node::callback_legs_goal_pose,     this, _1));
         sub_leg_left_goal_pose      = this->create_subscription<std_msgs::msg::Float32MultiArray>("leg_left_goal_pose",  1, std::bind(&CM730Node::callback_leg_left_goal_pose, this, _1));
@@ -65,33 +65,36 @@ namespace CM730
         sub_arm_right_goal_pose     = this->create_subscription<std_msgs::msg::Float32MultiArray>("arm_right_goal_pose", 1, std::bind(&CM730Node::callback_arm_right_goal_pose,this, _1));
         sub_head_goal_pose          = this->create_subscription<std_msgs::msg::Float32MultiArray>("head_goal_pose",      1, std::bind(&CM730Node::callback_head_goal_pose,     this, _1));
         
-        pub_legs_current_pose       = this->advertise<std_msgs::msg::Float32MultiArray>("legs_current_pose",       1);
-        pub_leg_left_current_pose   = this->advertise<std_msgs::msg::Float32MultiArray>("leg_left_current_pose",   1);
-        pub_leg_right_current_pose  = this->advertise<std_msgs::msg::Float32MultiArray>("leg_right_current_pose",  1);
-        pub_arms_current_pose       = this->advertise<std_msgs::msg::Float32MultiArray>("arms_current_pose",       1);
-        pub_arm_left_current_pose   = this->advertise<std_msgs::msg::Float32MultiArray>("arm_left_current_pose",   1);
-        pub_arm_right_current_pose  = this->advertise<std_msgs::msg::Float32MultiArray>("arm_right_current_pose",  1);
-        pub_head_current_pose       = this->advertise<std_msgs::msg::Float32MultiArray>("head_current_pose",       1);
-        pub_joint_current_angles    = this->advertise<std_msgs::msg::Float32MultiArray>("joint_current_angles",    1);
-        pub_joint_states            = this->advertise<sensor_msgs::JointState>("/joint_states", 1);
+        pub_legs_current_pose       = this->create_publisher<std_msgs::msg::Float32MultiArray>("legs_current_pose",       1);
+        pub_leg_left_current_pose   = this->create_publisher<std_msgs::msg::Float32MultiArray>("leg_left_current_pose",   1);
+        pub_leg_right_current_pose  = this->create_publisher<std_msgs::msg::Float32MultiArray>("leg_right_current_pose",  1);
+        pub_arms_current_pose       = this->create_publisher<std_msgs::msg::Float32MultiArray>("arms_current_pose",       1);
+        pub_arm_left_current_pose   = this->create_publisher<std_msgs::msg::Float32MultiArray>("arm_left_current_pose",   1);
+        pub_arm_right_current_pose  = this->create_publisher<std_msgs::msg::Float32MultiArray>("arm_right_current_pose",  1);
+        pub_head_current_pose       = this->create_publisher<std_msgs::msg::Float32MultiArray>("head_current_pose",       1);
+        pub_joint_current_angles    = this->create_publisher<std_msgs::msg::Float32MultiArray>("joint_current_angles",    1);
+        pub_joint_states            = this->create_publisher<sensor_msgs::msg::JointState>("/joint_states", 1);
 
         msg_joint_current_angles.data.resize(21);
         msg_joint_states.name.resize(21);
         msg_joint_states.position.resize(21);
-
+        timer_ = this->create_wall_timer(
+            std::chrono::milliseconds(25),
+            std::bind(&CM730Node::timer_callback, this));
     }
 
     bool CM730Node::start()
     {
         bool torque_enable_param;
-        if (!ros::param::get("torque_enable", torque_enable_param))
+        this->declare_parameter<bool>("torque enable", false);
+        if (!this->get_parameter("torque_enable", torque_enable_param))
         {
-            ROS_ERROR("Missing param in config file: %s", "torque_enable");
+            RCLCPP_ERROR(this->get_logger(), "Missing param in config file: torque_enable");
             return false;
         }
         if(!torque_enable_param)
         {
-            ROS_INFO("TORQUE ENABLED IS FALSE");
+            RCLCPP_INFO(this->get_logger(), "TORQUE ENABLED IS FALSE");
         }
         
         if(!fillServoParameters(left_arm_names,  left_arm_servos))  return false;
@@ -104,10 +107,10 @@ namespace CM730
         while( !comm.startComm() )
         {
             counter++;
-            ros::Duration(1.0).sleep();
+            rclcpp::sleep_for(std::chrono::nanoseconds(1000000000));
             if(counter > 10)
             {
-                ROS_ERROR("Shutting down after attempting to open port. Shutting down");
+                RCLCPP_ERROR(this->get_logger(), "Shutting down after attempting to open port. Shutting down");
                 return false;
             };
         }}
@@ -121,7 +124,7 @@ namespace CM730
 
         if(!comm.registerIDs(all_servos))  return false;
         if(!comm.wakeupAllServos(torque_enable_param)) return false;
-        ros::Duration(1.0).sleep();
+        rclcpp::sleep_for(std::chrono::nanoseconds(1000000000));
         
         present_position.resize(21);
         goal_position.resize(21);
@@ -135,6 +138,11 @@ namespace CM730
         {
             std::cout << "ERROR: Manual shutdown required." << std::endl;
         }
+    }
+
+    void CM730Node::timer_callback()
+    {
+        //TODO
     }
 
     void CM730Node::callback_legs_goal_pose(const std_msgs::msg::Float32MultiArray::ConstSharedPtr& msg)
@@ -268,36 +276,40 @@ namespace CM730
             std::string param_enabled_str {name + "/enabled"};
             std::string param_is4pin_str  {name + "/is4pin"};
             std::string param_joint_str   {name + "/joint"};
-            int zero;
-            if (!ros::param::get(param_id_str, servo.id))
+            this->declare_parameter<int>(param_id_str, 0);
+            if (!this->get_parameter(param_id_str, servo.id))
             {
-                ROS_ERROR("Missing param in config file: %s", param_id_str.c_str());
+                RCLCPP_ERROR(this->get_logger(), "Missing param in config file: %s", param_id_str.c_str());
                 return false;
             }
-            if (!ros::param::get(param_cw_str, servo.cw))
+            this->declare_parameter<int>(param_cw_str, 0);
+            if (!this->get_parameter(param_cw_str, servo.cw))
             {
-                ROS_ERROR("Missing param in config file: %s", param_cw_str.c_str());
+                RCLCPP_ERROR(this->get_logger(), "Missing param in config file: %s", param_cw_str.c_str());
                 return false;
             }
-            if (!ros::param::get(param_zero_str, zero))
+            this->declare_parameter<uint16_t>(param_zero_str, 0);
+            if (!this->get_parameter(param_zero_str, servo.zero))
             {
-                ROS_ERROR("Missing param in config file: %s", param_zero_str.c_str());
+                RCLCPP_ERROR(this->get_logger(), "Missing param in config file: %s", param_zero_str.c_str());
                 return false;
             }
-            servo.zero = zero;
-            if (!ros::param::get(param_enabled_str, servo.enabled))
+            this->declare_parameter<bool>(param_enabled_str, false);
+            if (!this->get_parameter(param_enabled_str, servo.enabled))
             {
-                ROS_ERROR("Missing param in config file: %s", param_enabled_str.c_str());
+                RCLCPP_ERROR(this->get_logger(), "Missing param in config file: %s", param_enabled_str.c_str());
                 return false;
             }
-            if (!ros::param::get(param_is4pin_str, servo.is4Pin))
+            this->declare_parameter<bool>(param_is4pin_str, false);
+            if (!this->get_parameter(param_is4pin_str, servo.is4Pin))
             {
-                ROS_ERROR("Missing param in config file: %s", param_is4pin_str.c_str());
+                RCLCPP_ERROR(this->get_logger(), "Missing param in config file: %s", param_is4pin_str.c_str());
                 return false;
             }
-            if (!ros::param::get(param_joint_str, servo.joint_name))
+            this->declare_parameter<std::string>(param_joint_str, "");
+            if (!this->get_parameter(param_joint_str, servo.joint_name))
             {
-                ROS_ERROR("Missing param in config file: %s", param_joint_str.c_str());
+                RCLCPP_ERROR(this->get_logger(), "Missing param in config file: %s", param_joint_str.c_str());
                 return false;
             }
             std::cout << "[CM730_UTILS] Servo added. ID: " << servo.id 
@@ -318,7 +330,7 @@ namespace CM730
         {
             return false;
         }
-        msg_joint_states.header.stamp = ros::Time::now();
+        msg_joint_states.header.stamp = this->get_clock()->now();
         for(auto servo: all_servos)
         {
             msg_joint_states.name[servo.id] = servo.joint_name;
@@ -335,10 +347,8 @@ namespace CM730
                 msg_joint_current_angles.data[servo.id] = msg_joint_states.position[servo.id];
             }
         }
-        pub_joint_states.publish(msg_joint_states);
-        pub_joint_current_angles.publish(msg_joint_current_angles);
-
-        rate.sleep();
+        pub_joint_states->publish(msg_joint_states);
+        pub_joint_current_angles->publish(msg_joint_current_angles);
         return true;
     }
 
