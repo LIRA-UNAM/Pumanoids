@@ -1,5 +1,5 @@
-<?xml version="1.0" ?>
-<sdf version="1.4">
+<?xml version="1.0"?>
+<sdf version="1.6">
 	<world name="default">
 		<scene>
 			<shadows>false</shadows>
@@ -23,7 +23,7 @@
  					<cfm>0.0</cfm>
 					<erp>0.2</erp>
 					<contact_max_correcting_vel>100.0</contact_max_correcting_vel>
-					<contact_surface_layer>0.0</contact_surface_layer>
+					<contact_surface_layer>0.1</contact_surface_layer>
 				</constraints>
 			</ode>
 		</physics>
@@ -45,11 +45,6 @@
  		<include>
 			<uri>model://teensize_goal2</uri>
 			<pose>-4.525 0 0 0 0 3.141592</pose>
-		</include> 
-
-		<include>
-			<uri>model://sun</uri>
 		</include>
-<!-- 		<plugin name="foot_fixer" filename="libfoot_fixer.so" /> -->
 	</world>
 </sdf>
