@@ -2,19 +2,49 @@ services:
   ros2-jazzy:
     image: ros2-jazzy
     container_name: ros2_humanoids
+
+    stdin_open: true
+    tty: true
+
     environment:
-      QT_X11_NO_MITSHM: "1"
-      DISPLAY: ${DISPLAY}
-      NVIDIA_DRIVER_CAPABILITIES: all
-      NVIDIA_VISIBLE_DEVICES: all
+      - QT_X11_NO_MITSHM=1
+      - DISPLAY=${DISPLAY}
+      - XAUTHORITY=/tmp/.docker.xauth
+      - HISTFILE=/home/miguel/.bash_history
+      - HISTFILESIZE=10000
+      - RCUTILS_COLORIZED_OUTPUT=1
+      - GZ_VERSION=harmonic
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all,graphics,display,video,utility,compute
+      - __NV_PRIME_RENDER_OFFLOAD=1
+      - __GLX_VENDOR_LIBRARY_NAME=nvidia
+
+    privileged: true  # Fixed spelling and removed duplicate
+
     volumes:
-      - /etc/group:/etc/group:ro
-      - /etc/passwd:/etc/passwd:ro
-      - /etc/shadow:/etc/shadow:ro
-      - /etc/sudoers.d:/etc/sudoers.d:ro
       - ~/Pumanoids:/home/miguel/Pumanoids:rw
       - ~/Volumes/ros2_jazzy:/home/miguel
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /tmp/.docker.xauth:/tmp/.docker.xauth:rw
+      - /dev/input:/dev/input
       - /dev/dri:/dev/dri
-    network_mode: "host"
+      - /dev/nvidia0:/dev/nvidia0
+      - /dev/nvidiactl:/dev/nvidiactl
+      - /dev/nvidia-modeset:/dev/nvidia-modeset
+
+    command: >
+      bash -c "
+        source /opt/ros/jazzy/setup.bash &&
+        echo 'ROS2 Jazzy environment loaded' &&
+        bash
+      "
     user: "1000:1000"
+    network_mode: "host"
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
