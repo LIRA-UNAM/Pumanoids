@@ -14,11 +14,11 @@
           </plane>
         </geometry>
         <material>
-          <script>
-            <uri>model://teensize_field/materials/scripts/</uri>
-            <uri>model://teensize_field/materials/textures/</uri>
-            <name>RoboCup/Carpet</name>
-          </script>
+          <pbr>
+            <metal>
+              <albedo_map>materials/textures/carpet.jpg</albedo_map>
+          </metal>
+          </pbr>
         </material>
       </visual>
 
