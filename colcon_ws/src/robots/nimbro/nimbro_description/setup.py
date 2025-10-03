@@ -18,7 +18,7 @@ setup(
         (os.path.join('share', package_name, 'mesh', 'nimbro_adult')      ,glob('mesh/nimbro_adult/*')),
         (os.path.join('share', package_name, 'mesh', 'nimbro_adult_hull') ,glob('mesh/nimbro_adult/*')),
         (os.path.join('share', package_name, 'mesh', 'nimbro_op')         ,glob('mesh/nimbro_op/*')),
-        (os.path.join('share', package_name, 'mesh', 'nimbro_op_hull')    ,glob('mesh/nimbro_op/hull/*')),
+        (os.path.join('share', package_name, 'mesh', 'nimbro_op_hull')    ,glob('mesh/nimbro_op_hull/*')),
         (os.path.join('share', package_name, 'materials')                   ,glob('materials/*'))
     ],
     install_requires=['setuptools'],
