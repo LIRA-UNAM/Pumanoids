@@ -22,3 +22,8 @@ build:
 source:
 	@echo "Launching Project..."
 	source $(PUMANOIDS_PROJECT_PATH)/install/setup.bash
+
+pi:
+	@echo "Building Project..."
+	cd $(PUMANOIDS_PROJECT_PATH) && colcon build --packages-skip gazebo_envs
+
