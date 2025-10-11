@@ -10,7 +10,7 @@ import os
 
 def generate_launch_description():
     #1. Find darwin_description_package
-    pkg_share_path = os.pathsep + os.path.join(get_package_prefix('darwin_description'), 'share')
+    pkg_share_path = os.pathsep + os.path.join(get_package_prefix('nimbro_description'), 'share')
     if 'GZ_SIM_RESOURCE_PATH' in os.environ:
         os.environ['GZ_SIM_RESOURCE_PATH'] += pkg_share_path
     else:
@@ -22,8 +22,8 @@ def generate_launch_description():
     gz_spawn_launch_path = PathJoinSubstitution([ros_gz_sim_pkg_path, 'launch', 'gz_spawn_model.launch.py'])
 
     #3. Find darwin_description urdf file
-    description_pkg_path  = get_package_share_directory('darwin_description')
-    urdf_file_path = os.path.join(description_pkg_path, 'urdf', 'darwin_lab.urdf')
+    description_pkg_path  = get_package_share_directory('nimbro_description')
+    urdf_file_path = os.path.join(description_pkg_path, 'robots', 'simple_nimbro_op_hull.xml')
     robot_description_content = xacro.process_file(urdf_file_path).toxml()
     
     #4. Find the gazebo world models (soccer field, goal, ball, etc.)

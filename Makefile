@@ -6,12 +6,12 @@ PUMANOIDS_PROJECT_PATH := $(CURDIR)/colcon_ws
 # Define the launch file
 
 # Default target to clean, build, start roscore, and launch both projects
-all: clean build source
+all: build source
 
 # Rule to clean project's build and devel folders
 clean:
 	@echo "Cleaning Project..."
-	rm -rf $(PUMANOIDS_PROJECT_PATH)/build $(PUMANOIDS_PROJECT_PATH)/devel
+	rm -rf $(PUMANOIDS_PROJECT_PATH)/build $(PUMANOIDS_PROJECT_PATH)/install $(PUMANOIDS_PROJECT_PATH)/log
 
 # Rule to build project
 build:
@@ -22,3 +22,8 @@ build:
 source:
 	@echo "Launching Project..."
 	source $(PUMANOIDS_PROJECT_PATH)/install/setup.bash
+
+pi:
+	@echo "Building Project..."
+	cd $(PUMANOIDS_PROJECT_PATH) && colcon build --packages-skip gazebo_envs
+
