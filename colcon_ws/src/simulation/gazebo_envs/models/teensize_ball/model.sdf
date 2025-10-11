@@ -41,6 +41,6 @@
         </material>
       </visual>
     </link>
-    <plugin name="plannar_mover_plugin" filename="libplannar_mover_plugin.so"/>
+    <!-- <plugin name="plannar_mover_plugin" filename="libplannar_mover_plugin.so"/> -->
   </model>
 </sdf>
