@@ -1,0 +1,16 @@
+/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/lib/dynamixel/cm730_v3_node
+/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/ament_index/resource_index/package_run_dependencies/dynamixel
+/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/ament_index/resource_index/parent_prefix_path/dynamixel
+/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/environment/ament_prefix_path.sh
+/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/environment/ament_prefix_path.dsv
+/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/environment/path.sh
+/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/environment/path.dsv
+/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/local_setup.bash
+/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/local_setup.sh
+/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/local_setup.zsh
+/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/local_setup.dsv
+/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/package.dsv
+/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/ament_index/resource_index/packages/dynamixel
+/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/cmake/dynamixelConfig.cmake
+/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/cmake/dynamixelConfig-version.cmake
+/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/package.xml

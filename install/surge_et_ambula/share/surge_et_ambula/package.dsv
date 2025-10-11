@@ -1,0 +1,8 @@
+source;share/surge_et_ambula/hook/cmake_prefix_path.ps1
+source;share/surge_et_ambula/hook/cmake_prefix_path.dsv
+source;share/surge_et_ambula/hook/cmake_prefix_path.sh
+source;share/surge_et_ambula/local_setup.bash
+source;share/surge_et_ambula/local_setup.dsv
+source;share/surge_et_ambula/local_setup.ps1
+source;share/surge_et_ambula/local_setup.sh
+source;share/surge_et_ambula/local_setup.zsh

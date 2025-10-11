@@ -1,0 +1,72 @@
+running egg_info
+creating ../../../../../build/darwin_description/darwin_description.egg-info
+writing ../../../../../build/darwin_description/darwin_description.egg-info/PKG-INFO
+writing dependency_links to ../../../../../build/darwin_description/darwin_description.egg-info/dependency_links.txt
+writing requirements to ../../../../../build/darwin_description/darwin_description.egg-info/requires.txt
+writing top-level names to ../../../../../build/darwin_description/darwin_description.egg-info/top_level.txt
+writing manifest file '../../../../../build/darwin_description/darwin_description.egg-info/SOURCES.txt'
+reading manifest file '../../../../../build/darwin_description/darwin_description.egg-info/SOURCES.txt'
+writing manifest file '../../../../../build/darwin_description/darwin_description.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /home/melissa/Documentos/Servicio/Pumanoids/build/darwin_description/build
+creating /home/melissa/Documentos/Servicio/Pumanoids/build/darwin_description/build/lib
+creating /home/melissa/Documentos/Servicio/Pumanoids/build/darwin_description/build/lib/darwin_description
+copying darwin_description/__init__.py -> /home/melissa/Documentos/Servicio/Pumanoids/build/darwin_description/build/lib/darwin_description
+running install
+running install_lib
+creating /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/lib/python3.12/site-packages/darwin_description
+copying /home/melissa/Documentos/Servicio/Pumanoids/build/darwin_description/build/lib/darwin_description/__init__.py -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/lib/python3.12/site-packages/darwin_description
+byte-compiling /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/lib/python3.12/site-packages/darwin_description/__init__.py to __init__.cpython-312.pyc
+running install_data
+creating /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/ament_index
+creating /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/ament_index/resource_index
+creating /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/ament_index/resource_index/packages
+copying resource/darwin_description -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/ament_index/resource_index/packages
+copying package.xml -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description
+creating /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/urdf
+copying urdf/darwin_lab.urdf -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/urdf
+copying urdf/darwin_lab_fixed.urdf -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/urdf
+creating /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/shoulder_l_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/body.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/shoulder_r.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/arm_high_l.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/tibia_l.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/ankle1_l.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/head.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/thigh1_r.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/tibia_l_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/thigh1_l_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/ankle2_r.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/tibia_r.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/thigh1_r_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/pelvis_r_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/pelvis_l.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/head_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/ankle2_r_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/ankle1_r_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/neck.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/arm_high_r.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/thigh2_r_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/pelvis_l_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/arm_high_r_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/neck_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/pelvis_r.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/tibia_r_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/ankle2_l.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/arm_high_l_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/shoulder_r_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/thigh2_l_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/ankle2_l_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/ankle1_l_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/thigh1_l.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/thigh2_r.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/ankle1_r.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/thigh2_l.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/body_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+copying meshes/shoulder_l.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes
+running install_egg_info
+Copying ../../../../../build/darwin_description/darwin_description.egg-info to /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/lib/python3.12/site-packages/darwin_description-0.0.0-py3.12.egg-info
+running install_scripts
+writing list of installed files to '/home/melissa/Documentos/Servicio/Pumanoids/build/darwin_description/install.log'

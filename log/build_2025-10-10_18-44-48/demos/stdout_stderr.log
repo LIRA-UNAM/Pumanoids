@@ -1,0 +1,8 @@
+[33mCMake Warning at CMakeLists.txt:5 (message):
+  Please Set Luckfox-pico SDK Path.  Such as:export
+  LUCKFOX_SDK_PATH=/home/user/luckfox-pico
+
+[0m
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/melissa/Documentos/Servicio/Pumanoids/build/demos

@@ -1,0 +1,16 @@
+/home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/launch/darwin_sim.launch.py
+/home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/ament_index/resource_index/package_run_dependencies/surge_et_ambula
+/home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/ament_index/resource_index/parent_prefix_path/surge_et_ambula
+/home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/environment/ament_prefix_path.sh
+/home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/environment/ament_prefix_path.dsv
+/home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/environment/path.sh
+/home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/environment/path.dsv
+/home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/local_setup.bash
+/home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/local_setup.sh
+/home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/local_setup.zsh
+/home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/local_setup.dsv
+/home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/package.dsv
+/home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/ament_index/resource_index/packages/surge_et_ambula
+/home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/cmake/surge_et_ambulaConfig.cmake
+/home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/cmake/surge_et_ambulaConfig-version.cmake
+/home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/package.xml

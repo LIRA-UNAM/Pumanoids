@@ -1,0 +1,10 @@
+/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel/CMakeFiles/uninstall.dir
+/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel/CMakeFiles/dynamixel_uninstall.dir
+/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel/CMakeFiles/cm730_v3_node.dir
+/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel/CMakeFiles/test.dir
+/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel/CMakeFiles/edit_cache.dir
+/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel/CMakeFiles/rebuild_cache.dir
+/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel/CMakeFiles/list_install_components.dir
+/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel/CMakeFiles/install.dir
+/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel/CMakeFiles/install/local.dir
+/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel/CMakeFiles/install/strip.dir

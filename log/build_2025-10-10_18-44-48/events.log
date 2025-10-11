@@ -1,0 +1,1187 @@
+[0.000000] (-) TimerEvent: {}
+[0.000730] (darwin_description) JobQueued: {'identifier': 'darwin_description', 'dependencies': OrderedDict()}
+[0.000934] (demos) JobQueued: {'identifier': 'demos', 'dependencies': OrderedDict()}
+[0.001095] (dynamixel) JobQueued: {'identifier': 'dynamixel', 'dependencies': OrderedDict()}
+[0.001215] (gazebo_envs) JobQueued: {'identifier': 'gazebo_envs', 'dependencies': OrderedDict()}
+[0.001318] (mujoco) JobQueued: {'identifier': 'mujoco', 'dependencies': OrderedDict()}
+[0.001416] (surge_et_ambula) JobQueued: {'identifier': 'surge_et_ambula', 'dependencies': OrderedDict()}
+[0.001506] (darwin_description) JobStarted: {'identifier': 'darwin_description'}
+[0.050133] (demos) JobStarted: {'identifier': 'demos'}
+[0.072528] (dynamixel) JobStarted: {'identifier': 'dynamixel'}
+[0.096741] (-) TimerEvent: {}
+[0.102087] (gazebo_envs) JobStarted: {'identifier': 'gazebo_envs'}
+[0.196946] (-) TimerEvent: {}
+[0.297547] (-) TimerEvent: {}
+[0.398222] (-) TimerEvent: {}
+[0.498848] (-) TimerEvent: {}
+[0.599528] (-) TimerEvent: {}
+[0.700171] (-) TimerEvent: {}
+[0.800809] (-) TimerEvent: {}
+[0.901456] (-) TimerEvent: {}
+[1.002137] (-) TimerEvent: {}
+[1.102791] (-) TimerEvent: {}
+[1.145918] (demos) JobProgress: {'identifier': 'demos', 'progress': 'cmake'}
+[1.147678] (demos) Command: {'cmd': ['/usr/bin/cmake', '/home/melissa/Documentos/Servicio/Pumanoids/setup/luckfox/demos', '-DCMAKE_INSTALL_PREFIX=/home/melissa/Documentos/Servicio/Pumanoids/install/demos'], 'cwd': '/home/melissa/Documentos/Servicio/Pumanoids/build/demos', 'env': OrderedDict({'LESSOPEN': '| /usr/bin/lesspipe %s', 'GZ_SIM_RESOURCE_PATH': '/opt/ros/jazzy/share', 'LANGUAGE': 'es:en', 'USER': 'melissa', 'LC_TIME': 'es_MX.UTF-8', 'GZ_CONFIG_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/share/gz:/opt/ros/jazzy/opt/sdformat_vendor/share/gz:/opt/ros/jazzy/opt/gz_gui_vendor/share/gz:/opt/ros/jazzy/opt/gz_transport_vendor/share/gz:/opt/ros/jazzy/opt/gz_rendering_vendor/share/gz:/opt/ros/jazzy/opt/gz_plugin_vendor/share/gz:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/share/gz:/opt/ros/jazzy/opt/gz_msgs_vendor/share/gz:/opt/ros/jazzy/opt/gz_common_vendor/share/gz', 'XDG_SESSION_TYPE': 'x11', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib', 'HOME': '/home/melissa', 'OLDPWD': '/home/melissa/Documentos/Servicio', 'DESKTOP_SESSION': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'LC_MONETARY': 'es_MX.UTF-8', 'SYSTEMD_EXEC_PID': '2923', 'GSM_SKIP_SSH_AGENT_WORKAROUND': 'true', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'GNOME_KEYRING_CONTROL': '/run/user/1000/keyring', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'melissa', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'MEMORY_PRESSURE_WATCH': '/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.MediaKeys.service/memory.pressure', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'melissa', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'WINDOWPATH': '2', 'PATH': '/home/melissa/.local/bin:/home/melissa/.local/bin:/opt/ros/jazzy/opt/gz_msgs_vendor/bin:/opt/ros/jazzy/opt/gz_tools_vendor/bin:/opt/ros/jazzy/opt/gz_ogre_next_vendor/bin:/opt/ros/jazzy/bin:/home/melissa/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin', 'SESSION_MANAGER': 'local/melissa-ThinkPad-T460s:@/tmp/.ICE-unix/2761,unix/melissa-ThinkPad-T460s:/tmp/.ICE-unix/2761', 'PAPERSIZE': 'letter', 'XDG_MENU_PREFIX': 'gnome-', 'LC_ADDRESS': 'es_MX.UTF-8', 'GNOME_TERMINAL_SCREEN': '/org/gnome/Terminal/screen/2d3042b1_54cf_4d3b_9e1c_674505d2b0a6', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':1', 'LANG': 'es_ES.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'LC_TELEPHONE': 'es_MX.UTF-8', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'GNOME_TERMINAL_SERVICE': ':1.95', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'AMENT_PREFIX_PATH': '/opt/ros/jazzy', 'SHELL': '/bin/bash', 'LC_NAME': 'es_MX.UTF-8', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'LC_MEASUREMENT': 'es_MX.UTF-8', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'LC_IDENTIFICATION': 'es_MX.UTF-8', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/melissa/Documentos/Servicio/Pumanoids/build/demos', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/opt/ros/jazzy/lib/python3.12/site-packages', 'LC_NUMERIC': 'es_MX.UTF-8', 'LC_PAPER': 'es_MX.UTF-8', 'COLCON': '1', 'MEMORY_PRESSURE_WRITE': 'c29tZSAyMDAwMDAgMjAwMDAwMAA=', 'VTE_VERSION': '7600', 'CMAKE_PREFIX_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor'}), 'shell': False}
+[1.158787] (dynamixel) JobProgress: {'identifier': 'dynamixel', 'progress': 'cmake'}
+[1.161539] (dynamixel) Command: {'cmd': ['/usr/bin/cmake', '/home/melissa/Documentos/Servicio/Pumanoids/colcon_ws/src/hardware/dynamixel', '-DCMAKE_INSTALL_PREFIX=/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel'], 'cwd': '/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel', 'env': OrderedDict({'LESSOPEN': '| /usr/bin/lesspipe %s', 'GZ_SIM_RESOURCE_PATH': '/opt/ros/jazzy/share', 'LANGUAGE': 'es:en', 'USER': 'melissa', 'LC_TIME': 'es_MX.UTF-8', 'GZ_CONFIG_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/share/gz:/opt/ros/jazzy/opt/sdformat_vendor/share/gz:/opt/ros/jazzy/opt/gz_gui_vendor/share/gz:/opt/ros/jazzy/opt/gz_transport_vendor/share/gz:/opt/ros/jazzy/opt/gz_rendering_vendor/share/gz:/opt/ros/jazzy/opt/gz_plugin_vendor/share/gz:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/share/gz:/opt/ros/jazzy/opt/gz_msgs_vendor/share/gz:/opt/ros/jazzy/opt/gz_common_vendor/share/gz', 'XDG_SESSION_TYPE': 'x11', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib', 'HOME': '/home/melissa', 'OLDPWD': '/home/melissa/Documentos/Servicio', 'DESKTOP_SESSION': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'LC_MONETARY': 'es_MX.UTF-8', 'SYSTEMD_EXEC_PID': '2923', 'GSM_SKIP_SSH_AGENT_WORKAROUND': 'true', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'GNOME_KEYRING_CONTROL': '/run/user/1000/keyring', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'melissa', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'MEMORY_PRESSURE_WATCH': '/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.MediaKeys.service/memory.pressure', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'melissa', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'WINDOWPATH': '2', 'PATH': '/home/melissa/.local/bin:/home/melissa/.local/bin:/opt/ros/jazzy/opt/gz_msgs_vendor/bin:/opt/ros/jazzy/opt/gz_tools_vendor/bin:/opt/ros/jazzy/opt/gz_ogre_next_vendor/bin:/opt/ros/jazzy/bin:/home/melissa/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin', 'SESSION_MANAGER': 'local/melissa-ThinkPad-T460s:@/tmp/.ICE-unix/2761,unix/melissa-ThinkPad-T460s:/tmp/.ICE-unix/2761', 'PAPERSIZE': 'letter', 'XDG_MENU_PREFIX': 'gnome-', 'LC_ADDRESS': 'es_MX.UTF-8', 'GNOME_TERMINAL_SCREEN': '/org/gnome/Terminal/screen/2d3042b1_54cf_4d3b_9e1c_674505d2b0a6', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':1', 'LANG': 'es_ES.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'LC_TELEPHONE': 'es_MX.UTF-8', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'GNOME_TERMINAL_SERVICE': ':1.95', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'AMENT_PREFIX_PATH': '/opt/ros/jazzy', 'SHELL': '/bin/bash', 'LC_NAME': 'es_MX.UTF-8', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'LC_MEASUREMENT': 'es_MX.UTF-8', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'LC_IDENTIFICATION': 'es_MX.UTF-8', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/opt/ros/jazzy/lib/python3.12/site-packages', 'LC_NUMERIC': 'es_MX.UTF-8', 'LC_PAPER': 'es_MX.UTF-8', 'COLCON': '1', 'MEMORY_PRESSURE_WRITE': 'c29tZSAyMDAwMDAgMjAwMDAwMAA=', 'VTE_VERSION': '7600', 'CMAKE_PREFIX_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy'}), 'shell': False}
+[1.179746] (gazebo_envs) JobProgress: {'identifier': 'gazebo_envs', 'progress': 'cmake'}
+[1.184720] (gazebo_envs) Command: {'cmd': ['/usr/bin/cmake', '/home/melissa/Documentos/Servicio/Pumanoids/colcon_ws/src/simulation/gazebo_envs', '-DCMAKE_INSTALL_PREFIX=/home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs'], 'cwd': '/home/melissa/Documentos/Servicio/Pumanoids/build/gazebo_envs', 'env': OrderedDict({'LESSOPEN': '| /usr/bin/lesspipe %s', 'GZ_SIM_RESOURCE_PATH': '/opt/ros/jazzy/share', 'LANGUAGE': 'es:en', 'USER': 'melissa', 'LC_TIME': 'es_MX.UTF-8', 'GZ_CONFIG_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/share/gz:/opt/ros/jazzy/opt/sdformat_vendor/share/gz:/opt/ros/jazzy/opt/gz_gui_vendor/share/gz:/opt/ros/jazzy/opt/gz_transport_vendor/share/gz:/opt/ros/jazzy/opt/gz_rendering_vendor/share/gz:/opt/ros/jazzy/opt/gz_plugin_vendor/share/gz:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/share/gz:/opt/ros/jazzy/opt/gz_msgs_vendor/share/gz:/opt/ros/jazzy/opt/gz_common_vendor/share/gz', 'XDG_SESSION_TYPE': 'x11', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib', 'HOME': '/home/melissa', 'OLDPWD': '/home/melissa/Documentos/Servicio', 'DESKTOP_SESSION': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'LC_MONETARY': 'es_MX.UTF-8', 'SYSTEMD_EXEC_PID': '2923', 'GSM_SKIP_SSH_AGENT_WORKAROUND': 'true', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'GNOME_KEYRING_CONTROL': '/run/user/1000/keyring', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'melissa', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'MEMORY_PRESSURE_WATCH': '/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.MediaKeys.service/memory.pressure', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'melissa', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'WINDOWPATH': '2', 'PATH': '/home/melissa/.local/bin:/home/melissa/.local/bin:/opt/ros/jazzy/opt/gz_msgs_vendor/bin:/opt/ros/jazzy/opt/gz_tools_vendor/bin:/opt/ros/jazzy/opt/gz_ogre_next_vendor/bin:/opt/ros/jazzy/bin:/home/melissa/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin', 'SESSION_MANAGER': 'local/melissa-ThinkPad-T460s:@/tmp/.ICE-unix/2761,unix/melissa-ThinkPad-T460s:/tmp/.ICE-unix/2761', 'PAPERSIZE': 'letter', 'XDG_MENU_PREFIX': 'gnome-', 'LC_ADDRESS': 'es_MX.UTF-8', 'GNOME_TERMINAL_SCREEN': '/org/gnome/Terminal/screen/2d3042b1_54cf_4d3b_9e1c_674505d2b0a6', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':1', 'LANG': 'es_ES.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'LC_TELEPHONE': 'es_MX.UTF-8', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'GNOME_TERMINAL_SERVICE': ':1.95', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'AMENT_PREFIX_PATH': '/opt/ros/jazzy', 'SHELL': '/bin/bash', 'LC_NAME': 'es_MX.UTF-8', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'LC_MEASUREMENT': 'es_MX.UTF-8', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'LC_IDENTIFICATION': 'es_MX.UTF-8', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/melissa/Documentos/Servicio/Pumanoids/build/gazebo_envs', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/opt/ros/jazzy/lib/python3.12/site-packages', 'LC_NUMERIC': 'es_MX.UTF-8', 'LC_PAPER': 'es_MX.UTF-8', 'COLCON': '1', 'MEMORY_PRESSURE_WRITE': 'c29tZSAyMDAwMDAgMjAwMDAwMAA=', 'VTE_VERSION': '7600', 'CMAKE_PREFIX_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy'}), 'shell': False}
+[1.202956] (-) TimerEvent: {}
+[1.240484] (demos) StderrLine: {'line': b'\x1b[33mCMake Warning at CMakeLists.txt:5 (message):\n'}
+[1.241462] (demos) StderrLine: {'line': b'  Please Set Luckfox-pico SDK Path.  Such as:export\n'}
+[1.242144] (demos) StderrLine: {'line': b'  LUCKFOX_SDK_PATH=/home/user/luckfox-pico\n'}
+[1.242772] (demos) StderrLine: {'line': b'\n'}
+[1.243630] (demos) StderrLine: {'line': b'\x1b[0m\n'}
+[1.244299] (demos) StdoutLine: {'line': b'-- Configuring done (0.0s)\n'}
+[1.254170] (demos) StdoutLine: {'line': b'-- Generating done (0.0s)\n'}
+[1.260526] (demos) StdoutLine: {'line': b'-- Build files have been written to: /home/melissa/Documentos/Servicio/Pumanoids/build/demos\n'}
+[1.274448] (demos) CommandEnded: {'returncode': 0}
+[1.278179] (demos) JobEnded: {'identifier': 'demos', 'rc': 0}
+[1.288228] (mujoco) JobStarted: {'identifier': 'mujoco'}
+[1.307902] (-) TimerEvent: {}
+[1.336333] (mujoco) JobProgress: {'identifier': 'mujoco', 'progress': 'cmake'}
+[1.339297] (mujoco) Command: {'cmd': ['/usr/bin/cmake', '/home/melissa/Documentos/Servicio/Pumanoids/colcon_ws/src/simulation/mujoco', '-DCMAKE_INSTALL_PREFIX=/home/melissa/Documentos/Servicio/Pumanoids/install/mujoco'], 'cwd': '/home/melissa/Documentos/Servicio/Pumanoids/build/mujoco', 'env': OrderedDict({'LESSOPEN': '| /usr/bin/lesspipe %s', 'GZ_SIM_RESOURCE_PATH': '/opt/ros/jazzy/share', 'LANGUAGE': 'es:en', 'USER': 'melissa', 'LC_TIME': 'es_MX.UTF-8', 'GZ_CONFIG_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/share/gz:/opt/ros/jazzy/opt/sdformat_vendor/share/gz:/opt/ros/jazzy/opt/gz_gui_vendor/share/gz:/opt/ros/jazzy/opt/gz_transport_vendor/share/gz:/opt/ros/jazzy/opt/gz_rendering_vendor/share/gz:/opt/ros/jazzy/opt/gz_plugin_vendor/share/gz:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/share/gz:/opt/ros/jazzy/opt/gz_msgs_vendor/share/gz:/opt/ros/jazzy/opt/gz_common_vendor/share/gz', 'XDG_SESSION_TYPE': 'x11', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib', 'HOME': '/home/melissa', 'OLDPWD': '/home/melissa/Documentos/Servicio', 'DESKTOP_SESSION': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'LC_MONETARY': 'es_MX.UTF-8', 'SYSTEMD_EXEC_PID': '2923', 'GSM_SKIP_SSH_AGENT_WORKAROUND': 'true', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'GNOME_KEYRING_CONTROL': '/run/user/1000/keyring', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'melissa', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'MEMORY_PRESSURE_WATCH': '/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.MediaKeys.service/memory.pressure', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'melissa', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'WINDOWPATH': '2', 'PATH': '/home/melissa/.local/bin:/home/melissa/.local/bin:/opt/ros/jazzy/opt/gz_msgs_vendor/bin:/opt/ros/jazzy/opt/gz_tools_vendor/bin:/opt/ros/jazzy/opt/gz_ogre_next_vendor/bin:/opt/ros/jazzy/bin:/home/melissa/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin', 'SESSION_MANAGER': 'local/melissa-ThinkPad-T460s:@/tmp/.ICE-unix/2761,unix/melissa-ThinkPad-T460s:/tmp/.ICE-unix/2761', 'PAPERSIZE': 'letter', 'XDG_MENU_PREFIX': 'gnome-', 'LC_ADDRESS': 'es_MX.UTF-8', 'GNOME_TERMINAL_SCREEN': '/org/gnome/Terminal/screen/2d3042b1_54cf_4d3b_9e1c_674505d2b0a6', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':1', 'LANG': 'es_ES.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'LC_TELEPHONE': 'es_MX.UTF-8', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'GNOME_TERMINAL_SERVICE': ':1.95', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'AMENT_PREFIX_PATH': '/opt/ros/jazzy', 'SHELL': '/bin/bash', 'LC_NAME': 'es_MX.UTF-8', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'LC_MEASUREMENT': 'es_MX.UTF-8', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'LC_IDENTIFICATION': 'es_MX.UTF-8', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/melissa/Documentos/Servicio/Pumanoids/build/mujoco', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/opt/ros/jazzy/lib/python3.12/site-packages', 'LC_NUMERIC': 'es_MX.UTF-8', 'LC_PAPER': 'es_MX.UTF-8', 'COLCON': '1', 'MEMORY_PRESSURE_WRITE': 'c29tZSAyMDAwMDAgMjAwMDAwMAA=', 'VTE_VERSION': '7600', 'CMAKE_PREFIX_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy'}), 'shell': False}
+[1.408148] (-) TimerEvent: {}
+[1.514181] (-) TimerEvent: {}
+[1.615199] (-) TimerEvent: {}
+[1.717951] (-) TimerEvent: {}
+[1.775602] (dynamixel) StdoutLine: {'line': b'-- The C compiler identification is GNU 13.3.0\n'}
+[1.791381] (mujoco) StdoutLine: {'line': b'-- The C compiler identification is GNU 13.3.0\n'}
+[1.794209] (gazebo_envs) StdoutLine: {'line': b'-- The C compiler identification is GNU 13.3.0\n'}
+[1.818168] (-) TimerEvent: {}
+[1.920461] (-) TimerEvent: {}
+[2.021891] (-) TimerEvent: {}
+[2.123188] (-) TimerEvent: {}
+[2.226782] (-) TimerEvent: {}
+[2.312660] (dynamixel) StdoutLine: {'line': b'-- The CXX compiler identification is GNU 13.3.0\n'}
+[2.328279] (-) TimerEvent: {}
+[2.347351] (gazebo_envs) StdoutLine: {'line': b'-- The CXX compiler identification is GNU 13.3.0\n'}
+[2.360838] (mujoco) StdoutLine: {'line': b'-- The CXX compiler identification is GNU 13.3.0\n'}
+[2.428447] (-) TimerEvent: {}
+[2.491786] (dynamixel) StdoutLine: {'line': b'-- Detecting C compiler ABI info\n'}
+[2.494334] (gazebo_envs) StdoutLine: {'line': b'-- Detecting C compiler ABI info\n'}
+[2.498192] (mujoco) StdoutLine: {'line': b'-- Detecting C compiler ABI info\n'}
+[2.531221] (-) TimerEvent: {}
+[2.632348] (-) TimerEvent: {}
+[2.733444] (-) TimerEvent: {}
+[2.836478] (-) TimerEvent: {}
+[2.940555] (-) TimerEvent: {}
+[3.043838] (-) TimerEvent: {}
+[3.147609] (-) TimerEvent: {}
+[3.248706] (-) TimerEvent: {}
+[3.270410] (mujoco) StdoutLine: {'line': b'-- Detecting C compiler ABI info - done\n'}
+[3.297180] (dynamixel) StdoutLine: {'line': b'-- Detecting C compiler ABI info - done\n'}
+[3.300913] (gazebo_envs) StdoutLine: {'line': b'-- Detecting C compiler ABI info - done\n'}
+[3.348868] (-) TimerEvent: {}
+[3.371987] (mujoco) StdoutLine: {'line': b'-- Check for working C compiler: /usr/bin/cc - skipped\n'}
+[3.376345] (mujoco) StdoutLine: {'line': b'-- Detecting C compile features\n'}
+[3.382218] (mujoco) StdoutLine: {'line': b'-- Detecting C compile features - done\n'}
+[3.384933] (dynamixel) StdoutLine: {'line': b'-- Check for working C compiler: /usr/bin/cc - skipped\n'}
+[3.387750] (dynamixel) StdoutLine: {'line': b'-- Detecting C compile features\n'}
+[3.390805] (dynamixel) StdoutLine: {'line': b'-- Detecting C compile features - done\n'}
+[3.396273] (gazebo_envs) StdoutLine: {'line': b'-- Check for working C compiler: /usr/bin/cc - skipped\n'}
+[3.399495] (gazebo_envs) StdoutLine: {'line': b'-- Detecting C compile features\n'}
+[3.401663] (gazebo_envs) StdoutLine: {'line': b'-- Detecting C compile features - done\n'}
+[3.449101] (-) TimerEvent: {}
+[3.473272] (dynamixel) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info\n'}
+[3.477190] (mujoco) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info\n'}
+[3.489758] (gazebo_envs) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info\n'}
+[3.550996] (-) TimerEvent: {}
+[3.652157] (-) TimerEvent: {}
+[3.756635] (-) TimerEvent: {}
+[3.858636] (-) TimerEvent: {}
+[3.961219] (-) TimerEvent: {}
+[4.064222] (-) TimerEvent: {}
+[4.168439] (-) TimerEvent: {}
+[4.269676] (-) TimerEvent: {}
+[4.370941] (-) TimerEvent: {}
+[4.455005] (dynamixel) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info - done\n'}
+[4.473152] (-) TimerEvent: {}
+[4.513752] (gazebo_envs) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info - done\n'}
+[4.532470] (mujoco) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info - done\n'}
+[4.574188] (-) TimerEvent: {}
+[4.592874] (dynamixel) StdoutLine: {'line': b'-- Check for working CXX compiler: /usr/bin/c++ - skipped\n'}
+[4.596297] (dynamixel) StdoutLine: {'line': b'-- Detecting CXX compile features\n'}
+[4.599894] (dynamixel) StdoutLine: {'line': b'-- Detecting CXX compile features - done\n'}
+[4.638334] (gazebo_envs) StdoutLine: {'line': b'-- Check for working CXX compiler: /usr/bin/c++ - skipped\n'}
+[4.639239] (gazebo_envs) StdoutLine: {'line': b'-- Detecting CXX compile features\n'}
+[4.643509] (gazebo_envs) StdoutLine: {'line': b'-- Detecting CXX compile features - done\n'}
+[4.645767] (dynamixel) StdoutLine: {'line': b'-- Found ament_cmake: 2.5.4 (/opt/ros/jazzy/share/ament_cmake/cmake)\n'}
+[4.666164] (mujoco) StdoutLine: {'line': b'-- Check for working CXX compiler: /usr/bin/c++ - skipped\n'}
+[4.668027] (mujoco) StdoutLine: {'line': b'-- Detecting CXX compile features\n'}
+[4.676208] (mujoco) StdoutLine: {'line': b'-- Detecting CXX compile features - done\n'}
+[4.677033] (-) TimerEvent: {}
+[4.681107] (gazebo_envs) StdoutLine: {'line': b'-- Found ament_cmake: 2.5.4 (/opt/ros/jazzy/share/ament_cmake/cmake)\n'}
+[4.720171] (mujoco) StdoutLine: {'line': b'-- Found ament_cmake: 2.5.4 (/opt/ros/jazzy/share/ament_cmake/cmake)\n'}
+[4.779190] (-) TimerEvent: {}
+[4.883257] (-) TimerEvent: {}
+[4.988520] (-) TimerEvent: {}
+[5.090205] (-) TimerEvent: {}
+[5.194637] (-) TimerEvent: {}
+[5.297677] (-) TimerEvent: {}
+[5.400985] (-) TimerEvent: {}
+[5.506363] (-) TimerEvent: {}
+[5.608199] (-) TimerEvent: {}
+[5.714280] (-) TimerEvent: {}
+[5.818991] (-) TimerEvent: {}
+[5.922572] (-) TimerEvent: {}
+[6.024208] (-) TimerEvent: {}
+[6.131916] (-) TimerEvent: {}
+[6.236457] (-) TimerEvent: {}
+[6.338237] (-) TimerEvent: {}
+[6.367040] (gazebo_envs) StdoutLine: {'line': b'-- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter \n'}
+[6.437240] (dynamixel) StdoutLine: {'line': b'-- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter \n'}
+[6.438677] (-) TimerEvent: {}
+[6.462530] (mujoco) StdoutLine: {'line': b'-- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter \n'}
+[6.538908] (-) TimerEvent: {}
+[6.642615] (-) TimerEvent: {}
+[6.743989] (-) TimerEvent: {}
+[6.847638] (-) TimerEvent: {}
+[6.949006] (-) TimerEvent: {}
+[7.053251] (-) TimerEvent: {}
+[7.158641] (-) TimerEvent: {}
+[7.260093] (-) TimerEvent: {}
+[7.363640] (-) TimerEvent: {}
+[7.466744] (-) TimerEvent: {}
+[7.572573] (-) TimerEvent: {}
+[7.674500] (-) TimerEvent: {}
+[7.779110] (-) TimerEvent: {}
+[7.883503] (-) TimerEvent: {}
+[7.984513] (-) TimerEvent: {}
+[8.048092] (gazebo_envs) StdoutLine: {'line': b'-- Found ros_gz_bridge: 1.0.16 (/opt/ros/jazzy/share/ros_gz_bridge/cmake)\n'}
+[8.051956] (dynamixel) StdoutLine: {'line': b'-- Found rclcpp: 28.1.12 (/opt/ros/jazzy/share/rclcpp/cmake)\n'}
+[8.060637] (mujoco) StdoutLine: {'line': b'-- Found ament_lint_auto: 0.17.3 (/opt/ros/jazzy/share/ament_lint_auto/cmake)\n'}
+[8.085158] (-) TimerEvent: {}
+[8.188428] (-) TimerEvent: {}
+[8.292476] (-) TimerEvent: {}
+[8.394199] (-) TimerEvent: {}
+[8.499558] (-) TimerEvent: {}
+[8.600825] (-) TimerEvent: {}
+[8.707556] (-) TimerEvent: {}
+[8.808736] (-) TimerEvent: {}
+[8.887847] (gazebo_envs) StdoutLine: {'line': b'-- Found rosidl_generator_c: 4.6.6 (/opt/ros/jazzy/share/rosidl_generator_c/cmake)\n'}
+[8.892331] (dynamixel) StdoutLine: {'line': b'-- Found rosidl_generator_c: 4.6.6 (/opt/ros/jazzy/share/rosidl_generator_c/cmake)\n'}
+[8.909228] (-) TimerEvent: {}
+[9.014716] (-) TimerEvent: {}
+[9.118677] (-) TimerEvent: {}
+[9.200642] (gazebo_envs) StdoutLine: {'line': b'-- Found rosidl_generator_cpp: 4.6.6 (/opt/ros/jazzy/share/rosidl_generator_cpp/cmake)\n'}
+[9.205078] (dynamixel) StdoutLine: {'line': b'-- Found rosidl_generator_cpp: 4.6.6 (/opt/ros/jazzy/share/rosidl_generator_cpp/cmake)\n'}
+[9.218899] (-) TimerEvent: {}
+[9.322649] (-) TimerEvent: {}
+[9.427356] (-) TimerEvent: {}
+[9.489754] (mujoco) StdoutLine: {'line': b"-- Added test 'lint_cmake' to check CMake code style\n"}
+[9.507267] (mujoco) StdoutLine: {'line': b"-- Added test 'xmllint' to check XML markup files\n"}
+[9.513292] (dynamixel) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c\n'}
+[9.528252] (-) TimerEvent: {}
+[9.536518] (mujoco) StdoutLine: {'line': b'-- Configuring done (8.1s)\n'}
+[9.557121] (darwin_description) Command: {'cmd': ['/usr/bin/python3', '-W', 'ignore:setup.py install is deprecated', '-W', 'ignore:easy_install command is deprecated', 'setup.py', 'egg_info', '--egg-base', '../../../../../build/darwin_description', 'build', '--build-base', '/home/melissa/Documentos/Servicio/Pumanoids/build/darwin_description/build', 'install', '--record', '/home/melissa/Documentos/Servicio/Pumanoids/build/darwin_description/install.log', '--single-version-externally-managed', 'install_data'], 'cwd': '/home/melissa/Documentos/Servicio/Pumanoids/colcon_ws/src/robots/darwin/darwin_description', 'env': {'LESSOPEN': '| /usr/bin/lesspipe %s', 'GZ_SIM_RESOURCE_PATH': '/opt/ros/jazzy/share', 'LANGUAGE': 'es:en', 'USER': 'melissa', 'LC_TIME': 'es_MX.UTF-8', 'GZ_CONFIG_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/share/gz:/opt/ros/jazzy/opt/sdformat_vendor/share/gz:/opt/ros/jazzy/opt/gz_gui_vendor/share/gz:/opt/ros/jazzy/opt/gz_transport_vendor/share/gz:/opt/ros/jazzy/opt/gz_rendering_vendor/share/gz:/opt/ros/jazzy/opt/gz_plugin_vendor/share/gz:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/share/gz:/opt/ros/jazzy/opt/gz_msgs_vendor/share/gz:/opt/ros/jazzy/opt/gz_common_vendor/share/gz', 'XDG_SESSION_TYPE': 'x11', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib', 'HOME': '/home/melissa', 'OLDPWD': '/home/melissa/Documentos/Servicio', 'DESKTOP_SESSION': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'LC_MONETARY': 'es_MX.UTF-8', 'SYSTEMD_EXEC_PID': '2923', 'GSM_SKIP_SSH_AGENT_WORKAROUND': 'true', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'GNOME_KEYRING_CONTROL': '/run/user/1000/keyring', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'melissa', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'MEMORY_PRESSURE_WATCH': '/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.MediaKeys.service/memory.pressure', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'melissa', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'WINDOWPATH': '2', 'PATH': '/home/melissa/.local/bin:/home/melissa/.local/bin:/opt/ros/jazzy/opt/gz_msgs_vendor/bin:/opt/ros/jazzy/opt/gz_tools_vendor/bin:/opt/ros/jazzy/opt/gz_ogre_next_vendor/bin:/opt/ros/jazzy/bin:/home/melissa/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin', 'SESSION_MANAGER': 'local/melissa-ThinkPad-T460s:@/tmp/.ICE-unix/2761,unix/melissa-ThinkPad-T460s:/tmp/.ICE-unix/2761', 'PAPERSIZE': 'letter', 'XDG_MENU_PREFIX': 'gnome-', 'LC_ADDRESS': 'es_MX.UTF-8', 'GNOME_TERMINAL_SCREEN': '/org/gnome/Terminal/screen/2d3042b1_54cf_4d3b_9e1c_674505d2b0a6', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':1', 'LANG': 'es_ES.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'LC_TELEPHONE': 'es_MX.UTF-8', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'GNOME_TERMINAL_SERVICE': ':1.95', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'AMENT_PREFIX_PATH': '/opt/ros/jazzy', 'SHELL': '/bin/bash', 'LC_NAME': 'es_MX.UTF-8', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'LC_MEASUREMENT': 'es_MX.UTF-8', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'LC_IDENTIFICATION': 'es_MX.UTF-8', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/melissa/Documentos/Servicio/Pumanoids/build/darwin_description', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/home/melissa/Documentos/Servicio/Pumanoids/build/darwin_description/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages', 'LC_NUMERIC': 'es_MX.UTF-8', 'LC_PAPER': 'es_MX.UTF-8', 'COLCON': '1', 'MEMORY_PRESSURE_WRITE': 'c29tZSAyMDAwMDAgMjAwMDAwMAA=', 'VTE_VERSION': '7600', 'CMAKE_PREFIX_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor'}, 'shell': False}
+[9.577795] (mujoco) StdoutLine: {'line': b'-- Generating done (0.0s)\n'}
+[9.584251] (gazebo_envs) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c\n'}
+[9.603763] (mujoco) StdoutLine: {'line': b'-- Build files have been written to: /home/melissa/Documentos/Servicio/Pumanoids/build/mujoco\n'}
+[9.629258] (-) TimerEvent: {}
+[9.654257] (mujoco) CommandEnded: {'returncode': 0}
+[9.664421] (mujoco) JobProgress: {'identifier': 'mujoco', 'progress': 'build'}
+[9.664716] (mujoco) Command: {'cmd': ['/usr/bin/cmake', '--build', '/home/melissa/Documentos/Servicio/Pumanoids/build/mujoco', '--', '-j4', '-l4'], 'cwd': '/home/melissa/Documentos/Servicio/Pumanoids/build/mujoco', 'env': OrderedDict({'LESSOPEN': '| /usr/bin/lesspipe %s', 'GZ_SIM_RESOURCE_PATH': '/opt/ros/jazzy/share', 'LANGUAGE': 'es:en', 'USER': 'melissa', 'LC_TIME': 'es_MX.UTF-8', 'GZ_CONFIG_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/share/gz:/opt/ros/jazzy/opt/sdformat_vendor/share/gz:/opt/ros/jazzy/opt/gz_gui_vendor/share/gz:/opt/ros/jazzy/opt/gz_transport_vendor/share/gz:/opt/ros/jazzy/opt/gz_rendering_vendor/share/gz:/opt/ros/jazzy/opt/gz_plugin_vendor/share/gz:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/share/gz:/opt/ros/jazzy/opt/gz_msgs_vendor/share/gz:/opt/ros/jazzy/opt/gz_common_vendor/share/gz', 'XDG_SESSION_TYPE': 'x11', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib', 'HOME': '/home/melissa', 'OLDPWD': '/home/melissa/Documentos/Servicio', 'DESKTOP_SESSION': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'LC_MONETARY': 'es_MX.UTF-8', 'SYSTEMD_EXEC_PID': '2923', 'GSM_SKIP_SSH_AGENT_WORKAROUND': 'true', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'GNOME_KEYRING_CONTROL': '/run/user/1000/keyring', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'melissa', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'MEMORY_PRESSURE_WATCH': '/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.MediaKeys.service/memory.pressure', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'melissa', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'WINDOWPATH': '2', 'PATH': '/home/melissa/.local/bin:/home/melissa/.local/bin:/opt/ros/jazzy/opt/gz_msgs_vendor/bin:/opt/ros/jazzy/opt/gz_tools_vendor/bin:/opt/ros/jazzy/opt/gz_ogre_next_vendor/bin:/opt/ros/jazzy/bin:/home/melissa/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin', 'SESSION_MANAGER': 'local/melissa-ThinkPad-T460s:@/tmp/.ICE-unix/2761,unix/melissa-ThinkPad-T460s:/tmp/.ICE-unix/2761', 'PAPERSIZE': 'letter', 'XDG_MENU_PREFIX': 'gnome-', 'LC_ADDRESS': 'es_MX.UTF-8', 'GNOME_TERMINAL_SCREEN': '/org/gnome/Terminal/screen/2d3042b1_54cf_4d3b_9e1c_674505d2b0a6', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':1', 'LANG': 'es_ES.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'LC_TELEPHONE': 'es_MX.UTF-8', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'GNOME_TERMINAL_SERVICE': ':1.95', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'AMENT_PREFIX_PATH': '/opt/ros/jazzy', 'SHELL': '/bin/bash', 'LC_NAME': 'es_MX.UTF-8', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'LC_MEASUREMENT': 'es_MX.UTF-8', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'LC_IDENTIFICATION': 'es_MX.UTF-8', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/melissa/Documentos/Servicio/Pumanoids/build/mujoco', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/opt/ros/jazzy/lib/python3.12/site-packages', 'LC_NUMERIC': 'es_MX.UTF-8', 'LC_PAPER': 'es_MX.UTF-8', 'COLCON': '1', 'MEMORY_PRESSURE_WRITE': 'c29tZSAyMDAwMDAgMjAwMDAwMAA=', 'VTE_VERSION': '7600', 'CMAKE_PREFIX_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy'}), 'shell': False}
+[9.729527] (-) TimerEvent: {}
+[9.833536] (-) TimerEvent: {}
+[9.936645] (-) TimerEvent: {}
+[9.965436] (gazebo_envs) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp\n'}
+[10.037323] (dynamixel) StdoutLine: {'line': b'-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp\n'}
+[10.038865] (-) TimerEvent: {}
+[10.146700] (-) TimerEvent: {}
+[10.182222] (mujoco) CommandEnded: {'returncode': 0}
+[10.189248] (mujoco) JobProgress: {'identifier': 'mujoco', 'progress': 'install'}
+[10.248261] (-) TimerEvent: {}
+[10.339279] (mujoco) Command: {'cmd': ['/usr/bin/cmake', '--install', '/home/melissa/Documentos/Servicio/Pumanoids/build/mujoco'], 'cwd': '/home/melissa/Documentos/Servicio/Pumanoids/build/mujoco', 'env': OrderedDict({'LESSOPEN': '| /usr/bin/lesspipe %s', 'GZ_SIM_RESOURCE_PATH': '/opt/ros/jazzy/share', 'LANGUAGE': 'es:en', 'USER': 'melissa', 'LC_TIME': 'es_MX.UTF-8', 'GZ_CONFIG_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/share/gz:/opt/ros/jazzy/opt/sdformat_vendor/share/gz:/opt/ros/jazzy/opt/gz_gui_vendor/share/gz:/opt/ros/jazzy/opt/gz_transport_vendor/share/gz:/opt/ros/jazzy/opt/gz_rendering_vendor/share/gz:/opt/ros/jazzy/opt/gz_plugin_vendor/share/gz:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/share/gz:/opt/ros/jazzy/opt/gz_msgs_vendor/share/gz:/opt/ros/jazzy/opt/gz_common_vendor/share/gz', 'XDG_SESSION_TYPE': 'x11', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib', 'HOME': '/home/melissa', 'OLDPWD': '/home/melissa/Documentos/Servicio', 'DESKTOP_SESSION': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'LC_MONETARY': 'es_MX.UTF-8', 'SYSTEMD_EXEC_PID': '2923', 'GSM_SKIP_SSH_AGENT_WORKAROUND': 'true', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'GNOME_KEYRING_CONTROL': '/run/user/1000/keyring', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'melissa', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'MEMORY_PRESSURE_WATCH': '/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.MediaKeys.service/memory.pressure', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'melissa', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'WINDOWPATH': '2', 'PATH': '/home/melissa/.local/bin:/home/melissa/.local/bin:/opt/ros/jazzy/opt/gz_msgs_vendor/bin:/opt/ros/jazzy/opt/gz_tools_vendor/bin:/opt/ros/jazzy/opt/gz_ogre_next_vendor/bin:/opt/ros/jazzy/bin:/home/melissa/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin', 'SESSION_MANAGER': 'local/melissa-ThinkPad-T460s:@/tmp/.ICE-unix/2761,unix/melissa-ThinkPad-T460s:/tmp/.ICE-unix/2761', 'PAPERSIZE': 'letter', 'XDG_MENU_PREFIX': 'gnome-', 'LC_ADDRESS': 'es_MX.UTF-8', 'GNOME_TERMINAL_SCREEN': '/org/gnome/Terminal/screen/2d3042b1_54cf_4d3b_9e1c_674505d2b0a6', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':1', 'LANG': 'es_ES.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'LC_TELEPHONE': 'es_MX.UTF-8', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'GNOME_TERMINAL_SERVICE': ':1.95', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'AMENT_PREFIX_PATH': '/opt/ros/jazzy', 'SHELL': '/bin/bash', 'LC_NAME': 'es_MX.UTF-8', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'LC_MEASUREMENT': 'es_MX.UTF-8', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'LC_IDENTIFICATION': 'es_MX.UTF-8', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/melissa/Documentos/Servicio/Pumanoids/build/mujoco', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/opt/ros/jazzy/lib/python3.12/site-packages', 'LC_NUMERIC': 'es_MX.UTF-8', 'LC_PAPER': 'es_MX.UTF-8', 'COLCON': '1', 'MEMORY_PRESSURE_WRITE': 'c29tZSAyMDAwMDAgMjAwMDAwMAA=', 'VTE_VERSION': '7600', 'CMAKE_PREFIX_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy'}), 'shell': False}
+[10.350255] (-) TimerEvent: {}
+[10.442524] (mujoco) StdoutLine: {'line': b'-- Install configuration: ""\n'}
+[10.447758] (mujoco) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/mujoco/share/ament_index/resource_index/package_run_dependencies/mujoco\n'}
+[10.449358] (mujoco) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/mujoco/share/ament_index/resource_index/parent_prefix_path/mujoco\n'}
+[10.450306] (-) TimerEvent: {}
+[10.457544] (mujoco) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/mujoco/share/mujoco/environment/ament_prefix_path.sh\n'}
+[10.459511] (mujoco) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/mujoco/share/mujoco/environment/ament_prefix_path.dsv\n'}
+[10.464673] (mujoco) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/mujoco/share/mujoco/environment/path.sh\n'}
+[10.466028] (mujoco) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/mujoco/share/mujoco/environment/path.dsv\n'}
+[10.469462] (mujoco) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/mujoco/share/mujoco/local_setup.bash\n'}
+[10.477813] (mujoco) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/mujoco/share/mujoco/local_setup.sh\n'}
+[10.479137] (mujoco) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/mujoco/share/mujoco/local_setup.zsh\n'}
+[10.484701] (mujoco) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/mujoco/share/mujoco/local_setup.dsv\n'}
+[10.487513] (mujoco) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/mujoco/share/mujoco/package.dsv\n'}
+[10.491112] (mujoco) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/mujoco/share/ament_index/resource_index/packages/mujoco\n'}
+[10.494426] (mujoco) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/mujoco/share/mujoco/cmake/mujocoConfig.cmake\n'}
+[10.499448] (mujoco) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/mujoco/share/mujoco/cmake/mujocoConfig-version.cmake\n'}
+[10.500661] (mujoco) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/mujoco/share/mujoco/package.xml\n'}
+[10.513768] (mujoco) CommandEnded: {'returncode': 0}
+[10.551893] (-) TimerEvent: {}
+[10.658939] (-) TimerEvent: {}
+[10.710415] (mujoco) JobEnded: {'identifier': 'mujoco', 'rc': 0}
+[10.715907] (surge_et_ambula) JobStarted: {'identifier': 'surge_et_ambula'}
+[10.759238] (-) TimerEvent: {}
+[10.797566] (surge_et_ambula) JobProgress: {'identifier': 'surge_et_ambula', 'progress': 'cmake'}
+[10.802848] (surge_et_ambula) Command: {'cmd': ['/usr/bin/cmake', '/home/melissa/Documentos/Servicio/Pumanoids/colcon_ws/src/surge_et_ambula', '-DCMAKE_INSTALL_PREFIX=/home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula'], 'cwd': '/home/melissa/Documentos/Servicio/Pumanoids/build/surge_et_ambula', 'env': OrderedDict({'LESSOPEN': '| /usr/bin/lesspipe %s', 'GZ_SIM_RESOURCE_PATH': '/opt/ros/jazzy/share', 'LANGUAGE': 'es:en', 'USER': 'melissa', 'LC_TIME': 'es_MX.UTF-8', 'GZ_CONFIG_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/share/gz:/opt/ros/jazzy/opt/sdformat_vendor/share/gz:/opt/ros/jazzy/opt/gz_gui_vendor/share/gz:/opt/ros/jazzy/opt/gz_transport_vendor/share/gz:/opt/ros/jazzy/opt/gz_rendering_vendor/share/gz:/opt/ros/jazzy/opt/gz_plugin_vendor/share/gz:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/share/gz:/opt/ros/jazzy/opt/gz_msgs_vendor/share/gz:/opt/ros/jazzy/opt/gz_common_vendor/share/gz', 'XDG_SESSION_TYPE': 'x11', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib', 'HOME': '/home/melissa', 'OLDPWD': '/home/melissa/Documentos/Servicio', 'DESKTOP_SESSION': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'LC_MONETARY': 'es_MX.UTF-8', 'SYSTEMD_EXEC_PID': '2923', 'GSM_SKIP_SSH_AGENT_WORKAROUND': 'true', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'GNOME_KEYRING_CONTROL': '/run/user/1000/keyring', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'melissa', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'MEMORY_PRESSURE_WATCH': '/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.MediaKeys.service/memory.pressure', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'melissa', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'WINDOWPATH': '2', 'PATH': '/home/melissa/.local/bin:/home/melissa/.local/bin:/opt/ros/jazzy/opt/gz_msgs_vendor/bin:/opt/ros/jazzy/opt/gz_tools_vendor/bin:/opt/ros/jazzy/opt/gz_ogre_next_vendor/bin:/opt/ros/jazzy/bin:/home/melissa/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin', 'SESSION_MANAGER': 'local/melissa-ThinkPad-T460s:@/tmp/.ICE-unix/2761,unix/melissa-ThinkPad-T460s:/tmp/.ICE-unix/2761', 'PAPERSIZE': 'letter', 'XDG_MENU_PREFIX': 'gnome-', 'LC_ADDRESS': 'es_MX.UTF-8', 'GNOME_TERMINAL_SCREEN': '/org/gnome/Terminal/screen/2d3042b1_54cf_4d3b_9e1c_674505d2b0a6', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':1', 'LANG': 'es_ES.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'LC_TELEPHONE': 'es_MX.UTF-8', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'GNOME_TERMINAL_SERVICE': ':1.95', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'AMENT_PREFIX_PATH': '/opt/ros/jazzy', 'SHELL': '/bin/bash', 'LC_NAME': 'es_MX.UTF-8', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'LC_MEASUREMENT': 'es_MX.UTF-8', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'LC_IDENTIFICATION': 'es_MX.UTF-8', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/melissa/Documentos/Servicio/Pumanoids/build/surge_et_ambula', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/opt/ros/jazzy/lib/python3.12/site-packages', 'LC_NUMERIC': 'es_MX.UTF-8', 'LC_PAPER': 'es_MX.UTF-8', 'COLCON': '1', 'MEMORY_PRESSURE_WRITE': 'c29tZSAyMDAwMDAgMjAwMDAwMAA=', 'VTE_VERSION': '7600', 'CMAKE_PREFIX_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy'}), 'shell': False}
+[10.859550] (-) TimerEvent: {}
+[10.963204] (-) TimerEvent: {}
+[11.064426] (-) TimerEvent: {}
+[11.168433] (-) TimerEvent: {}
+[11.253506] (surge_et_ambula) StdoutLine: {'line': b'-- The C compiler identification is GNU 13.3.0\n'}
+[11.269193] (-) TimerEvent: {}
+[11.372496] (-) TimerEvent: {}
+[11.376282] (dynamixel) StdoutLine: {'line': b'-- Found rmw_implementation_cmake: 7.3.2 (/opt/ros/jazzy/share/rmw_implementation_cmake/cmake)\n'}
+[11.385277] (gazebo_envs) StdoutLine: {'line': b'-- Found rmw_implementation_cmake: 7.3.2 (/opt/ros/jazzy/share/rmw_implementation_cmake/cmake)\n'}
+[11.428082] (dynamixel) StdoutLine: {'line': b'-- Found rmw_fastrtps_cpp: 8.4.3 (/opt/ros/jazzy/share/rmw_fastrtps_cpp/cmake)\n'}
+[11.432144] (gazebo_envs) StdoutLine: {'line': b'-- Found rmw_fastrtps_cpp: 8.4.3 (/opt/ros/jazzy/share/rmw_fastrtps_cpp/cmake)\n'}
+[11.472688] (-) TimerEvent: {}
+[11.573575] (-) TimerEvent: {}
+[11.674502] (-) TimerEvent: {}
+[11.716985] (surge_et_ambula) StdoutLine: {'line': b'-- The CXX compiler identification is GNU 13.3.0\n'}
+[11.777206] (-) TimerEvent: {}
+[11.842664] (surge_et_ambula) StdoutLine: {'line': b'-- Detecting C compiler ABI info\n'}
+[11.878247] (-) TimerEvent: {}
+[11.979237] (-) TimerEvent: {}
+[12.081514] (-) TimerEvent: {}
+[12.183814] (-) TimerEvent: {}
+[12.286183] (-) TimerEvent: {}
+[12.290180] (gazebo_envs) StdoutLine: {'line': b'-- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.13")  \n'}
+[12.297238] (dynamixel) StdoutLine: {'line': b'-- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.13")  \n'}
+[12.386387] (-) TimerEvent: {}
+[12.469761] (gazebo_envs) StdoutLine: {'line': b'-- Found FastRTPS: /opt/ros/jazzy/include (Required is at least version "2.13") \n'}
+[12.475253] (dynamixel) StdoutLine: {'line': b'-- Found FastRTPS: /opt/ros/jazzy/include (Required is at least version "2.13") \n'}
+[12.486539] (-) TimerEvent: {}
+[12.588233] (-) TimerEvent: {}
+[12.615389] (surge_et_ambula) StdoutLine: {'line': b'-- Detecting C compiler ABI info - done\n'}
+[12.689179] (-) TimerEvent: {}
+[12.710102] (dynamixel) StdoutLine: {'line': b"-- Using RMW implementation 'rmw_fastrtps_cpp' as default\n"}
+[12.712757] (darwin_description) StdoutLine: {'line': b'running egg_info\n'}
+[12.715243] (darwin_description) StdoutLine: {'line': b'creating ../../../../../build/darwin_description/darwin_description.egg-info\n'}
+[12.720728] (surge_et_ambula) StdoutLine: {'line': b'-- Check for working C compiler: /usr/bin/cc - skipped\n'}
+[12.721871] (surge_et_ambula) StdoutLine: {'line': b'-- Detecting C compile features\n'}
+[12.724417] (gazebo_envs) StdoutLine: {'line': b"-- Using RMW implementation 'rmw_fastrtps_cpp' as default\n"}
+[12.725474] (surge_et_ambula) StdoutLine: {'line': b'-- Detecting C compile features - done\n'}
+[12.789377] (-) TimerEvent: {}
+[12.795328] (surge_et_ambula) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info\n'}
+[12.889560] (-) TimerEvent: {}
+[12.952409] (darwin_description) StdoutLine: {'line': b'writing ../../../../../build/darwin_description/darwin_description.egg-info/PKG-INFO\n'}
+[12.958164] (darwin_description) StdoutLine: {'line': b'writing dependency_links to ../../../../../build/darwin_description/darwin_description.egg-info/dependency_links.txt\n'}
+[12.959301] (darwin_description) StdoutLine: {'line': b'writing requirements to ../../../../../build/darwin_description/darwin_description.egg-info/requires.txt\n'}
+[12.960370] (darwin_description) StdoutLine: {'line': b'writing top-level names to ../../../../../build/darwin_description/darwin_description.egg-info/top_level.txt\n'}
+[12.961072] (darwin_description) StdoutLine: {'line': b"writing manifest file '../../../../../build/darwin_description/darwin_description.egg-info/SOURCES.txt'\n"}
+[12.991200] (-) TimerEvent: {}
+[13.092200] (-) TimerEvent: {}
+[13.193188] (-) TimerEvent: {}
+[13.294250] (-) TimerEvent: {}
+[13.395231] (-) TimerEvent: {}
+[13.401173] (darwin_description) StdoutLine: {'line': b"reading manifest file '../../../../../build/darwin_description/darwin_description.egg-info/SOURCES.txt'\n"}
+[13.408519] (darwin_description) StdoutLine: {'line': b"writing manifest file '../../../../../build/darwin_description/darwin_description.egg-info/SOURCES.txt'\n"}
+[13.415990] (darwin_description) StdoutLine: {'line': b'running build\n'}
+[13.416994] (darwin_description) StdoutLine: {'line': b'running build_py\n'}
+[13.420432] (darwin_description) StdoutLine: {'line': b'creating /home/melissa/Documentos/Servicio/Pumanoids/build/darwin_description/build\n'}
+[13.421345] (darwin_description) StdoutLine: {'line': b'creating /home/melissa/Documentos/Servicio/Pumanoids/build/darwin_description/build/lib\n'}
+[13.425385] (darwin_description) StdoutLine: {'line': b'creating /home/melissa/Documentos/Servicio/Pumanoids/build/darwin_description/build/lib/darwin_description\n'}
+[13.426368] (darwin_description) StdoutLine: {'line': b'copying darwin_description/__init__.py -> /home/melissa/Documentos/Servicio/Pumanoids/build/darwin_description/build/lib/darwin_description\n'}
+[13.427171] (darwin_description) StdoutLine: {'line': b'running install\n'}
+[13.472493] (darwin_description) StdoutLine: {'line': b'running install_lib\n'}
+[13.495399] (-) TimerEvent: {}
+[13.598502] (-) TimerEvent: {}
+[13.655404] (surge_et_ambula) StdoutLine: {'line': b'-- Detecting CXX compiler ABI info - done\n'}
+[13.699193] (-) TimerEvent: {}
+[13.718189] (darwin_description) StdoutLine: {'line': b'creating /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/lib/python3.12/site-packages/darwin_description\n'}
+[13.722199] (darwin_description) StdoutLine: {'line': b'copying /home/melissa/Documentos/Servicio/Pumanoids/build/darwin_description/build/lib/darwin_description/__init__.py -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/lib/python3.12/site-packages/darwin_description\n'}
+[13.723734] (darwin_description) StdoutLine: {'line': b'byte-compiling /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/lib/python3.12/site-packages/darwin_description/__init__.py to __init__.cpython-312.pyc\n'}
+[13.725207] (darwin_description) StdoutLine: {'line': b'running install_data\n'}
+[13.728575] (darwin_description) StdoutLine: {'line': b'creating /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/ament_index\n'}
+[13.731775] (darwin_description) StdoutLine: {'line': b'creating /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/ament_index/resource_index\n'}
+[13.736569] (darwin_description) StdoutLine: {'line': b'creating /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/ament_index/resource_index/packages\n'}
+[13.737851] (darwin_description) StdoutLine: {'line': b'copying resource/darwin_description -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/ament_index/resource_index/packages\n'}
+[13.738980] (darwin_description) StdoutLine: {'line': b'copying package.xml -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description\n'}
+[13.740241] (darwin_description) StdoutLine: {'line': b'creating /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/urdf\n'}
+[13.741282] (darwin_description) StdoutLine: {'line': b'copying urdf/darwin_lab.urdf -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/urdf\n'}
+[13.742352] (darwin_description) StdoutLine: {'line': b'copying urdf/darwin_lab_fixed.urdf -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/urdf\n'}
+[13.743411] (darwin_description) StdoutLine: {'line': b'creating /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.744576] (darwin_description) StdoutLine: {'line': b'copying meshes/shoulder_l_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.745632] (darwin_description) StdoutLine: {'line': b'copying meshes/body.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.761825] (dynamixel) StdoutLine: {'line': b'-- Found std_msgs: 5.3.6 (/opt/ros/jazzy/share/std_msgs/cmake)\n'}
+[13.774326] (darwin_description) StdoutLine: {'line': b'copying meshes/shoulder_r.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.778518] (darwin_description) StdoutLine: {'line': b'copying meshes/arm_high_l.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.791960] (darwin_description) StdoutLine: {'line': b'copying meshes/tibia_l.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.799165] (darwin_description) StdoutLine: {'line': b'copying meshes/ankle1_l.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.800043] (-) TimerEvent: {}
+[13.813756] (darwin_description) StdoutLine: {'line': b'copying meshes/head.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.824265] (surge_et_ambula) StdoutLine: {'line': b'-- Check for working CXX compiler: /usr/bin/c++ - skipped\n'}
+[13.828092] (surge_et_ambula) StdoutLine: {'line': b'-- Detecting CXX compile features\n'}
+[13.839226] (surge_et_ambula) StdoutLine: {'line': b'-- Detecting CXX compile features - done\n'}
+[13.863232] (darwin_description) StdoutLine: {'line': b'copying meshes/thigh1_r.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.877831] (darwin_description) StdoutLine: {'line': b'copying meshes/tibia_l_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.881432] (darwin_description) StdoutLine: {'line': b'copying meshes/thigh1_l_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.884110] (surge_et_ambula) StdoutLine: {'line': b'-- Found ament_cmake: 2.5.4 (/opt/ros/jazzy/share/ament_cmake/cmake)\n'}
+[13.886946] (darwin_description) StdoutLine: {'line': b'copying meshes/ankle2_r.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.894170] (darwin_description) StdoutLine: {'line': b'copying meshes/tibia_r.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.900630] (-) TimerEvent: {}
+[13.903223] (darwin_description) StdoutLine: {'line': b'copying meshes/thigh1_r_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.905215] (darwin_description) StdoutLine: {'line': b'copying meshes/pelvis_r_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.909172] (darwin_description) StdoutLine: {'line': b'copying meshes/pelvis_l.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.917394] (darwin_description) StdoutLine: {'line': b'copying meshes/head_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.924597] (darwin_description) StdoutLine: {'line': b'copying meshes/ankle2_r_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.929725] (darwin_description) StdoutLine: {'line': b'copying meshes/ankle1_r_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.934852] (darwin_description) StdoutLine: {'line': b'copying meshes/neck.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.938800] (darwin_description) StdoutLine: {'line': b'copying meshes/arm_high_r.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.957430] (darwin_description) StdoutLine: {'line': b'copying meshes/thigh2_r_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.960403] (darwin_description) StdoutLine: {'line': b'copying meshes/pelvis_l_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.963864] (darwin_description) StdoutLine: {'line': b'copying meshes/arm_high_r_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.968874] (darwin_description) StdoutLine: {'line': b'copying meshes/neck_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.971736] (darwin_description) StdoutLine: {'line': b'copying meshes/pelvis_r.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.979199] (darwin_description) StdoutLine: {'line': b'copying meshes/tibia_r_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.984371] (darwin_description) StdoutLine: {'line': b'copying meshes/ankle2_l.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.996302] (darwin_description) StdoutLine: {'line': b'copying meshes/arm_high_l_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[13.999876] (darwin_description) StdoutLine: {'line': b'copying meshes/shoulder_r_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[14.000850] (-) TimerEvent: {}
+[14.006372] (darwin_description) StdoutLine: {'line': b'copying meshes/thigh2_l_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[14.009871] (darwin_description) StdoutLine: {'line': b'copying meshes/ankle2_l_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[14.019358] (darwin_description) StdoutLine: {'line': b'copying meshes/ankle1_l_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[14.026248] (dynamixel) StdoutLine: {'line': b'-- Found geometry_msgs: 5.3.6 (/opt/ros/jazzy/share/geometry_msgs/cmake)\n'}
+[14.027698] (darwin_description) StdoutLine: {'line': b'copying meshes/thigh1_l.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[14.051907] (darwin_description) StdoutLine: {'line': b'copying meshes/thigh2_r.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[14.067870] (darwin_description) StdoutLine: {'line': b'copying meshes/ankle1_r.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[14.082261] (darwin_description) StdoutLine: {'line': b'copying meshes/thigh2_l.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[14.096450] (darwin_description) StdoutLine: {'line': b'copying meshes/body_coll.stl -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[14.100008] (darwin_description) StdoutLine: {'line': b'copying meshes/shoulder_l.STL -> /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/share/darwin_description/meshes\n'}
+[14.103157] (-) TimerEvent: {}
+[14.108320] (darwin_description) StdoutLine: {'line': b'running install_egg_info\n'}
+[14.203332] (-) TimerEvent: {}
+[14.265234] (dynamixel) StdoutLine: {'line': b'-- Found sensor_msgs: 5.3.6 (/opt/ros/jazzy/share/sensor_msgs/cmake)\n'}
+[14.304193] (-) TimerEvent: {}
+[14.351575] (darwin_description) StdoutLine: {'line': b'Copying ../../../../../build/darwin_description/darwin_description.egg-info to /home/melissa/Documentos/Servicio/Pumanoids/install/darwin_description/lib/python3.12/site-packages/darwin_description-0.0.0-py3.12.egg-info\n'}
+[14.358616] (darwin_description) StdoutLine: {'line': b'running install_scripts\n'}
+[14.405285] (-) TimerEvent: {}
+[14.508593] (-) TimerEvent: {}
+[14.600748] (gazebo_envs) StdoutLine: {'line': b'-- Looking for gz-msgs10 -- found version 10.3.2\n'}
+[14.609368] (-) TimerEvent: {}
+[14.682321] (dynamixel) StdoutLine: {'line': b'-- Found tf2_msgs: 0.36.14 (/opt/ros/jazzy/share/tf2_msgs/cmake)\n'}
+[14.709993] (-) TimerEvent: {}
+[14.726352] (gazebo_envs) StdoutLine: {'line': b'-- Searching for dependencies of gz-msgs10\n'}
+[14.810214] (-) TimerEvent: {}
+[14.914437] (-) TimerEvent: {}
+[15.015678] (-) TimerEvent: {}
+[15.120701] (-) TimerEvent: {}
+[15.223537] (-) TimerEvent: {}
+[15.329281] (-) TimerEvent: {}
+[15.433436] (-) TimerEvent: {}
+[15.534352] (-) TimerEvent: {}
+[15.559254] (surge_et_ambula) StdoutLine: {'line': b'-- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter \n'}
+[15.634519] (-) TimerEvent: {}
+[15.737449] (-) TimerEvent: {}
+[15.782835] (dynamixel) StdoutLine: {'line': b'-- Found dynamixel_sdk: 3.8.4 (/opt/ros/jazzy/share/dynamixel_sdk/cmake)\n'}
+[15.838184] (-) TimerEvent: {}
+[15.853261] (dynamixel) StdoutLine: {'line': b'-- Found ament_lint_auto: 0.17.3 (/opt/ros/jazzy/share/ament_lint_auto/cmake)\n'}
+[15.941319] (-) TimerEvent: {}
+[16.046014] (-) TimerEvent: {}
+[16.154426] (-) TimerEvent: {}
+[16.197534] (darwin_description) StdoutLine: {'line': b"writing list of installed files to '/home/melissa/Documentos/Servicio/Pumanoids/build/darwin_description/install.log'\n"}
+[16.255317] (-) TimerEvent: {}
+[16.316389] (gazebo_envs) StdoutLine: {'line': b'-- Found Protobuf: /usr/lib/x86_64-linux-gnu/libprotobuf.so (found version "3.21.12") \n'}
+[16.351309] (gazebo_envs) StdoutLine: {'line': b'-- Looking for gz-utils2 -- found version 2.2.1\n'}
+[16.355658] (gazebo_envs) StdoutLine: {'line': b'-- Searching for dependencies of gz-utils2\n'}
+[16.356707] (-) TimerEvent: {}
+[16.400274] (gazebo_envs) StdoutLine: {'line': b'-- Looking for gz-math7 -- found version 7.5.2\n'}
+[16.404169] (gazebo_envs) StdoutLine: {'line': b'-- Searching for dependencies of gz-math7\n'}
+[16.405669] (gazebo_envs) StdoutLine: {'line': b'-- Looking for gz-utils2 -- found version 2.2.1\n'}
+[16.437971] (darwin_description) CommandEnded: {'returncode': 0}
+[16.451644] (gazebo_envs) StdoutLine: {'line': b"-- Checking for module 'tinyxml2'\n"}
+[16.457438] (-) TimerEvent: {}
+[16.492203] (darwin_description) JobEnded: {'identifier': 'darwin_description', 'rc': 0}
+[16.558119] (-) TimerEvent: {}
+[16.577096] (gazebo_envs) StdoutLine: {'line': b'--   Found tinyxml2, version 10.0.0\n'}
+[16.659718] (-) TimerEvent: {}
+[16.751599] (surge_et_ambula) StdoutLine: {'line': b'-- Found ament_lint_auto: 0.17.3 (/opt/ros/jazzy/share/ament_lint_auto/cmake)\n'}
+[16.759962] (-) TimerEvent: {}
+[16.863433] (-) TimerEvent: {}
+[16.903487] (gazebo_envs) StdoutLine: {'line': b'-- Looking for gz-transport13 -- found version 13.4.1\n'}
+[16.904999] (gazebo_envs) StdoutLine: {'line': b'-- Searching for dependencies of gz-transport13\n'}
+[16.963597] (-) TimerEvent: {}
+[17.002160] (dynamixel) StdoutLine: {'line': b"-- Added test 'cppcheck' to perform static code analysis on C / C++ code\n"}
+[17.003877] (dynamixel) StdoutLine: {'line': b'-- Configured cppcheck include dirs: $<BUILD_INTERFACE:/home/melissa/Documentos/Servicio/Pumanoids/colcon_ws/src/hardware/dynamixel/include>\n'}
+[17.004794] (dynamixel) StdoutLine: {'line': b'-- Configured cppcheck exclude dirs and/or files: \n'}
+[17.012675] (dynamixel) StdoutLine: {'line': b"-- Added test 'lint_cmake' to check CMake code style\n"}
+[17.024115] (dynamixel) StdoutLine: {'line': b"-- Added test 'uncrustify' to check C / C++ code style\n"}
+[17.025405] (dynamixel) StdoutLine: {'line': b'-- Configured uncrustify additional arguments: \n'}
+[17.031767] (dynamixel) StdoutLine: {'line': b"-- Added test 'xmllint' to check XML markup files\n"}
+[17.045307] (dynamixel) StdoutLine: {'line': b'-- Configuring done (15.8s)\n'}
+[17.063814] (-) TimerEvent: {}
+[17.096977] (gazebo_envs) StdoutLine: {'line': b'-- Config-file not installed for ZeroMQ -- checking for pkg-config\n'}
+[17.121438] (gazebo_envs) StdoutLine: {'line': b"-- Checking for module 'libzmq >= 4'\n"}
+[17.154420] (dynamixel) StdoutLine: {'line': b'-- Generating done (0.1s)\n'}
+[17.165190] (-) TimerEvent: {}
+[17.199295] (dynamixel) StdoutLine: {'line': b'-- Build files have been written to: /home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel\n'}
+[17.243308] (gazebo_envs) StdoutLine: {'line': b'--   Found libzmq, version 4.3.5\n'}
+[17.258433] (dynamixel) CommandEnded: {'returncode': 0}
+[17.260659] (dynamixel) JobProgress: {'identifier': 'dynamixel', 'progress': 'build'}
+[17.261897] (dynamixel) Command: {'cmd': ['/usr/bin/cmake', '--build', '/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel', '--', '-j4', '-l4'], 'cwd': '/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel', 'env': OrderedDict({'LESSOPEN': '| /usr/bin/lesspipe %s', 'GZ_SIM_RESOURCE_PATH': '/opt/ros/jazzy/share', 'LANGUAGE': 'es:en', 'USER': 'melissa', 'LC_TIME': 'es_MX.UTF-8', 'GZ_CONFIG_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/share/gz:/opt/ros/jazzy/opt/sdformat_vendor/share/gz:/opt/ros/jazzy/opt/gz_gui_vendor/share/gz:/opt/ros/jazzy/opt/gz_transport_vendor/share/gz:/opt/ros/jazzy/opt/gz_rendering_vendor/share/gz:/opt/ros/jazzy/opt/gz_plugin_vendor/share/gz:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/share/gz:/opt/ros/jazzy/opt/gz_msgs_vendor/share/gz:/opt/ros/jazzy/opt/gz_common_vendor/share/gz', 'XDG_SESSION_TYPE': 'x11', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib', 'HOME': '/home/melissa', 'OLDPWD': '/home/melissa/Documentos/Servicio', 'DESKTOP_SESSION': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'LC_MONETARY': 'es_MX.UTF-8', 'SYSTEMD_EXEC_PID': '2923', 'GSM_SKIP_SSH_AGENT_WORKAROUND': 'true', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'GNOME_KEYRING_CONTROL': '/run/user/1000/keyring', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'melissa', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'MEMORY_PRESSURE_WATCH': '/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.MediaKeys.service/memory.pressure', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'melissa', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'WINDOWPATH': '2', 'PATH': '/home/melissa/.local/bin:/home/melissa/.local/bin:/opt/ros/jazzy/opt/gz_msgs_vendor/bin:/opt/ros/jazzy/opt/gz_tools_vendor/bin:/opt/ros/jazzy/opt/gz_ogre_next_vendor/bin:/opt/ros/jazzy/bin:/home/melissa/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin', 'SESSION_MANAGER': 'local/melissa-ThinkPad-T460s:@/tmp/.ICE-unix/2761,unix/melissa-ThinkPad-T460s:/tmp/.ICE-unix/2761', 'PAPERSIZE': 'letter', 'XDG_MENU_PREFIX': 'gnome-', 'LC_ADDRESS': 'es_MX.UTF-8', 'GNOME_TERMINAL_SCREEN': '/org/gnome/Terminal/screen/2d3042b1_54cf_4d3b_9e1c_674505d2b0a6', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':1', 'LANG': 'es_ES.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'LC_TELEPHONE': 'es_MX.UTF-8', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'GNOME_TERMINAL_SERVICE': ':1.95', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'AMENT_PREFIX_PATH': '/opt/ros/jazzy', 'SHELL': '/bin/bash', 'LC_NAME': 'es_MX.UTF-8', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'LC_MEASUREMENT': 'es_MX.UTF-8', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'LC_IDENTIFICATION': 'es_MX.UTF-8', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/opt/ros/jazzy/lib/python3.12/site-packages', 'LC_NUMERIC': 'es_MX.UTF-8', 'LC_PAPER': 'es_MX.UTF-8', 'COLCON': '1', 'MEMORY_PRESSURE_WRITE': 'c29tZSAyMDAwMDAgMjAwMDAwMAA=', 'VTE_VERSION': '7600', 'CMAKE_PREFIX_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy'}), 'shell': False}
+[17.269414] (-) TimerEvent: {}
+[17.371201] (-) TimerEvent: {}
+[17.472443] (-) TimerEvent: {}
+[17.537841] (gazebo_envs) StdoutLine: {'line': b'-- Found ZeroMQ: TRUE (Required is at least version "4") \n'}
+[17.576231] (-) TimerEvent: {}
+[17.600381] (gazebo_envs) StdoutLine: {'line': b"-- Checking for module 'uuid'\n"}
+[17.625870] (surge_et_ambula) StdoutLine: {'line': b"-- Added test 'flake8' to check Python code syntax and style conventions\n"}
+[17.626912] (surge_et_ambula) StdoutLine: {'line': b"-- Configured 'flake8' exclude dirs and/or files: \n"}
+[17.637362] (dynamixel) StdoutLine: {'line': b'[ 25%] \x1b[32mBuilding CXX object CMakeFiles/cm730_v3_node.dir/src/servo_utils.cpp.o\x1b[0m\n'}
+[17.639667] (dynamixel) StdoutLine: {'line': b'[ 50%] \x1b[32mBuilding CXX object CMakeFiles/cm730_v3_node.dir/src/cm730_v3.cpp.o\x1b[0m\n'}
+[17.644168] (surge_et_ambula) StdoutLine: {'line': b"-- Added test 'lint_cmake' to check CMake code style\n"}
+[17.659447] (surge_et_ambula) StdoutLine: {'line': b"-- Added test 'pep257' to check Python code against some of the docstring style conventions in PEP 257\n"}
+[17.670025] (surge_et_ambula) StdoutLine: {'line': b"-- Added test 'xmllint' to check XML markup files\n"}
+[17.676400] (-) TimerEvent: {}
+[17.683657] (dynamixel) StdoutLine: {'line': b'[ 75%] \x1b[32mBuilding CXX object CMakeFiles/cm730_v3_node.dir/src/cm730_utils.cpp.o\x1b[0m\n'}
+[17.692856] (surge_et_ambula) StdoutLine: {'line': b'-- Configuring done (6.8s)\n'}
+[17.717961] (surge_et_ambula) StdoutLine: {'line': b'-- Generating done (0.0s)\n'}
+[17.730240] (gazebo_envs) StdoutLine: {'line': b'--   Found uuid, version 2.39.3\n'}
+[17.733850] (surge_et_ambula) StdoutLine: {'line': b'-- Build files have been written to: /home/melissa/Documentos/Servicio/Pumanoids/build/surge_et_ambula\n'}
+[17.768169] (surge_et_ambula) CommandEnded: {'returncode': 0}
+[17.774035] (surge_et_ambula) JobProgress: {'identifier': 'surge_et_ambula', 'progress': 'build'}
+[17.774276] (surge_et_ambula) Command: {'cmd': ['/usr/bin/cmake', '--build', '/home/melissa/Documentos/Servicio/Pumanoids/build/surge_et_ambula', '--', '-j4', '-l4'], 'cwd': '/home/melissa/Documentos/Servicio/Pumanoids/build/surge_et_ambula', 'env': OrderedDict({'LESSOPEN': '| /usr/bin/lesspipe %s', 'GZ_SIM_RESOURCE_PATH': '/opt/ros/jazzy/share', 'LANGUAGE': 'es:en', 'USER': 'melissa', 'LC_TIME': 'es_MX.UTF-8', 'GZ_CONFIG_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/share/gz:/opt/ros/jazzy/opt/sdformat_vendor/share/gz:/opt/ros/jazzy/opt/gz_gui_vendor/share/gz:/opt/ros/jazzy/opt/gz_transport_vendor/share/gz:/opt/ros/jazzy/opt/gz_rendering_vendor/share/gz:/opt/ros/jazzy/opt/gz_plugin_vendor/share/gz:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/share/gz:/opt/ros/jazzy/opt/gz_msgs_vendor/share/gz:/opt/ros/jazzy/opt/gz_common_vendor/share/gz', 'XDG_SESSION_TYPE': 'x11', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib', 'HOME': '/home/melissa', 'OLDPWD': '/home/melissa/Documentos/Servicio', 'DESKTOP_SESSION': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'LC_MONETARY': 'es_MX.UTF-8', 'SYSTEMD_EXEC_PID': '2923', 'GSM_SKIP_SSH_AGENT_WORKAROUND': 'true', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'GNOME_KEYRING_CONTROL': '/run/user/1000/keyring', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'melissa', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'MEMORY_PRESSURE_WATCH': '/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.MediaKeys.service/memory.pressure', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'melissa', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'WINDOWPATH': '2', 'PATH': '/home/melissa/.local/bin:/home/melissa/.local/bin:/opt/ros/jazzy/opt/gz_msgs_vendor/bin:/opt/ros/jazzy/opt/gz_tools_vendor/bin:/opt/ros/jazzy/opt/gz_ogre_next_vendor/bin:/opt/ros/jazzy/bin:/home/melissa/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin', 'SESSION_MANAGER': 'local/melissa-ThinkPad-T460s:@/tmp/.ICE-unix/2761,unix/melissa-ThinkPad-T460s:/tmp/.ICE-unix/2761', 'PAPERSIZE': 'letter', 'XDG_MENU_PREFIX': 'gnome-', 'LC_ADDRESS': 'es_MX.UTF-8', 'GNOME_TERMINAL_SCREEN': '/org/gnome/Terminal/screen/2d3042b1_54cf_4d3b_9e1c_674505d2b0a6', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':1', 'LANG': 'es_ES.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'LC_TELEPHONE': 'es_MX.UTF-8', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'GNOME_TERMINAL_SERVICE': ':1.95', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'AMENT_PREFIX_PATH': '/opt/ros/jazzy', 'SHELL': '/bin/bash', 'LC_NAME': 'es_MX.UTF-8', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'LC_MEASUREMENT': 'es_MX.UTF-8', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'LC_IDENTIFICATION': 'es_MX.UTF-8', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/melissa/Documentos/Servicio/Pumanoids/build/surge_et_ambula', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/opt/ros/jazzy/lib/python3.12/site-packages', 'LC_NUMERIC': 'es_MX.UTF-8', 'LC_PAPER': 'es_MX.UTF-8', 'COLCON': '1', 'MEMORY_PRESSURE_WRITE': 'c29tZSAyMDAwMDAgMjAwMDAwMAA=', 'VTE_VERSION': '7600', 'CMAKE_PREFIX_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy'}), 'shell': False}
+[17.778280] (-) TimerEvent: {}
+[17.883231] (-) TimerEvent: {}
+[17.986476] (-) TimerEvent: {}
+[18.005308] (gazebo_envs) StdoutLine: {'line': b'-- Found UUID: TRUE  \n'}
+[18.011371] (gazebo_envs) StdoutLine: {'line': b'-- Looking for gz-utils2 -- found version 2.2.1\n'}
+[18.014913] (gazebo_envs) StdoutLine: {'line': b'-- Searching for dependencies of gz-utils2\n'}
+[18.017501] (gazebo_envs) StdoutLine: {'line': b'-- Searching for <gz-utils2> component [cli]\n'}
+[18.048182] (gazebo_envs) StdoutLine: {'line': b'-- Looking for gz-utils2-cli -- found version 2.2.1\n'}
+[18.050275] (gazebo_envs) StdoutLine: {'line': b'-- Searching for dependencies of gz-utils2-cli\n'}
+[18.058916] (gazebo_envs) StdoutLine: {'line': b'-- Looking for gz-msgs10 -- found version 10.3.2\n'}
+[18.086421] (surge_et_ambula) CommandEnded: {'returncode': 0}
+[18.088703] (-) TimerEvent: {}
+[18.098889] (surge_et_ambula) JobProgress: {'identifier': 'surge_et_ambula', 'progress': 'install'}
+[18.099161] (surge_et_ambula) Command: {'cmd': ['/usr/bin/cmake', '--install', '/home/melissa/Documentos/Servicio/Pumanoids/build/surge_et_ambula'], 'cwd': '/home/melissa/Documentos/Servicio/Pumanoids/build/surge_et_ambula', 'env': OrderedDict({'LESSOPEN': '| /usr/bin/lesspipe %s', 'GZ_SIM_RESOURCE_PATH': '/opt/ros/jazzy/share', 'LANGUAGE': 'es:en', 'USER': 'melissa', 'LC_TIME': 'es_MX.UTF-8', 'GZ_CONFIG_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/share/gz:/opt/ros/jazzy/opt/sdformat_vendor/share/gz:/opt/ros/jazzy/opt/gz_gui_vendor/share/gz:/opt/ros/jazzy/opt/gz_transport_vendor/share/gz:/opt/ros/jazzy/opt/gz_rendering_vendor/share/gz:/opt/ros/jazzy/opt/gz_plugin_vendor/share/gz:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/share/gz:/opt/ros/jazzy/opt/gz_msgs_vendor/share/gz:/opt/ros/jazzy/opt/gz_common_vendor/share/gz', 'XDG_SESSION_TYPE': 'x11', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib', 'HOME': '/home/melissa', 'OLDPWD': '/home/melissa/Documentos/Servicio', 'DESKTOP_SESSION': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'LC_MONETARY': 'es_MX.UTF-8', 'SYSTEMD_EXEC_PID': '2923', 'GSM_SKIP_SSH_AGENT_WORKAROUND': 'true', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'GNOME_KEYRING_CONTROL': '/run/user/1000/keyring', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'melissa', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'MEMORY_PRESSURE_WATCH': '/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.MediaKeys.service/memory.pressure', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'melissa', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'WINDOWPATH': '2', 'PATH': '/home/melissa/.local/bin:/home/melissa/.local/bin:/opt/ros/jazzy/opt/gz_msgs_vendor/bin:/opt/ros/jazzy/opt/gz_tools_vendor/bin:/opt/ros/jazzy/opt/gz_ogre_next_vendor/bin:/opt/ros/jazzy/bin:/home/melissa/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin', 'SESSION_MANAGER': 'local/melissa-ThinkPad-T460s:@/tmp/.ICE-unix/2761,unix/melissa-ThinkPad-T460s:/tmp/.ICE-unix/2761', 'PAPERSIZE': 'letter', 'XDG_MENU_PREFIX': 'gnome-', 'LC_ADDRESS': 'es_MX.UTF-8', 'GNOME_TERMINAL_SCREEN': '/org/gnome/Terminal/screen/2d3042b1_54cf_4d3b_9e1c_674505d2b0a6', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':1', 'LANG': 'es_ES.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'LC_TELEPHONE': 'es_MX.UTF-8', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'GNOME_TERMINAL_SERVICE': ':1.95', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'AMENT_PREFIX_PATH': '/opt/ros/jazzy', 'SHELL': '/bin/bash', 'LC_NAME': 'es_MX.UTF-8', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'LC_MEASUREMENT': 'es_MX.UTF-8', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'LC_IDENTIFICATION': 'es_MX.UTF-8', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/melissa/Documentos/Servicio/Pumanoids/build/surge_et_ambula', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/opt/ros/jazzy/lib/python3.12/site-packages', 'LC_NUMERIC': 'es_MX.UTF-8', 'LC_PAPER': 'es_MX.UTF-8', 'COLCON': '1', 'MEMORY_PRESSURE_WRITE': 'c29tZSAyMDAwMDAgMjAwMDAwMAA=', 'VTE_VERSION': '7600', 'CMAKE_PREFIX_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy'}), 'shell': False}
+[18.162919] (surge_et_ambula) StdoutLine: {'line': b'-- Install configuration: ""\n'}
+[18.165087] (surge_et_ambula) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/launch\n'}
+[18.168121] (surge_et_ambula) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/launch/darwin_sim.launch.py\n'}
+[18.170621] (surge_et_ambula) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/ament_index/resource_index/package_run_dependencies/surge_et_ambula\n'}
+[18.173132] (surge_et_ambula) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/ament_index/resource_index/parent_prefix_path/surge_et_ambula\n'}
+[18.175667] (surge_et_ambula) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/environment/ament_prefix_path.sh\n'}
+[18.177911] (surge_et_ambula) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/environment/ament_prefix_path.dsv\n'}
+[18.180032] (surge_et_ambula) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/environment/path.sh\n'}
+[18.183197] (surge_et_ambula) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/environment/path.dsv\n'}
+[18.185337] (surge_et_ambula) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/local_setup.bash\n'}
+[18.186395] (surge_et_ambula) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/local_setup.sh\n'}
+[18.188425] (surge_et_ambula) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/local_setup.zsh\n'}
+[18.189038] (-) TimerEvent: {}
+[18.191178] (surge_et_ambula) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/local_setup.dsv\n'}
+[18.193012] (surge_et_ambula) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/package.dsv\n'}
+[18.195815] (surge_et_ambula) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/ament_index/resource_index/packages/surge_et_ambula\n'}
+[18.198556] (surge_et_ambula) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/cmake/surge_et_ambulaConfig.cmake\n'}
+[18.201410] (surge_et_ambula) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/cmake/surge_et_ambulaConfig-version.cmake\n'}
+[18.204170] (surge_et_ambula) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/surge_et_ambula/share/surge_et_ambula/package.xml\n'}
+[18.212225] (surge_et_ambula) CommandEnded: {'returncode': 0}
+[18.279567] (surge_et_ambula) JobEnded: {'identifier': 'surge_et_ambula', 'rc': 0}
+[18.289234] (-) TimerEvent: {}
+[18.390047] (-) TimerEvent: {}
+[18.497219] (-) TimerEvent: {}
+[18.598129] (-) TimerEvent: {}
+[18.699418] (-) TimerEvent: {}
+[18.801220] (-) TimerEvent: {}
+[18.903852] (-) TimerEvent: {}
+[19.005202] (-) TimerEvent: {}
+[19.106469] (-) TimerEvent: {}
+[19.211082] (-) TimerEvent: {}
+[19.312019] (-) TimerEvent: {}
+[19.412936] (-) TimerEvent: {}
+[19.515466] (-) TimerEvent: {}
+[19.619829] (-) TimerEvent: {}
+[19.720815] (-) TimerEvent: {}
+[19.824555] (-) TimerEvent: {}
+[19.925553] (-) TimerEvent: {}
+[20.026953] (-) TimerEvent: {}
+[20.130570] (-) TimerEvent: {}
+[20.239236] (-) TimerEvent: {}
+[20.341287] (-) TimerEvent: {}
+[20.446160] (-) TimerEvent: {}
+[20.554140] (-) TimerEvent: {}
+[20.656016] (-) TimerEvent: {}
+[20.761085] (-) TimerEvent: {}
+[20.864586] (-) TimerEvent: {}
+[20.967551] (-) TimerEvent: {}
+[21.074199] (-) TimerEvent: {}
+[21.175089] (-) TimerEvent: {}
+[21.281633] (-) TimerEvent: {}
+[21.387638] (-) TimerEvent: {}
+[21.488721] (-) TimerEvent: {}
+[21.593152] (-) TimerEvent: {}
+[21.695203] (-) TimerEvent: {}
+[21.800416] (-) TimerEvent: {}
+[21.903203] (-) TimerEvent: {}
+[22.004104] (-) TimerEvent: {}
+[22.110992] (-) TimerEvent: {}
+[22.213209] (-) TimerEvent: {}
+[22.316274] (-) TimerEvent: {}
+[22.419214] (-) TimerEvent: {}
+[22.522205] (-) TimerEvent: {}
+[22.623138] (-) TimerEvent: {}
+[22.724036] (-) TimerEvent: {}
+[22.800632] (gazebo_envs) StdoutLine: {'line': b'-- Found ros_gz_image: 1.0.16 (/opt/ros/jazzy/share/ros_gz_image/cmake)\n'}
+[22.824218] (-) TimerEvent: {}
+[22.863834] (gazebo_envs) StdoutLine: {'line': b'-- Found ros_gz_sim: 1.0.16 (/opt/ros/jazzy/share/ros_gz_sim/cmake)\n'}
+[22.924668] (-) TimerEvent: {}
+[23.038569] (-) TimerEvent: {}
+[23.141153] (-) TimerEvent: {}
+[23.247205] (-) TimerEvent: {}
+[23.348149] (-) TimerEvent: {}
+[23.449093] (-) TimerEvent: {}
+[23.556335] (-) TimerEvent: {}
+[23.652328] (gazebo_envs) StdoutLine: {'line': b'-- Found ament_lint_auto: 0.17.3 (/opt/ros/jazzy/share/ament_lint_auto/cmake)\n'}
+[23.657208] (-) TimerEvent: {}
+[23.759376] (-) TimerEvent: {}
+[23.862855] (-) TimerEvent: {}
+[23.968185] (-) TimerEvent: {}
+[24.069209] (-) TimerEvent: {}
+[24.171701] (-) TimerEvent: {}
+[24.272506] (-) TimerEvent: {}
+[24.374217] (-) TimerEvent: {}
+[24.475243] (-) TimerEvent: {}
+[24.578752] (-) TimerEvent: {}
+[24.682171] (-) TimerEvent: {}
+[24.783635] (-) TimerEvent: {}
+[24.881248] (gazebo_envs) StdoutLine: {'line': b"-- Added test 'lint_cmake' to check CMake code style\n"}
+[24.883808] (-) TimerEvent: {}
+[24.979390] (gazebo_envs) StdoutLine: {'line': b"-- Added test 'xmllint' to check XML markup files\n"}
+[24.986414] (-) TimerEvent: {}
+[25.011128] (gazebo_envs) StdoutLine: {'line': b'-- Configuring done (23.8s)\n'}
+[25.086792] (-) TimerEvent: {}
+[25.193403] (gazebo_envs) StdoutLine: {'line': b'-- Generating done (0.1s)\n'}
+[25.194664] (-) TimerEvent: {}
+[25.224318] (gazebo_envs) StdoutLine: {'line': b'-- Build files have been written to: /home/melissa/Documentos/Servicio/Pumanoids/build/gazebo_envs\n'}
+[25.295197] (-) TimerEvent: {}
+[25.310186] (gazebo_envs) CommandEnded: {'returncode': 0}
+[25.317015] (gazebo_envs) JobProgress: {'identifier': 'gazebo_envs', 'progress': 'build'}
+[25.317299] (gazebo_envs) Command: {'cmd': ['/usr/bin/cmake', '--build', '/home/melissa/Documentos/Servicio/Pumanoids/build/gazebo_envs', '--', '-j4', '-l4'], 'cwd': '/home/melissa/Documentos/Servicio/Pumanoids/build/gazebo_envs', 'env': OrderedDict({'LESSOPEN': '| /usr/bin/lesspipe %s', 'GZ_SIM_RESOURCE_PATH': '/opt/ros/jazzy/share', 'LANGUAGE': 'es:en', 'USER': 'melissa', 'LC_TIME': 'es_MX.UTF-8', 'GZ_CONFIG_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/share/gz:/opt/ros/jazzy/opt/sdformat_vendor/share/gz:/opt/ros/jazzy/opt/gz_gui_vendor/share/gz:/opt/ros/jazzy/opt/gz_transport_vendor/share/gz:/opt/ros/jazzy/opt/gz_rendering_vendor/share/gz:/opt/ros/jazzy/opt/gz_plugin_vendor/share/gz:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/share/gz:/opt/ros/jazzy/opt/gz_msgs_vendor/share/gz:/opt/ros/jazzy/opt/gz_common_vendor/share/gz', 'XDG_SESSION_TYPE': 'x11', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib', 'HOME': '/home/melissa', 'OLDPWD': '/home/melissa/Documentos/Servicio', 'DESKTOP_SESSION': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'LC_MONETARY': 'es_MX.UTF-8', 'SYSTEMD_EXEC_PID': '2923', 'GSM_SKIP_SSH_AGENT_WORKAROUND': 'true', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'GNOME_KEYRING_CONTROL': '/run/user/1000/keyring', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'melissa', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'MEMORY_PRESSURE_WATCH': '/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.MediaKeys.service/memory.pressure', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'melissa', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'WINDOWPATH': '2', 'PATH': '/home/melissa/.local/bin:/home/melissa/.local/bin:/opt/ros/jazzy/opt/gz_msgs_vendor/bin:/opt/ros/jazzy/opt/gz_tools_vendor/bin:/opt/ros/jazzy/opt/gz_ogre_next_vendor/bin:/opt/ros/jazzy/bin:/home/melissa/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin', 'SESSION_MANAGER': 'local/melissa-ThinkPad-T460s:@/tmp/.ICE-unix/2761,unix/melissa-ThinkPad-T460s:/tmp/.ICE-unix/2761', 'PAPERSIZE': 'letter', 'XDG_MENU_PREFIX': 'gnome-', 'LC_ADDRESS': 'es_MX.UTF-8', 'GNOME_TERMINAL_SCREEN': '/org/gnome/Terminal/screen/2d3042b1_54cf_4d3b_9e1c_674505d2b0a6', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':1', 'LANG': 'es_ES.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'LC_TELEPHONE': 'es_MX.UTF-8', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'GNOME_TERMINAL_SERVICE': ':1.95', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'AMENT_PREFIX_PATH': '/opt/ros/jazzy', 'SHELL': '/bin/bash', 'LC_NAME': 'es_MX.UTF-8', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'LC_MEASUREMENT': 'es_MX.UTF-8', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'LC_IDENTIFICATION': 'es_MX.UTF-8', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/melissa/Documentos/Servicio/Pumanoids/build/gazebo_envs', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/opt/ros/jazzy/lib/python3.12/site-packages', 'LC_NUMERIC': 'es_MX.UTF-8', 'LC_PAPER': 'es_MX.UTF-8', 'COLCON': '1', 'MEMORY_PRESSURE_WRITE': 'c29tZSAyMDAwMDAgMjAwMDAwMAA=', 'VTE_VERSION': '7600', 'CMAKE_PREFIX_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy'}), 'shell': False}
+[25.395651] (-) TimerEvent: {}
+[25.501684] (-) TimerEvent: {}
+[25.603795] (-) TimerEvent: {}
+[25.708759] (-) TimerEvent: {}
+[25.728180] (gazebo_envs) CommandEnded: {'returncode': 0}
+[25.742753] (gazebo_envs) JobProgress: {'identifier': 'gazebo_envs', 'progress': 'install'}
+[25.746028] (gazebo_envs) Command: {'cmd': ['/usr/bin/cmake', '--install', '/home/melissa/Documentos/Servicio/Pumanoids/build/gazebo_envs'], 'cwd': '/home/melissa/Documentos/Servicio/Pumanoids/build/gazebo_envs', 'env': OrderedDict({'LESSOPEN': '| /usr/bin/lesspipe %s', 'GZ_SIM_RESOURCE_PATH': '/opt/ros/jazzy/share', 'LANGUAGE': 'es:en', 'USER': 'melissa', 'LC_TIME': 'es_MX.UTF-8', 'GZ_CONFIG_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/share/gz:/opt/ros/jazzy/opt/sdformat_vendor/share/gz:/opt/ros/jazzy/opt/gz_gui_vendor/share/gz:/opt/ros/jazzy/opt/gz_transport_vendor/share/gz:/opt/ros/jazzy/opt/gz_rendering_vendor/share/gz:/opt/ros/jazzy/opt/gz_plugin_vendor/share/gz:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/share/gz:/opt/ros/jazzy/opt/gz_msgs_vendor/share/gz:/opt/ros/jazzy/opt/gz_common_vendor/share/gz', 'XDG_SESSION_TYPE': 'x11', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib', 'HOME': '/home/melissa', 'OLDPWD': '/home/melissa/Documentos/Servicio', 'DESKTOP_SESSION': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'LC_MONETARY': 'es_MX.UTF-8', 'SYSTEMD_EXEC_PID': '2923', 'GSM_SKIP_SSH_AGENT_WORKAROUND': 'true', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'GNOME_KEYRING_CONTROL': '/run/user/1000/keyring', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'melissa', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'MEMORY_PRESSURE_WATCH': '/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.MediaKeys.service/memory.pressure', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'melissa', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'WINDOWPATH': '2', 'PATH': '/home/melissa/.local/bin:/home/melissa/.local/bin:/opt/ros/jazzy/opt/gz_msgs_vendor/bin:/opt/ros/jazzy/opt/gz_tools_vendor/bin:/opt/ros/jazzy/opt/gz_ogre_next_vendor/bin:/opt/ros/jazzy/bin:/home/melissa/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin', 'SESSION_MANAGER': 'local/melissa-ThinkPad-T460s:@/tmp/.ICE-unix/2761,unix/melissa-ThinkPad-T460s:/tmp/.ICE-unix/2761', 'PAPERSIZE': 'letter', 'XDG_MENU_PREFIX': 'gnome-', 'LC_ADDRESS': 'es_MX.UTF-8', 'GNOME_TERMINAL_SCREEN': '/org/gnome/Terminal/screen/2d3042b1_54cf_4d3b_9e1c_674505d2b0a6', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':1', 'LANG': 'es_ES.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'LC_TELEPHONE': 'es_MX.UTF-8', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'GNOME_TERMINAL_SERVICE': ':1.95', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'AMENT_PREFIX_PATH': '/opt/ros/jazzy', 'SHELL': '/bin/bash', 'LC_NAME': 'es_MX.UTF-8', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'LC_MEASUREMENT': 'es_MX.UTF-8', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'LC_IDENTIFICATION': 'es_MX.UTF-8', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/melissa/Documentos/Servicio/Pumanoids/build/gazebo_envs', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/opt/ros/jazzy/lib/python3.12/site-packages', 'LC_NUMERIC': 'es_MX.UTF-8', 'LC_PAPER': 'es_MX.UTF-8', 'COLCON': '1', 'MEMORY_PRESSURE_WRITE': 'c29tZSAyMDAwMDAgMjAwMDAwMAA=', 'VTE_VERSION': '7600', 'CMAKE_PREFIX_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy'}), 'shell': False}
+[25.809139] (-) TimerEvent: {}
+[25.828840] (gazebo_envs) StdoutLine: {'line': b'-- Install configuration: ""\n'}
+[25.830098] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models\n'}
+[25.830912] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_field\n'}
+[25.831660] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_field/materials\n'}
+[25.832402] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_field/materials/scripts\n'}
+[25.833142] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_field/materials/scripts/teensize_field.material\n'}
+[25.838417] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_field/materials/textures\n'}
+[25.839691] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_field/materials/textures/carpet.jpg\n'}
+[25.854218] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_field/model-1_4.sdf\n'}
+[25.855367] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_field/model.config\n'}
+[25.856609] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_field/mesh\n'}
+[25.858464] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_field/mesh/annulus.stl\n'}
+[25.859617] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_field/model.sdf\n'}
+[25.861163] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_goal2\n'}
+[25.862175] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_goal2/materials\n'}
+[25.863143] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_goal2/materials/scripts\n'}
+[25.864164] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_goal2/materials/scripts/teensize_goal.material\n'}
+[25.865021] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_goal2/materials/textures\n'}
+[25.865938] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_goal2/materials/textures/net.png\n'}
+[25.866889] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_goal2/model-1_4.sdf\n'}
+[25.867572] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_goal2/model.config\n'}
+[25.868826] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_goal2/model.sdf\n'}
+[25.869725] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_ball\n'}
+[25.870385] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_ball/materials\n'}
+[25.870946] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_ball/materials/scripts\n'}
+[25.871808] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_ball/materials/scripts/teensize_ball.material\n'}
+[25.872478] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_ball/materials/textures\n'}
+[25.873028] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_ball/materials/textures/ball_official.png\n'}
+[25.876507] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_ball/materials/textures/ball.png\n'}
+[25.877520] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_ball/model-1_4.sdf\n'}
+[25.878441] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_ball/model.config\n'}
+[25.879357] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_ball/model.sdf\n'}
+[25.880273] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/soft_ground_plane\n'}
+[25.881041] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/soft_ground_plane/model-1_2.sdf\n'}
+[25.881770] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/soft_ground_plane/model-1_4.sdf\n'}
+[25.882681] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/soft_ground_plane/model.config\n'}
+[25.883720] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/soft_ground_plane/model.sdf\n'}
+[25.884659] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/soft_ground_plane/model-1_3.sdf\n'}
+[25.885483] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_goal\n'}
+[25.886415] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_goal/materials\n'}
+[25.887507] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_goal/materials/scripts\n'}
+[25.888339] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_goal/materials/scripts/teensize_goal.material\n'}
+[25.889237] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_goal/materials/textures\n'}
+[25.890116] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_goal/materials/textures/net.png\n'}
+[25.890700] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_goal/model-1_4.sdf\n'}
+[25.891579] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_goal/model.config\n'}
+[25.892740] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/models/teensize_goal/model.sdf\n'}
+[25.894917] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/worlds\n'}
+[25.899190] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/worlds/nimbro_op.world\n'}
+[25.899999] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/config\n'}
+[25.903827] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/config/gz_bridge.yaml\n'}
+[25.904490] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/ament_index/resource_index/package_run_dependencies/gazebo_envs\n'}
+[25.908178] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/ament_index/resource_index/parent_prefix_path/gazebo_envs\n'}
+[25.909234] (-) TimerEvent: {}
+[25.913974] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/environment/ament_prefix_path.sh\n'}
+[25.916953] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/environment/ament_prefix_path.dsv\n'}
+[25.918346] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/environment/path.sh\n'}
+[25.918930] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/environment/path.dsv\n'}
+[25.919546] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/local_setup.bash\n'}
+[25.924146] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/local_setup.sh\n'}
+[25.937696] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/local_setup.zsh\n'}
+[25.958118] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/local_setup.dsv\n'}
+[25.958833] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/package.dsv\n'}
+[25.963680] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/ament_index/resource_index/packages/gazebo_envs\n'}
+[25.964421] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/cmake/gazebo_envsConfig.cmake\n'}
+[25.965094] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/cmake/gazebo_envsConfig-version.cmake\n'}
+[25.965731] (gazebo_envs) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/gazebo_envs/share/gazebo_envs/package.xml\n'}
+[25.969971] (gazebo_envs) CommandEnded: {'returncode': 0}
+[26.011231] (-) TimerEvent: {}
+[26.048100] (gazebo_envs) JobEnded: {'identifier': 'gazebo_envs', 'rc': 0}
+[26.112208] (-) TimerEvent: {}
+[26.213003] (-) TimerEvent: {}
+[26.313845] (-) TimerEvent: {}
+[26.415340] (-) TimerEvent: {}
+[26.519228] (-) TimerEvent: {}
+[26.620656] (-) TimerEvent: {}
+[26.723281] (-) TimerEvent: {}
+[26.830560] (-) TimerEvent: {}
+[26.931642] (-) TimerEvent: {}
+[27.037417] (-) TimerEvent: {}
+[27.155226] (-) TimerEvent: {}
+[27.255999] (-) TimerEvent: {}
+[27.357212] (-) TimerEvent: {}
+[27.463553] (-) TimerEvent: {}
+[27.564453] (-) TimerEvent: {}
+[27.665381] (-) TimerEvent: {}
+[27.766134] (-) TimerEvent: {}
+[27.868513] (-) TimerEvent: {}
+[27.969231] (-) TimerEvent: {}
+[28.071437] (-) TimerEvent: {}
+[28.173199] (-) TimerEvent: {}
+[28.274920] (-) TimerEvent: {}
+[28.379494] (-) TimerEvent: {}
+[28.480225] (-) TimerEvent: {}
+[28.580954] (-) TimerEvent: {}
+[28.683736] (-) TimerEvent: {}
+[28.785008] (-) TimerEvent: {}
+[28.885811] (-) TimerEvent: {}
+[28.998405] (-) TimerEvent: {}
+[29.114987] (-) TimerEvent: {}
+[29.217466] (-) TimerEvent: {}
+[29.318473] (-) TimerEvent: {}
+[29.425267] (-) TimerEvent: {}
+[29.532250] (-) TimerEvent: {}
+[29.636471] (-) TimerEvent: {}
+[29.743307] (-) TimerEvent: {}
+[29.849294] (-) TimerEvent: {}
+[29.952369] (-) TimerEvent: {}
+[30.058284] (-) TimerEvent: {}
+[30.159654] (-) TimerEvent: {}
+[30.261808] (-) TimerEvent: {}
+[30.363789] (-) TimerEvent: {}
+[30.464559] (-) TimerEvent: {}
+[30.565220] (-) TimerEvent: {}
+[30.666487] (-) TimerEvent: {}
+[30.767280] (-) TimerEvent: {}
+[30.873035] (-) TimerEvent: {}
+[30.974864] (-) TimerEvent: {}
+[31.076937] (-) TimerEvent: {}
+[31.187324] (-) TimerEvent: {}
+[31.295144] (-) TimerEvent: {}
+[31.396084] (-) TimerEvent: {}
+[31.498218] (-) TimerEvent: {}
+[31.599120] (-) TimerEvent: {}
+[31.700025] (-) TimerEvent: {}
+[31.804603] (-) TimerEvent: {}
+[31.905458] (-) TimerEvent: {}
+[32.008468] (-) TimerEvent: {}
+[32.113694] (-) TimerEvent: {}
+[32.218662] (-) TimerEvent: {}
+[32.322318] (-) TimerEvent: {}
+[32.423397] (-) TimerEvent: {}
+[32.529936] (-) TimerEvent: {}
+[32.630859] (-) TimerEvent: {}
+[32.734016] (-) TimerEvent: {}
+[32.837358] (-) TimerEvent: {}
+[32.938332] (-) TimerEvent: {}
+[33.045213] (-) TimerEvent: {}
+[33.146683] (-) TimerEvent: {}
+[33.247600] (-) TimerEvent: {}
+[33.354194] (-) TimerEvent: {}
+[33.454942] (-) TimerEvent: {}
+[33.555800] (-) TimerEvent: {}
+[33.659506] (-) TimerEvent: {}
+[33.760351] (-) TimerEvent: {}
+[33.861252] (-) TimerEvent: {}
+[33.965227] (-) TimerEvent: {}
+[34.066205] (-) TimerEvent: {}
+[34.168858] (-) TimerEvent: {}
+[34.272202] (-) TimerEvent: {}
+[34.372954] (-) TimerEvent: {}
+[34.477125] (-) TimerEvent: {}
+[34.578102] (-) TimerEvent: {}
+[34.681174] (-) TimerEvent: {}
+[34.785683] (-) TimerEvent: {}
+[34.886521] (-) TimerEvent: {}
+[34.987708] (-) TimerEvent: {}
+[35.092219] (-) TimerEvent: {}
+[35.200244] (-) TimerEvent: {}
+[35.301156] (-) TimerEvent: {}
+[35.407450] (-) TimerEvent: {}
+[35.517217] (-) TimerEvent: {}
+[35.618202] (-) TimerEvent: {}
+[35.726516] (-) TimerEvent: {}
+[35.827327] (-) TimerEvent: {}
+[35.928385] (-) TimerEvent: {}
+[36.029447] (-) TimerEvent: {}
+[36.136940] (-) TimerEvent: {}
+[36.237722] (-) TimerEvent: {}
+[36.349266] (-) TimerEvent: {}
+[36.450927] (-) TimerEvent: {}
+[36.558699] (-) TimerEvent: {}
+[36.667843] (-) TimerEvent: {}
+[36.775344] (-) TimerEvent: {}
+[36.879663] (-) TimerEvent: {}
+[36.984788] (-) TimerEvent: {}
+[37.085789] (-) TimerEvent: {}
+[37.191230] (-) TimerEvent: {}
+[37.292022] (-) TimerEvent: {}
+[37.393038] (-) TimerEvent: {}
+[37.496038] (-) TimerEvent: {}
+[37.598221] (-) TimerEvent: {}
+[37.701218] (-) TimerEvent: {}
+[37.802042] (-) TimerEvent: {}
+[37.903436] (-) TimerEvent: {}
+[38.008508] (-) TimerEvent: {}
+[38.112198] (-) TimerEvent: {}
+[38.214196] (-) TimerEvent: {}
+[38.316191] (-) TimerEvent: {}
+[38.416932] (-) TimerEvent: {}
+[38.518136] (-) TimerEvent: {}
+[38.623177] (-) TimerEvent: {}
+[38.723958] (-) TimerEvent: {}
+[38.825626] (-) TimerEvent: {}
+[38.926493] (-) TimerEvent: {}
+[39.027937] (-) TimerEvent: {}
+[39.128657] (-) TimerEvent: {}
+[39.232198] (-) TimerEvent: {}
+[39.333427] (-) TimerEvent: {}
+[39.437791] (-) TimerEvent: {}
+[39.541547] (-) TimerEvent: {}
+[39.642769] (-) TimerEvent: {}
+[39.743870] (-) TimerEvent: {}
+[39.847745] (-) TimerEvent: {}
+[39.950410] (-) TimerEvent: {}
+[40.053207] (-) TimerEvent: {}
+[40.153988] (-) TimerEvent: {}
+[40.254782] (-) TimerEvent: {}
+[40.358512] (-) TimerEvent: {}
+[40.459315] (-) TimerEvent: {}
+[40.560754] (-) TimerEvent: {}
+[40.662098] (-) TimerEvent: {}
+[40.763281] (-) TimerEvent: {}
+[40.868554] (-) TimerEvent: {}
+[40.969465] (-) TimerEvent: {}
+[41.076218] (-) TimerEvent: {}
+[41.177214] (-) TimerEvent: {}
+[41.300602] (-) TimerEvent: {}
+[41.405394] (-) TimerEvent: {}
+[41.506208] (-) TimerEvent: {}
+[41.607131] (-) TimerEvent: {}
+[41.709497] (-) TimerEvent: {}
+[41.815213] (-) TimerEvent: {}
+[41.916022] (-) TimerEvent: {}
+[42.016935] (-) TimerEvent: {}
+[42.117955] (-) TimerEvent: {}
+[42.218753] (-) TimerEvent: {}
+[42.319447] (-) TimerEvent: {}
+[42.420140] (-) TimerEvent: {}
+[42.521299] (-) TimerEvent: {}
+[42.622310] (-) TimerEvent: {}
+[42.722948] (-) TimerEvent: {}
+[42.823654] (-) TimerEvent: {}
+[42.924431] (-) TimerEvent: {}
+[43.025430] (-) TimerEvent: {}
+[43.126566] (-) TimerEvent: {}
+[43.227882] (-) TimerEvent: {}
+[43.328681] (-) TimerEvent: {}
+[43.429244] (-) TimerEvent: {}
+[43.529861] (-) TimerEvent: {}
+[43.630511] (-) TimerEvent: {}
+[43.731242] (-) TimerEvent: {}
+[43.831900] (-) TimerEvent: {}
+[43.932560] (-) TimerEvent: {}
+[44.033249] (-) TimerEvent: {}
+[44.134306] (-) TimerEvent: {}
+[44.235510] (-) TimerEvent: {}
+[44.336704] (-) TimerEvent: {}
+[44.437670] (-) TimerEvent: {}
+[44.539007] (-) TimerEvent: {}
+[44.639950] (-) TimerEvent: {}
+[44.740930] (-) TimerEvent: {}
+[44.841942] (-) TimerEvent: {}
+[44.942964] (-) TimerEvent: {}
+[45.044003] (-) TimerEvent: {}
+[45.148815] (-) TimerEvent: {}
+[45.249913] (-) TimerEvent: {}
+[45.351018] (-) TimerEvent: {}
+[45.452163] (-) TimerEvent: {}
+[45.554975] (-) TimerEvent: {}
+[45.656330] (-) TimerEvent: {}
+[45.758742] (-) TimerEvent: {}
+[45.859988] (-) TimerEvent: {}
+[45.961196] (-) TimerEvent: {}
+[46.062159] (-) TimerEvent: {}
+[46.163209] (-) TimerEvent: {}
+[46.266034] (-) TimerEvent: {}
+[46.367244] (-) TimerEvent: {}
+[46.468919] (-) TimerEvent: {}
+[46.571966] (-) TimerEvent: {}
+[46.676582] (-) TimerEvent: {}
+[46.777561] (-) TimerEvent: {}
+[46.878998] (-) TimerEvent: {}
+[46.979901] (-) TimerEvent: {}
+[47.080568] (-) TimerEvent: {}
+[47.181239] (-) TimerEvent: {}
+[47.281827] (-) TimerEvent: {}
+[47.382497] (-) TimerEvent: {}
+[47.483236] (-) TimerEvent: {}
+[47.584359] (-) TimerEvent: {}
+[47.685773] (-) TimerEvent: {}
+[47.786580] (-) TimerEvent: {}
+[47.887393] (-) TimerEvent: {}
+[47.988269] (-) TimerEvent: {}
+[48.089208] (-) TimerEvent: {}
+[48.190380] (-) TimerEvent: {}
+[48.292251] (-) TimerEvent: {}
+[48.393240] (-) TimerEvent: {}
+[48.494354] (-) TimerEvent: {}
+[48.595423] (-) TimerEvent: {}
+[48.696583] (-) TimerEvent: {}
+[48.797603] (-) TimerEvent: {}
+[48.899240] (-) TimerEvent: {}
+[49.000016] (-) TimerEvent: {}
+[49.100908] (-) TimerEvent: {}
+[49.204479] (-) TimerEvent: {}
+[49.305680] (-) TimerEvent: {}
+[49.406636] (-) TimerEvent: {}
+[49.507615] (-) TimerEvent: {}
+[49.610536] (-) TimerEvent: {}
+[49.712163] (-) TimerEvent: {}
+[49.813324] (-) TimerEvent: {}
+[49.915302] (-) TimerEvent: {}
+[50.016514] (-) TimerEvent: {}
+[50.117386] (-) TimerEvent: {}
+[50.218626] (-) TimerEvent: {}
+[50.319908] (-) TimerEvent: {}
+[50.420774] (-) TimerEvent: {}
+[50.521544] (-) TimerEvent: {}
+[50.622215] (-) TimerEvent: {}
+[50.722821] (-) TimerEvent: {}
+[50.823634] (-) TimerEvent: {}
+[50.924241] (-) TimerEvent: {}
+[51.024900] (-) TimerEvent: {}
+[51.126345] (-) TimerEvent: {}
+[51.227627] (-) TimerEvent: {}
+[51.328482] (-) TimerEvent: {}
+[51.429420] (-) TimerEvent: {}
+[51.530096] (-) TimerEvent: {}
+[51.630758] (-) TimerEvent: {}
+[51.731427] (-) TimerEvent: {}
+[51.832222] (-) TimerEvent: {}
+[51.933235] (-) TimerEvent: {}
+[52.033908] (-) TimerEvent: {}
+[52.135199] (-) TimerEvent: {}
+[52.235980] (-) TimerEvent: {}
+[52.336742] (-) TimerEvent: {}
+[52.437553] (-) TimerEvent: {}
+[52.538441] (-) TimerEvent: {}
+[52.639576] (-) TimerEvent: {}
+[52.740888] (-) TimerEvent: {}
+[52.842114] (-) TimerEvent: {}
+[52.944028] (-) TimerEvent: {}
+[53.047404] (-) TimerEvent: {}
+[53.148944] (-) TimerEvent: {}
+[53.250231] (-) TimerEvent: {}
+[53.351223] (-) TimerEvent: {}
+[53.452354] (-) TimerEvent: {}
+[53.553547] (-) TimerEvent: {}
+[53.654980] (-) TimerEvent: {}
+[53.757635] (-) TimerEvent: {}
+[53.858744] (-) TimerEvent: {}
+[53.959742] (-) TimerEvent: {}
+[54.060636] (-) TimerEvent: {}
+[54.162036] (-) TimerEvent: {}
+[54.263216] (-) TimerEvent: {}
+[54.364288] (-) TimerEvent: {}
+[54.465544] (-) TimerEvent: {}
+[54.568770] (-) TimerEvent: {}
+[54.670281] (-) TimerEvent: {}
+[54.773006] (-) TimerEvent: {}
+[54.879373] (-) TimerEvent: {}
+[54.988313] (-) TimerEvent: {}
+[55.090574] (-) TimerEvent: {}
+[55.197284] (-) TimerEvent: {}
+[55.301800] (-) TimerEvent: {}
+[55.406003] (-) TimerEvent: {}
+[55.507311] (-) TimerEvent: {}
+[55.609222] (-) TimerEvent: {}
+[55.710227] (-) TimerEvent: {}
+[55.811494] (-) TimerEvent: {}
+[55.912724] (-) TimerEvent: {}
+[56.014590] (-) TimerEvent: {}
+[56.119765] (-) TimerEvent: {}
+[56.220585] (-) TimerEvent: {}
+[56.323149] (-) TimerEvent: {}
+[56.426877] (-) TimerEvent: {}
+[56.528186] (-) TimerEvent: {}
+[56.629129] (-) TimerEvent: {}
+[56.730172] (-) TimerEvent: {}
+[56.831098] (-) TimerEvent: {}
+[56.931958] (-) TimerEvent: {}
+[57.032857] (-) TimerEvent: {}
+[57.133736] (-) TimerEvent: {}
+[57.234592] (-) TimerEvent: {}
+[57.335739] (-) TimerEvent: {}
+[57.438541] (-) TimerEvent: {}
+[57.543580] (-) TimerEvent: {}
+[57.644735] (-) TimerEvent: {}
+[57.745922] (-) TimerEvent: {}
+[57.847793] (-) TimerEvent: {}
+[57.948803] (-) TimerEvent: {}
+[58.049987] (-) TimerEvent: {}
+[58.151182] (-) TimerEvent: {}
+[58.252339] (-) TimerEvent: {}
+[58.353282] (-) TimerEvent: {}
+[58.454630] (-) TimerEvent: {}
+[58.557608] (-) TimerEvent: {}
+[58.658552] (-) TimerEvent: {}
+[58.759845] (-) TimerEvent: {}
+[58.861036] (-) TimerEvent: {}
+[58.962113] (-) TimerEvent: {}
+[59.063355] (-) TimerEvent: {}
+[59.164311] (-) TimerEvent: {}
+[59.265236] (-) TimerEvent: {}
+[59.366235] (-) TimerEvent: {}
+[59.467176] (-) TimerEvent: {}
+[59.567971] (-) TimerEvent: {}
+[59.668654] (-) TimerEvent: {}
+[59.769840] (-) TimerEvent: {}
+[59.870566] (-) TimerEvent: {}
+[59.971271] (-) TimerEvent: {}
+[60.071954] (-) TimerEvent: {}
+[60.172793] (-) TimerEvent: {}
+[60.273386] (-) TimerEvent: {}
+[60.374023] (-) TimerEvent: {}
+[60.474849] (-) TimerEvent: {}
+[60.576200] (-) TimerEvent: {}
+[60.677099] (-) TimerEvent: {}
+[60.777766] (-) TimerEvent: {}
+[60.878893] (-) TimerEvent: {}
+[60.980638] (-) TimerEvent: {}
+[61.081768] (-) TimerEvent: {}
+[61.183169] (-) TimerEvent: {}
+[61.283871] (-) TimerEvent: {}
+[61.385103] (-) TimerEvent: {}
+[61.485741] (-) TimerEvent: {}
+[61.586443] (-) TimerEvent: {}
+[61.687117] (-) TimerEvent: {}
+[61.787750] (-) TimerEvent: {}
+[61.888401] (-) TimerEvent: {}
+[61.989122] (-) TimerEvent: {}
+[62.090019] (-) TimerEvent: {}
+[62.190918] (-) TimerEvent: {}
+[62.291667] (-) TimerEvent: {}
+[62.392316] (-) TimerEvent: {}
+[62.493483] (-) TimerEvent: {}
+[62.594985] (-) TimerEvent: {}
+[62.698329] (-) TimerEvent: {}
+[62.804026] (-) TimerEvent: {}
+[62.905016] (-) TimerEvent: {}
+[63.005790] (-) TimerEvent: {}
+[63.106680] (-) TimerEvent: {}
+[63.207264] (-) TimerEvent: {}
+[63.307891] (-) TimerEvent: {}
+[63.408807] (-) TimerEvent: {}
+[63.509479] (-) TimerEvent: {}
+[63.610177] (-) TimerEvent: {}
+[63.710864] (-) TimerEvent: {}
+[63.812019] (-) TimerEvent: {}
+[63.913873] (-) TimerEvent: {}
+[64.014694] (-) TimerEvent: {}
+[64.116786] (-) TimerEvent: {}
+[64.219753] (-) TimerEvent: {}
+[64.320744] (-) TimerEvent: {}
+[64.426608] (-) TimerEvent: {}
+[64.528523] (-) TimerEvent: {}
+[64.629353] (-) TimerEvent: {}
+[64.730174] (-) TimerEvent: {}
+[64.830940] (-) TimerEvent: {}
+[64.931718] (-) TimerEvent: {}
+[65.032602] (-) TimerEvent: {}
+[65.133611] (-) TimerEvent: {}
+[65.234593] (-) TimerEvent: {}
+[65.335470] (-) TimerEvent: {}
+[65.436912] (-) TimerEvent: {}
+[65.537905] (-) TimerEvent: {}
+[65.638713] (-) TimerEvent: {}
+[65.739500] (-) TimerEvent: {}
+[65.840233] (-) TimerEvent: {}
+[65.940982] (-) TimerEvent: {}
+[66.041759] (-) TimerEvent: {}
+[66.142549] (-) TimerEvent: {}
+[66.243508] (-) TimerEvent: {}
+[66.344557] (-) TimerEvent: {}
+[66.445580] (-) TimerEvent: {}
+[66.547122] (-) TimerEvent: {}
+[66.647739] (-) TimerEvent: {}
+[66.748623] (-) TimerEvent: {}
+[66.849255] (-) TimerEvent: {}
+[66.949891] (-) TimerEvent: {}
+[67.050750] (-) TimerEvent: {}
+[67.151430] (-) TimerEvent: {}
+[67.252132] (-) TimerEvent: {}
+[67.353229] (-) TimerEvent: {}
+[67.454146] (-) TimerEvent: {}
+[67.555150] (-) TimerEvent: {}
+[67.655796] (-) TimerEvent: {}
+[67.756657] (-) TimerEvent: {}
+[67.857268] (-) TimerEvent: {}
+[67.957983] (-) TimerEvent: {}
+[68.058690] (-) TimerEvent: {}
+[68.159475] (-) TimerEvent: {}
+[68.260432] (-) TimerEvent: {}
+[68.361468] (-) TimerEvent: {}
+[68.463588] (-) TimerEvent: {}
+[68.564538] (-) TimerEvent: {}
+[68.665959] (-) TimerEvent: {}
+[68.767139] (-) TimerEvent: {}
+[68.868207] (-) TimerEvent: {}
+[68.969107] (-) TimerEvent: {}
+[69.070223] (-) TimerEvent: {}
+[69.170979] (-) TimerEvent: {}
+[69.271694] (-) TimerEvent: {}
+[69.372338] (-) TimerEvent: {}
+[69.473039] (-) TimerEvent: {}
+[69.573901] (-) TimerEvent: {}
+[69.675165] (-) TimerEvent: {}
+[69.776194] (-) TimerEvent: {}
+[69.877252] (-) TimerEvent: {}
+[69.978112] (-) TimerEvent: {}
+[70.078964] (-) TimerEvent: {}
+[70.179910] (-) TimerEvent: {}
+[70.280806] (-) TimerEvent: {}
+[70.382097] (-) TimerEvent: {}
+[70.486191] (-) TimerEvent: {}
+[70.587256] (-) TimerEvent: {}
+[70.688214] (-) TimerEvent: {}
+[70.789124] (-) TimerEvent: {}
+[70.890102] (-) TimerEvent: {}
+[70.991203] (-) TimerEvent: {}
+[71.092322] (-) TimerEvent: {}
+[71.193474] (-) TimerEvent: {}
+[71.294613] (-) TimerEvent: {}
+[71.395672] (-) TimerEvent: {}
+[71.496708] (-) TimerEvent: {}
+[71.597859] (-) TimerEvent: {}
+[71.699175] (-) TimerEvent: {}
+[71.800197] (-) TimerEvent: {}
+[71.901416] (-) TimerEvent: {}
+[72.002632] (-) TimerEvent: {}
+[72.103809] (-) TimerEvent: {}
+[72.205187] (-) TimerEvent: {}
+[72.305947] (-) TimerEvent: {}
+[72.406939] (-) TimerEvent: {}
+[72.508224] (-) TimerEvent: {}
+[72.609829] (-) TimerEvent: {}
+[72.711434] (-) TimerEvent: {}
+[72.812872] (-) TimerEvent: {}
+[72.916618] (-) TimerEvent: {}
+[73.017891] (-) TimerEvent: {}
+[73.118830] (-) TimerEvent: {}
+[73.219547] (-) TimerEvent: {}
+[73.320186] (-) TimerEvent: {}
+[73.420973] (-) TimerEvent: {}
+[73.521774] (-) TimerEvent: {}
+[73.622567] (-) TimerEvent: {}
+[73.723368] (-) TimerEvent: {}
+[73.824182] (-) TimerEvent: {}
+[73.924929] (-) TimerEvent: {}
+[74.025968] (-) TimerEvent: {}
+[74.126674] (-) TimerEvent: {}
+[74.227348] (-) TimerEvent: {}
+[74.327973] (-) TimerEvent: {}
+[74.428734] (-) TimerEvent: {}
+[74.529729] (-) TimerEvent: {}
+[74.630388] (-) TimerEvent: {}
+[74.731111] (-) TimerEvent: {}
+[74.831966] (-) TimerEvent: {}
+[74.933034] (-) TimerEvent: {}
+[75.034467] (-) TimerEvent: {}
+[75.137463] (-) TimerEvent: {}
+[75.238224] (-) TimerEvent: {}
+[75.339247] (-) TimerEvent: {}
+[75.440254] (-) TimerEvent: {}
+[75.541141] (-) TimerEvent: {}
+[75.641856] (-) TimerEvent: {}
+[75.742829] (-) TimerEvent: {}
+[75.843681] (-) TimerEvent: {}
+[75.944694] (-) TimerEvent: {}
+[76.045767] (-) TimerEvent: {}
+[76.146874] (-) TimerEvent: {}
+[76.248106] (-) TimerEvent: {}
+[76.349172] (-) TimerEvent: {}
+[76.362116] (dynamixel) StdoutLine: {'line': b'[100%] \x1b[32m\x1b[1mLinking CXX executable cm730_v3_node\x1b[0m\n'}
+[76.449372] (-) TimerEvent: {}
+[76.550205] (-) TimerEvent: {}
+[76.651116] (-) TimerEvent: {}
+[76.752122] (-) TimerEvent: {}
+[76.854284] (-) TimerEvent: {}
+[76.955624] (-) TimerEvent: {}
+[77.056622] (-) TimerEvent: {}
+[77.157621] (-) TimerEvent: {}
+[77.258702] (-) TimerEvent: {}
+[77.360220] (-) TimerEvent: {}
+[77.462509] (-) TimerEvent: {}
+[77.564514] (-) TimerEvent: {}
+[77.665748] (-) TimerEvent: {}
+[77.767325] (-) TimerEvent: {}
+[77.869260] (-) TimerEvent: {}
+[77.973331] (-) TimerEvent: {}
+[78.076300] (-) TimerEvent: {}
+[78.179820] (-) TimerEvent: {}
+[78.285409] (-) TimerEvent: {}
+[78.391165] (-) TimerEvent: {}
+[78.494231] (-) TimerEvent: {}
+[78.602218] (-) TimerEvent: {}
+[78.706043] (-) TimerEvent: {}
+[78.809225] (-) TimerEvent: {}
+[78.911609] (-) TimerEvent: {}
+[79.017538] (-) TimerEvent: {}
+[79.119611] (-) TimerEvent: {}
+[79.221525] (-) TimerEvent: {}
+[79.326510] (-) TimerEvent: {}
+[79.431221] (-) TimerEvent: {}
+[79.534458] (-) TimerEvent: {}
+[79.594350] (dynamixel) StdoutLine: {'line': b'[100%] Built target cm730_v3_node\n'}
+[79.635241] (-) TimerEvent: {}
+[79.702169] (dynamixel) CommandEnded: {'returncode': 0}
+[79.714935] (dynamixel) JobProgress: {'identifier': 'dynamixel', 'progress': 'install'}
+[79.715180] (dynamixel) Command: {'cmd': ['/usr/bin/cmake', '--install', '/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel'], 'cwd': '/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel', 'env': OrderedDict({'LESSOPEN': '| /usr/bin/lesspipe %s', 'GZ_SIM_RESOURCE_PATH': '/opt/ros/jazzy/share', 'LANGUAGE': 'es:en', 'USER': 'melissa', 'LC_TIME': 'es_MX.UTF-8', 'GZ_CONFIG_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/share/gz:/opt/ros/jazzy/opt/sdformat_vendor/share/gz:/opt/ros/jazzy/opt/gz_gui_vendor/share/gz:/opt/ros/jazzy/opt/gz_transport_vendor/share/gz:/opt/ros/jazzy/opt/gz_rendering_vendor/share/gz:/opt/ros/jazzy/opt/gz_plugin_vendor/share/gz:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/share/gz:/opt/ros/jazzy/opt/gz_msgs_vendor/share/gz:/opt/ros/jazzy/opt/gz_common_vendor/share/gz', 'XDG_SESSION_TYPE': 'x11', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib', 'HOME': '/home/melissa', 'OLDPWD': '/home/melissa/Documentos/Servicio', 'DESKTOP_SESSION': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'LC_MONETARY': 'es_MX.UTF-8', 'SYSTEMD_EXEC_PID': '2923', 'GSM_SKIP_SSH_AGENT_WORKAROUND': 'true', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'GNOME_KEYRING_CONTROL': '/run/user/1000/keyring', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'melissa', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'MEMORY_PRESSURE_WATCH': '/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.SettingsDaemon.MediaKeys.service/memory.pressure', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'melissa', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'WINDOWPATH': '2', 'PATH': '/home/melissa/.local/bin:/home/melissa/.local/bin:/opt/ros/jazzy/opt/gz_msgs_vendor/bin:/opt/ros/jazzy/opt/gz_tools_vendor/bin:/opt/ros/jazzy/opt/gz_ogre_next_vendor/bin:/opt/ros/jazzy/bin:/home/melissa/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin', 'SESSION_MANAGER': 'local/melissa-ThinkPad-T460s:@/tmp/.ICE-unix/2761,unix/melissa-ThinkPad-T460s:/tmp/.ICE-unix/2761', 'PAPERSIZE': 'letter', 'XDG_MENU_PREFIX': 'gnome-', 'LC_ADDRESS': 'es_MX.UTF-8', 'GNOME_TERMINAL_SCREEN': '/org/gnome/Terminal/screen/2d3042b1_54cf_4d3b_9e1c_674505d2b0a6', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':1', 'LANG': 'es_ES.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'LC_TELEPHONE': 'es_MX.UTF-8', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'GNOME_TERMINAL_SERVICE': ':1.95', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'AMENT_PREFIX_PATH': '/opt/ros/jazzy', 'SHELL': '/bin/bash', 'LC_NAME': 'es_MX.UTF-8', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'LC_MEASUREMENT': 'es_MX.UTF-8', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'LC_IDENTIFICATION': 'es_MX.UTF-8', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/opt/ros/jazzy/lib/python3.12/site-packages', 'LC_NUMERIC': 'es_MX.UTF-8', 'LC_PAPER': 'es_MX.UTF-8', 'COLCON': '1', 'MEMORY_PRESSURE_WRITE': 'c29tZSAyMDAwMDAgMjAwMDAwMAA=', 'VTE_VERSION': '7600', 'CMAKE_PREFIX_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/opt/ros/jazzy'}), 'shell': False}
+[79.737733] (-) TimerEvent: {}
+[79.785480] (dynamixel) StdoutLine: {'line': b'-- Install configuration: ""\n'}
+[79.787024] (dynamixel) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/lib/dynamixel/cm730_v3_node\n'}
+[79.819091] (dynamixel) StdoutLine: {'line': b'-- Set non-toolchain portion of runtime path of "/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/lib/dynamixel/cm730_v3_node" to ""\n'}
+[79.820008] (dynamixel) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/ament_index/resource_index/package_run_dependencies/dynamixel\n'}
+[79.827128] (dynamixel) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/ament_index/resource_index/parent_prefix_path/dynamixel\n'}
+[79.827962] (dynamixel) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/environment/ament_prefix_path.sh\n'}
+[79.828754] (dynamixel) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/environment/ament_prefix_path.dsv\n'}
+[79.833719] (dynamixel) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/environment/path.sh\n'}
+[79.838027] (dynamixel) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/environment/path.dsv\n'}
+[79.848659] (-) TimerEvent: {}
+[79.849266] (dynamixel) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/local_setup.bash\n'}
+[79.850068] (dynamixel) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/local_setup.sh\n'}
+[79.850835] (dynamixel) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/local_setup.zsh\n'}
+[79.860361] (dynamixel) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/local_setup.dsv\n'}
+[79.861046] (dynamixel) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/package.dsv\n'}
+[79.867940] (dynamixel) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/ament_index/resource_index/packages/dynamixel\n'}
+[79.868687] (dynamixel) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/cmake/dynamixelConfig.cmake\n'}
+[79.880742] (dynamixel) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/cmake/dynamixelConfig-version.cmake\n'}
+[79.885230] (dynamixel) StdoutLine: {'line': b'-- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/package.xml\n'}
+[79.886010] (dynamixel) CommandEnded: {'returncode': 0}
+[79.949607] (-) TimerEvent: {}
+[79.993014] (dynamixel) JobEnded: {'identifier': 'dynamixel', 'rc': 0}
+[80.000703] (-) EventReactorShutdown: {}

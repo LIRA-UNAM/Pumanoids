@@ -1,0 +1,69 @@
+[1.096s] Invoking command in '/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/melissa/Documentos/Servicio/Pumanoids/colcon_ws/src/hardware/dynamixel -DCMAKE_INSTALL_PREFIX=/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel
+[1.701s] -- The C compiler identification is GNU 13.3.0
+[2.238s] -- The CXX compiler identification is GNU 13.3.0
+[2.417s] -- Detecting C compiler ABI info
+[3.222s] -- Detecting C compiler ABI info - done
+[3.312s] -- Check for working C compiler: /usr/bin/cc - skipped
+[3.312s] -- Detecting C compile features
+[3.316s] -- Detecting C compile features - done
+[3.398s] -- Detecting CXX compiler ABI info
+[4.380s] -- Detecting CXX compiler ABI info - done
+[4.518s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[4.521s] -- Detecting CXX compile features
+[4.525s] -- Detecting CXX compile features - done
+[4.571s] -- Found ament_cmake: 2.5.4 (/opt/ros/jazzy/share/ament_cmake/cmake)
+[6.363s] -- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter 
+[7.977s] -- Found rclcpp: 28.1.12 (/opt/ros/jazzy/share/rclcpp/cmake)
+[8.817s] -- Found rosidl_generator_c: 4.6.6 (/opt/ros/jazzy/share/rosidl_generator_c/cmake)
+[9.130s] -- Found rosidl_generator_cpp: 4.6.6 (/opt/ros/jazzy/share/rosidl_generator_cpp/cmake)
+[9.439s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[9.963s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[11.303s] -- Found rmw_implementation_cmake: 7.3.2 (/opt/ros/jazzy/share/rmw_implementation_cmake/cmake)
+[11.353s] -- Found rmw_fastrtps_cpp: 8.4.3 (/opt/ros/jazzy/share/rmw_fastrtps_cpp/cmake)
+[12.222s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.13")  
+[12.400s] -- Found FastRTPS: /opt/ros/jazzy/include (Required is at least version "2.13") 
+[12.635s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[13.687s] -- Found std_msgs: 5.3.6 (/opt/ros/jazzy/share/std_msgs/cmake)
+[13.951s] -- Found geometry_msgs: 5.3.6 (/opt/ros/jazzy/share/geometry_msgs/cmake)
+[14.190s] -- Found sensor_msgs: 5.3.6 (/opt/ros/jazzy/share/sensor_msgs/cmake)
+[14.607s] -- Found tf2_msgs: 0.36.14 (/opt/ros/jazzy/share/tf2_msgs/cmake)
+[15.708s] -- Found dynamixel_sdk: 3.8.4 (/opt/ros/jazzy/share/dynamixel_sdk/cmake)
+[15.778s] -- Found ament_lint_auto: 0.17.3 (/opt/ros/jazzy/share/ament_lint_auto/cmake)
+[16.927s] -- Added test 'cppcheck' to perform static code analysis on C / C++ code
+[16.929s] -- Configured cppcheck include dirs: $<BUILD_INTERFACE:/home/melissa/Documentos/Servicio/Pumanoids/colcon_ws/src/hardware/dynamixel/include>
+[16.930s] -- Configured cppcheck exclude dirs and/or files: 
+[16.937s] -- Added test 'lint_cmake' to check CMake code style
+[16.949s] -- Added test 'uncrustify' to check C / C++ code style
+[16.950s] -- Configured uncrustify additional arguments: 
+[16.957s] -- Added test 'xmllint' to check XML markup files
+[16.970s] -- Configuring done (15.8s)
+[17.079s] -- Generating done (0.1s)
+[17.124s] -- Build files have been written to: /home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel
+[17.183s] Invoked command in '/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/melissa/Documentos/Servicio/Pumanoids/colcon_ws/src/hardware/dynamixel -DCMAKE_INSTALL_PREFIX=/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel
+[17.191s] Invoking command in '/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel -- -j4 -l4
+[17.562s] [ 25%] [32mBuilding CXX object CMakeFiles/cm730_v3_node.dir/src/servo_utils.cpp.o[0m
+[17.564s] [ 50%] [32mBuilding CXX object CMakeFiles/cm730_v3_node.dir/src/cm730_v3.cpp.o[0m
+[17.608s] [ 75%] [32mBuilding CXX object CMakeFiles/cm730_v3_node.dir/src/cm730_utils.cpp.o[0m
+[76.287s] [100%] [32m[1mLinking CXX executable cm730_v3_node[0m
+[79.519s] [100%] Built target cm730_v3_node
+[79.628s] Invoked command in '/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel -- -j4 -l4
+[79.641s] Invoking command in '/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel
+[79.711s] -- Install configuration: ""
+[79.714s] -- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/lib/dynamixel/cm730_v3_node
+[79.744s] -- Set non-toolchain portion of runtime path of "/home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/lib/dynamixel/cm730_v3_node" to ""
+[79.750s] -- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/ament_index/resource_index/package_run_dependencies/dynamixel
+[79.752s] -- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/ament_index/resource_index/parent_prefix_path/dynamixel
+[79.753s] -- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/environment/ament_prefix_path.sh
+[79.758s] -- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/environment/ament_prefix_path.dsv
+[79.759s] -- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/environment/path.sh
+[79.773s] -- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/environment/path.dsv
+[79.774s] -- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/local_setup.bash
+[79.775s] -- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/local_setup.sh
+[79.784s] -- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/local_setup.zsh
+[79.785s] -- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/local_setup.dsv
+[79.792s] -- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/package.dsv
+[79.793s] -- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/ament_index/resource_index/packages/dynamixel
+[79.805s] -- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/cmake/dynamixelConfig.cmake
+[79.809s] -- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/cmake/dynamixelConfig-version.cmake
+[79.810s] -- Installing: /home/melissa/Documentos/Servicio/Pumanoids/install/dynamixel/share/dynamixel/package.xml
+[79.811s] Invoked command in '/home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/melissa/Documentos/Servicio/Pumanoids/build/dynamixel
