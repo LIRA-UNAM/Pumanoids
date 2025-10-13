@@ -1,6 +1,5 @@
 #include "dynamixel_sdk/dynamixel_sdk.h"
 #include "rclcpp/rclcpp.hpp"
-
 #include<iostream>
 #include<string>
 
