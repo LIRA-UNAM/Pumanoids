@@ -55,7 +55,26 @@ ament_target_dependencies(allpositions_node
   "dynamixel_sdk"
 )
 
-install(TARGETS cm730_v3_node allpositions_node
+add_executable(position_test_node src/position_test.cpp ${SOURCES})
+
+target_include_directories(position_test_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+  ${dynamixel_sdk_INCLUDE_DIRS}
+)
+
+target_compile_features(position_test_node PUBLIC c_std_99 cxx_std_17)
+
+ament_target_dependencies(position_test_node
+  "rclcpp"
+  "std_msgs"
+  "geometry_msgs"
+  "sensor_msgs"
+  "tf2_msgs"
+  "dynamixel_sdk"
+)
+
+install(TARGETS cm730_v3_node allpositions_node position_test_node
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
