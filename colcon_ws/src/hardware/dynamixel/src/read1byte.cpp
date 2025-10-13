@@ -5,7 +5,7 @@ int main(int argc, char **argv)
 {
     //Initialize ROS 2
     rclcpp::init(argc, argv);
-    auto node = std ::make_shared<rclcpp::Node>("allpositions");
+    auto node = std::make_shared<rclcpp::Node>("read1byte");
 
     int id, addr;
 

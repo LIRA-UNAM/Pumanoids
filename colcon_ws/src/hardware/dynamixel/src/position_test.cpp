@@ -7,7 +7,7 @@
 int main(int argc, char **argv){
     //Initialize ROS 2
     rclcpp::init(argc, argv);
-    auto node = std ::make_shared<rclcpp::Node>("allpositions");
+    auto node = std ::make_shared<rclcpp::Node>("position_test");
 
     // Declare and get the 'id' parameter
     int id = node->declare_parameter("id", 0);
