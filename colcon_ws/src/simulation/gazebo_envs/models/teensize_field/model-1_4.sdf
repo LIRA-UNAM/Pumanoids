@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<sdf version="1.4">
+<sdf version="1.8">
   <model name="teensize_field">
     <static>true</static>
 
@@ -14,11 +14,15 @@
           </plane>
         </geometry>
         <material>
-          <script>
-            <uri>model://teensize_field/materials/scripts/</uri>
-            <uri>model://teensize_field/materials/textures/</uri>
-            <name>RoboCup/Carpet</name>
-          </script>
+          <ambient>1 1 1 1</ambient>
+          <diffuse>1 1 1 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+          <emissive>0 0 0 1</emissive>
+          <pbr>
+            <metal>
+              <albedo_map>model://teensize_field/materials/textures/carpet.jpg</albedo_map>
+            </metal>
+          </pbr>
         </material>
       </visual>
 
