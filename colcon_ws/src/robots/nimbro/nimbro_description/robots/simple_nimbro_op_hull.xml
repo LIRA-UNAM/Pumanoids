@@ -857,9 +857,9 @@
   <!-- Gazebo configuration -->
   
   <gazebo>
-    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+    <!-- <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
       <robotNamespace>/nimbro</robotNamespace>
-    </plugin>
+    </plugin> -->
   </gazebo>
 
   <!-- Gazebo links -->
@@ -989,7 +989,7 @@
       <update_rate>25</update_rate>
       <visualize>true</visualize>
       <topic>/imu/data_raw</topic>
-      <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+      <!-- <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
         <topicName>imu/data_raw</topicName>
         <bodyName>imu_link</bodyName>
         <updateRateHZ>25.0</updateRateHZ>
@@ -998,7 +998,7 @@
         <rpyOffset>3.14159 0 0</rpyOffset>
         <frameName>imu_link</frameName>
         <initialOrientationAsReference>false</initialOrientationAsReference>
-      </plugin>
+      </plugin> -->
       <pose>0 0 0 0 0 0</pose>
     </sensor>
   </gazebo>
