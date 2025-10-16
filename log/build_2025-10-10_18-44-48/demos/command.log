@@ -1,2 +1,0 @@
-Invoking command in '/home/melissa/Documentos/Servicio/Pumanoids/build/demos': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/melissa/Documentos/Servicio/Pumanoids/setup/luckfox/demos -DCMAKE_INSTALL_PREFIX=/home/melissa/Documentos/Servicio/Pumanoids/install/demos
-Invoked command in '/home/melissa/Documentos/Servicio/Pumanoids/build/demos' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/melissa/Documentos/Servicio/Pumanoids/setup/luckfox/demos -DCMAKE_INSTALL_PREFIX=/home/melissa/Documentos/Servicio/Pumanoids/install/demos

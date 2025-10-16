@@ -1,2 +1,0 @@
-/home/melissa/Documentos/Servicio/Pumanoids/build/demos/CMakeFiles/edit_cache.dir
-/home/melissa/Documentos/Servicio/Pumanoids/build/demos/CMakeFiles/rebuild_cache.dir
