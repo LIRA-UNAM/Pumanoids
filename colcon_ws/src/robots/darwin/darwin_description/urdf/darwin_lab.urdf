@@ -898,11 +898,12 @@
   <limit effort="10" velocity="5.6548668" lower="-2.6179939" upper="2.6179939" />
 </joint>
 
-<!-- <gazebo>
-  <plugin filename="libgazebo_ros_control.so" name="gazebo_ros_control">
+<gazebo>
+  <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
     <robotNamespace>/darwin</robotNamespace>
+    <parameters>$(find darwin_description)/config/darwin_control.yaml</parameters>
   </plugin>
-</gazebo> -->
+</gazebo>
   
   
   
