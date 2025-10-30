@@ -7,6 +7,7 @@ import numpy
 import cv2
 from ultralytics import YOLO
 
+
 class BallDetectorNode(Node):
     def get_vision_object_msg(self, id, confidence, x, y, width, height):
         msg = VisionObject()
@@ -47,10 +48,10 @@ class BallDetectorNode(Node):
         super().__init__("ball_detector")
         self.br = CvBridge()
         self.declare_parameter('model_path', "best.pt")
-        madel_path  = self.get_parameter('model_path').get_parameter_value().string_value
+        model_path  = self.get_parameter('model_path').get_parameter_value().string_value
         self.sub_img = self.create_subscription(Image, '/camera/color/image_raw', self.callback_img, 1)
         self.pub_ball = self.create_publisher(VisionObject, '/vision/ball', 1)
-        self.model = YOLO(madel_path)
+        self.model = YOLO(model_path)
 
 def main(args=None):
     rclpy.init(args=args)
