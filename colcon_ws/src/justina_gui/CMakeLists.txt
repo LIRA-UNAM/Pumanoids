@@ -15,10 +15,10 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(nav_msgs REQUIRED)
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Widgets Network REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(OpenCV REQUIRED)
 
 file(GLOB PRO_SOURCE_DIR RELATIVE ${CMAKE_SOURCE_DIR} FOLLOW_SYMLINKS src/*.cpp)
 file(GLOB PRO_UI_DIR RELATIVE ${CMAKE_SOURCE_DIR} FOLLOW_SYMLINKS ui/*.ui)
@@ -34,6 +34,7 @@ include_directories(
   ${geometry_msgs_INCLUDE_DIRS}
   ${sensor_msgs_INCLUDE_DIRS}
   ${nav_msgs_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
   ${CMAKE_CURRENT_BINARY_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
@@ -53,15 +54,19 @@ add_executable(justina_gui_node
   ${QT_RESOUCE_HPP}
 )
 
-target_link_libraries(justina_gui_node
-  PRIVATE Qt5::Widgets
-  ${rclcpp_LIBRARIES}
-  ${std_msgs_LIBRARIES}
-  ${geometry_msgs_LIBRARIES}
-  ${nav_msgs_LIBRARIES}
-  #${sensor_msgs_LIBRARIES}
+ament_target_dependencies(justina_gui_node
+  rclcpp
+  cv_bridge
+  std_msgs
+  sensor_msgs
+  geometry_msgs
 )
 
+target_link_libraries(justina_gui_node
+  Qt5::Widgets
+  Qt5::Network
+  ${OpenCV_LIBRARIES}
+)
 # target_include_directories(justina_gui_node PUBLIC
 #   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 #   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
