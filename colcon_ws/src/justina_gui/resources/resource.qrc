@@ -6,5 +6,7 @@
     <file>images/btnRight.png</file>
     <file>images/btnTurnLeft.png</file>
     <file>images/btnTurnRight.png</file>
+    <file>images/points.png</file>
+    <file>images/logo_lira.png</file>
 </qresource>
 </RCC>

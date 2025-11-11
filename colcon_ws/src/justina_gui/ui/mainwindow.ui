@@ -14,12 +14,23 @@
    <palette>
     <active>
      <colorrole role="Button">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>98</red>
-        <green>160</green>
-        <blue>234</blue>
-       </color>
+      <brush brushstyle="LinearGradientPattern">
+       <gradient startx="0.662129000000000" starty="0.545455000000000" endx="1.000000000000000" endy="1.000000000000000" type="LinearGradient" spread="PadSpread" coordinatemode="ObjectBoundingMode">
+        <gradientstop position="0.000000000000000">
+         <color alpha="255">
+          <red>0</red>
+          <green>128</green>
+          <blue>158</blue>
+         </color>
+        </gradientstop>
+        <gradientstop position="1.000000000000000">
+         <color alpha="255">
+          <red>255</red>
+          <green>255</green>
+          <blue>255</blue>
+         </color>
+        </gradientstop>
+       </gradient>
       </brush>
      </colorrole>
      <colorrole role="Base">
@@ -65,12 +76,23 @@
     </active>
     <inactive>
      <colorrole role="Button">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>98</red>
-        <green>160</green>
-        <blue>234</blue>
-       </color>
+      <brush brushstyle="LinearGradientPattern">
+       <gradient startx="0.662129000000000" starty="0.545455000000000" endx="1.000000000000000" endy="1.000000000000000" type="LinearGradient" spread="PadSpread" coordinatemode="ObjectBoundingMode">
+        <gradientstop position="0.000000000000000">
+         <color alpha="255">
+          <red>0</red>
+          <green>128</green>
+          <blue>158</blue>
+         </color>
+        </gradientstop>
+        <gradientstop position="1.000000000000000">
+         <color alpha="255">
+          <red>255</red>
+          <green>255</green>
+          <blue>255</blue>
+         </color>
+        </gradientstop>
+       </gradient>
       </brush>
      </colorrole>
      <colorrole role="Base">
@@ -116,12 +138,23 @@
     </inactive>
     <disabled>
      <colorrole role="Button">
-      <brush brushstyle="SolidPattern">
-       <color alpha="255">
-        <red>98</red>
-        <green>160</green>
-        <blue>234</blue>
-       </color>
+      <brush brushstyle="LinearGradientPattern">
+       <gradient startx="0.662129000000000" starty="0.545455000000000" endx="1.000000000000000" endy="1.000000000000000" type="LinearGradient" spread="PadSpread" coordinatemode="ObjectBoundingMode">
+        <gradientstop position="0.000000000000000">
+         <color alpha="255">
+          <red>0</red>
+          <green>128</green>
+          <blue>158</blue>
+         </color>
+        </gradientstop>
+        <gradientstop position="1.000000000000000">
+         <color alpha="255">
+          <red>255</red>
+          <green>255</green>
+          <blue>255</blue>
+         </color>
+        </gradientstop>
+       </gradient>
       </brush>
      </colorrole>
      <colorrole role="Base">
@@ -175,7 +208,8 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>:/rsc/wab_icon.png</normaloff>:/rsc/wab_icon.png</iconset>
+    <normalon>:/images/logo_lira.png</normalon>
+   </iconset>
   </property>
   <property name="styleSheet">
    <string notr="true">background-color: qlineargradient(spread:pad, x1:0.662129, y1:0.545455, x2:1, y2:1, stop:0 rgba(0, 128, 158, 255), stop:1 rgba(255, 255, 255, 255));</string>
@@ -963,6 +997,18 @@ background-color: rgb(26, 95, 180);
                 </item>
                 <item>
                  <widget class="QFrame" name="frame_46">
+                  <property name="styleSheet">
+                   <string notr="true">QPushButton {
+color: rgb(255, 255, 255);
+background-color: rgb(52, 101, 164);
+border: 2px solid rgb(255, 255, 255);
+border-radius: 5px;
+}
+
+QPushButton:pressed {
+background-color: rgb(32, 74, 135);
+}</string>
+                  </property>
                   <property name="frameShape">
                    <enum>QFrame::StyledPanel</enum>
                   </property>
@@ -974,65 +1020,198 @@ background-color: rgb(26, 95, 180);
                     <number>0</number>
                    </property>
                    <property name="leftMargin">
-                    <number>0</number>
+                    <number>10</number>
                    </property>
                    <property name="topMargin">
-                    <number>0</number>
+                    <number>10</number>
                    </property>
                    <property name="rightMargin">
-                    <number>0</number>
+                    <number>10</number>
                    </property>
                    <property name="bottomMargin">
-                    <number>0</number>
+                    <number>10</number>
                    </property>
                    <item>
                     <layout class="QGridLayout" name="gridLayout">
+                     <property name="leftMargin">
+                      <number>10</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>10</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>10</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>10</number>
+                     </property>
+                     <property name="spacing">
+                      <number>10</number>
+                     </property>
                      <item row="0" column="1">
-                      <widget class="QPushButton" name="pushButton_6">
+                      <widget class="QPushButton" name="button_front">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
                        <property name="text">
-                        <string>PushButton</string>
+                        <string/>
+                       </property>
+                       <property name="icon">
+                        <iconset>
+                         <normalon>:/images/btnUp.png</normalon>
+                        </iconset>
+                       </property>
+                       <property name="iconSize">
+                        <size>
+                         <width>60</width>
+                         <height>60</height>
+                        </size>
                        </property>
                       </widget>
                      </item>
                      <item row="0" column="0">
-                      <widget class="QPushButton" name="pushButton_11">
+                      <widget class="QPushButton" name="button_turn_left">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
                        <property name="text">
-                        <string>A</string>
+                        <string/>
+                       </property>
+                       <property name="icon">
+                        <iconset>
+                         <normalon>:/images/btnTurnLeft.png</normalon>
+                        </iconset>
+                       </property>
+                       <property name="iconSize">
+                        <size>
+                         <width>60</width>
+                         <height>60</height>
+                        </size>
                        </property>
                       </widget>
                      </item>
                      <item row="0" column="2">
-                      <widget class="QPushButton" name="pushButton_12">
+                      <widget class="QPushButton" name="button_turn_right">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
                        <property name="text">
-                        <string>PushButton</string>
+                        <string/>
+                       </property>
+                       <property name="icon">
+                        <iconset>
+                         <normalon>:/images/btnTurnRight.png</normalon>
+                        </iconset>
+                       </property>
+                       <property name="iconSize">
+                        <size>
+                         <width>60</width>
+                         <height>60</height>
+                        </size>
                        </property>
                       </widget>
                      </item>
                      <item row="1" column="0">
-                      <widget class="QPushButton" name="pushButton_10">
+                      <widget class="QPushButton" name="button_left">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
                        <property name="text">
-                        <string>PushButton</string>
+                        <string/>
+                       </property>
+                       <property name="icon">
+                        <iconset>
+                         <normalon>:/images/btnLeft.png</normalon>
+                        </iconset>
+                       </property>
+                       <property name="iconSize">
+                        <size>
+                         <width>60</width>
+                         <height>60</height>
+                        </size>
                        </property>
                       </widget>
                      </item>
                      <item row="1" column="1">
-                      <widget class="QPushButton" name="pushButton_8">
+                      <widget class="QPushButton" name="button_center">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
                        <property name="text">
-                        <string>PushButton</string>
+                        <string/>
+                       </property>
+                       <property name="icon">
+                        <iconset>
+                         <normalon>:/images/points.png</normalon>
+                        </iconset>
+                       </property>
+                       <property name="iconSize">
+                        <size>
+                         <width>60</width>
+                         <height>60</height>
+                        </size>
                        </property>
                       </widget>
                      </item>
                      <item row="3" column="1">
-                      <widget class="QPushButton" name="pushButton_7">
+                      <widget class="QPushButton" name="button_back">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
                        <property name="text">
-                        <string>PushButton</string>
+                        <string/>
+                       </property>
+                       <property name="icon">
+                        <iconset resource="../resources/resource.qrc">
+                         <normaloff>:/images/btnDown.png</normaloff>:/images/btnDown.png</iconset>
+                       </property>
+                       <property name="iconSize">
+                        <size>
+                         <width>60</width>
+                         <height>60</height>
+                        </size>
                        </property>
                       </widget>
                      </item>
                      <item row="1" column="2">
-                      <widget class="QPushButton" name="pushButton_9">
+                      <widget class="QPushButton" name="button_right">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
                        <property name="text">
-                        <string>PushButton</string>
+                        <string/>
+                       </property>
+                       <property name="icon">
+                        <iconset>
+                         <normalon>:/images/btnRight.png</normalon>
+                        </iconset>
+                       </property>
+                       <property name="iconSize">
+                        <size>
+                         <width>60</width>
+                         <height>60</height>
+                        </size>
                        </property>
                       </widget>
                      </item>
@@ -1153,7 +1332,7 @@ border-radius: 10px;</string>
      <x>0</x>
      <y>0</y>
      <width>1280</width>
-     <height>24</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuPumanoids_GUI_v1">
