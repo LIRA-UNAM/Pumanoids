@@ -38,6 +38,8 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <cv_bridge/cv_bridge.hpp> // Include CvBridge for conversion
 #include <opencv2/opencv.hpp> // Include OpenCV
+#include "ui_mainwindow.h"
+
 namespace Ui { class MainWindow; }
 
 class MainWindow : public QMainWindow
@@ -49,10 +51,15 @@ class MainWindow : public QMainWindow
         void raw_image_callback(const sensor_msgs::msg::Image::SharedPtr msg);
         void vision_image_callback(const sensor_msgs::msg::Image::SharedPtr msg);
 
+    private slots:
+        void spinOnce();
+
     private:
         Ui::MainWindow *ui;
-
         // ROS Variables
+        rclcpp::Node::SharedPtr nh_;
+        rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_raw_sub_;
+        rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr vision_image_sub_;
         QTimer *ros_timer;        
 };
 
