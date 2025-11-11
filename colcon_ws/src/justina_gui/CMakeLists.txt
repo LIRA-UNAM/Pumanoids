@@ -65,6 +65,8 @@ endforeach(source)
 # Generate headers
 qt5_wrap_ui(UI_HDRS ${UI})
 qt5_wrap_cpp(QT_MOC_HPP ${HDRS})
+qt5_add_resources(QRC_RSC ${QRC})
+
 
 message("Generating ${PROJECT_NAME} UI Headers: " )
 foreach(source ${UI_HDRS})
@@ -77,7 +79,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_executable(justina_gui_node ${SRCS} ${UI_HDRS} ${QT_MOC_HPP})
+add_executable(justina_gui_node ${SRCS} ${UI_HDRS} ${QT_MOC_HPP} ${QRC_RSC})
 ament_target_dependencies(justina_gui_node ${ROS_DEPENDS})
 target_link_libraries(justina_gui_node ${EXTERNAL_DEPENDS_LIB})
 
