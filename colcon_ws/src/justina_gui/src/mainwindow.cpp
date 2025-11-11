@@ -1,16 +1,16 @@
-#include "mainwindow.hpp"
-#include "ui_mainwindow.h"
+#include "mainwindow.h"
 
-unsigned int last_index_value = 0;
-QFileInfoList ptc_images_list;
+using std::placeholders::_1;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , nh_(new rclcpp::Node("pumanoids_gui_node"))
 {
+    image_raw_sub_      = nh_->create_subscription<sensor_msgs::msg::Image>("/camera/image_raw", 1, std::bind(&MainWindow::raw_image_callback, this, _1));
+    vision_image_sub_   = nh_->create_subscription<sensor_msgs::msg::Image>("/camera/image_raw", 1, std::bind(&MainWindow::vision_image_callback, this, _1));
     //UI SETUP
     ui->setupUi(this);
- 
     ros_timer = new QTimer(this);
     connect(ros_timer, SIGNAL(timeout()), this, SLOT(spinOnce()));
     ros_timer->start(100);
@@ -45,4 +45,9 @@ void MainWindow::vision_image_callback(const sensor_msgs::msg::Image::SharedPtr 
     label->setPixmap(pixmap);
     label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     label->setScaledContents(true);
+}
+
+void MainWindow::spinOnce()
+{
+    rclcpp::spin_some(nh_);
 }
