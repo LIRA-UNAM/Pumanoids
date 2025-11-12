@@ -36,6 +36,7 @@
 // #include "rclcomm.h"
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/image.hpp>
+#include <geometry_msgs/msg/twist.hpp>
 #include <cv_bridge/cv_bridge.hpp> // Include CvBridge for conversion
 #include <opencv2/opencv.hpp> // Include OpenCV
 #include "ui_mainwindow.h"
@@ -54,12 +55,36 @@ class MainWindow : public QMainWindow
     private slots:
         void spinOnce();
 
+        //Pressed
+        void button_front_pressed();
+        void button_back_pressed();
+        void button_left_pressed();
+        void button_right_pressed();
+        void button_turn_right_pressed();
+        void button_turn_left_pressed();
+        void button_center_pressed();
+
+        //Released
+        void button_front_released();
+        void button_back_released();
+        void button_left_released();
+        void button_right_released();
+        void button_turn_right_released();
+        void button_turn_left_released();
+        void button_center_released();
+
     private:
         Ui::MainWindow *ui;
         // ROS Variables
         rclcpp::Node::SharedPtr nh_;
         rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_raw_sub_;
         rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr vision_image_sub_;
+
+        rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr  pub_cmd_vel_;
+        geometry_msgs::msg::Twist cmd_vel_;
+
+        void publish_cmd_vel(double linear_x, double linear_y, double angular);
+
         QTimer *ros_timer;        
 };
 

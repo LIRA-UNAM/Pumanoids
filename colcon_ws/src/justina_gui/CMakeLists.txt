@@ -7,6 +7,7 @@ set(ROS_DEPENDS
   std_msgs
   sensor_msgs
   cv_bridge
+  geometry_msgs
 )
 
 set(EXTERNAL_DEPENDS
