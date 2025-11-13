@@ -33,7 +33,6 @@ def generate_launch_description():
     #5. Set the environment variable GZ_SIM_RESOURCE_PATH
     gz_sim_resource_path = os.pathsep + os.path.join(gazebo_envs_pkg, 'models')
     os.environ['GZ_SIM_RESOURCE_PATH'] += gz_sim_resource_path
-    print(f"GZ_ENVIRONMENT ISS: {os.environ['GZ_SIM_RESOURCE_PATH']}")
 
     #4. Find robot_description params
     robot_state_publisher_params = [{'robot_description': robot_description_content}]
