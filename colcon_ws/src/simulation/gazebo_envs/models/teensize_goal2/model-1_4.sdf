@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<sdf version="1.4">
+<sdf version="1.8">
   <model name="teensize_goal2">
     <static>true</static>
     <link name="left_post">
@@ -277,11 +277,11 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>model://teensize_goal/materials/scripts/</uri>
-            <uri>model://teensize_goal/materials/textures/</uri>
-            <name>RoboCup/Net</name>
-          </script>
+          <pbr>
+            <metal>
+              <albedo_map>materials/textures/net.png</albedo_map>
+          </metal>
+          </pbr>
         </material>
       </visual>
     </link>
@@ -301,11 +301,11 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>model://teensize_goal/materials/scripts/</uri>
-            <uri>model://teensize_goal/materials/textures/</uri>
-            <name>RoboCup/Net</name>
-          </script>
+          <pbr>
+            <metal>
+              <albedo_map>materials/textures/net.png</albedo_map>
+          </metal>
+          </pbr>
         </material>
       </visual>
     </link>
@@ -325,11 +325,11 @@
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>model://teensize_goal/materials/scripts/</uri>
-            <uri>model://teensize_goal/materials/textures/</uri>
-            <name>RoboCup/Net</name>
-          </script>
+          <pbr>
+            <metal>
+              <albedo_map>materials/textures/net.png</albedo_map>
+          </metal>
+          </pbr>
         </material>
       </visual>
     </link>

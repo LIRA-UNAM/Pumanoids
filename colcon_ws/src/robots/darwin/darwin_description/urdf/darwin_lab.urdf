@@ -898,12 +898,22 @@
   <limit effort="10" velocity="5.6548668" lower="-2.6179939" upper="2.6179939" />
 </joint>
 
-<gazebo>
-  <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
-    <robotNamespace>/darwin</robotNamespace>
-    <parameters>$(find darwin_description)/config/darwin_control.yaml</parameters>
-  </plugin>
-</gazebo>
+  <ros2_control name="GazeboSystem" type="system">
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+    <joint name="rear_left_wheel_joint">
+      <command_interface name="velocity" />
+      <state_interface name="velocity" />
+      <state_interface name="position" />
+    </joint>
+  </ros2_control>
+
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find darwin_description)/config/darwin_control.yaml</parameters>
+    </plugin>
+  </gazebo>
   
   
   
@@ -1195,365 +1205,111 @@
     </actuator>
   </transmission>
 
-
-
-
-
-<gazebo reference="trunk_link">
-    
-    
+  <!-- COLOR LINKS -->
+  <gazebo reference="trunk_link">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="neck_link">
-    
-    
+  <gazebo reference="neck_link">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="head_link">
-    
-    
+  <gazebo reference="head_link">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="MP_BACK_L">
-    
-    
+  <gazebo reference="MP_BACK_L">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="left_shoulder_pitch_link">
-    
-    
+  <gazebo reference="left_shoulder_pitch_link">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="left_upper_arm_link">
-    
-    
+  <gazebo reference="left_upper_arm_link">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="left_lower_arm_link">
-    
-    
+  <gazebo reference="left_lower_arm_link">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="MP_ARM_GRIPPER_FIX_L">
-    
-    
+  <gazebo reference="MP_ARM_GRIPPER_FIX_L">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="MP_ARM_GRIPPER_FIX_DUMMY_L">
-    
-    
+  <gazebo reference="MP_ARM_GRIPPER_FIX_DUMMY_L">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="MP_ARM_GRIPPER_MOV_L">
-    
-    
+  <gazebo reference="MP_ARM_GRIPPER_MOV_L">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="MP_BACK_R">
-    
-    
+  <gazebo reference="MP_BACK_R">
+    <material>Gazebo/Grey</material>  
+  </gazebo>
+  <gazebo reference="right_shoulder_pitch_link">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="right_shoulder_pitch_link">
-    
-    
+  <gazebo reference="right_upper_arm_link">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="right_upper_arm_link">
-    
-    
+  <gazebo reference="right_lower_arm_link">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="right_lower_arm_link">
-    
-    
+  <gazebo reference="MP_ARM_GRIPPER_FIX_R">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="MP_ARM_GRIPPER_FIX_R">
-    
-    
+  <gazebo reference="MP_ARM_GRIPPER_FIX_DUMMY_R">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="MP_ARM_GRIPPER_FIX_DUMMY_R">
-    
-    
+  <gazebo reference="MP_ARM_GRIPPER_MOV_R">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="MP_ARM_GRIPPER_MOV_R">
-    
-    
+  <gazebo reference="left_hip_yaw_link">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="left_hip_yaw_link">
-    
-    
+  <gazebo reference="left_hip_roll_link">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="left_hip_roll_link">
-    
-    
+  <gazebo reference="left_thigh_link">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="left_thigh_link">
-    
-    
+  <gazebo reference="left_shank_link">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="left_shank_link">
-    
-    
+  <gazebo reference="left_ankle_link">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="left_ankle_link">
-    
-    
+  <gazebo reference="left_foot_link">
     <material>Gazebo/Grey</material>
-    
+    <mu1>9000</mu1>
+    <mu2>9000</mu2>
+    <kp>1000000.0</kp>
+    <kd>10.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxContacts>1</maxContacts>    
   </gazebo>
-
-
-
-<gazebo reference="left_foot_link">
-    
-    
+  <gazebo reference="right_hip_yaw_link">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+  <gazebo reference="right_hip_roll_link">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+  <gazebo reference="right_thigh_link">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+  <gazebo reference="right_shank_link">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+  <gazebo reference="right_ankle_link">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+  <gazebo reference="right_foot_link">
+    <material>Gazebo/Grey</material>
+    <mu1>9000</mu1>
+    <mu2>9000</mu2>
+    <kp>1000000.0</kp>
+    <kd>10.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxContacts>1</maxContacts>    
+  </gazebo>
+  <gazebo reference="camera_optical">
     <material>Gazebo/Grey</material>    
-
-    <mu1>9000</mu1>
-    <mu2>9000</mu2>
-    <kp>1000000.0</kp>
-    <kd>10.0</kd>
-    <minDepth>0.001</minDepth>
-    <maxContacts>1</maxContacts>    
   </gazebo>
-
-
-
-<gazebo reference="right_hip_yaw_link">
-    
-    
+  <gazebo reference="">
     <material>Gazebo/Grey</material>
-    
   </gazebo>
-
-
-
-<gazebo reference="right_hip_roll_link">
-    
-    
-    <material>Gazebo/Grey</material>
-    
-  </gazebo>
-
-
-
-<gazebo reference="right_thigh_link">
-    
-    
-    <material>Gazebo/Grey</material>
-    
-  </gazebo>
-
-
-
-<gazebo reference="right_shank_link">
-    
-    
-    <material>Gazebo/Grey</material>
-    
-  </gazebo>
-
-
-
-<gazebo reference="right_ankle_link">
-    
-    
-    <material>Gazebo/Grey</material>
-    
-  </gazebo>
-
-
-
-<gazebo reference="right_foot_link">
-    
-    
-    <material>Gazebo/Grey</material>
-    
-
-    <mu1>9000</mu1>
-    <mu2>9000</mu2>
-    <kp>1000000.0</kp>
-    <kd>10.0</kd>
-    <minDepth>0.001</minDepth>
-    <maxContacts>1</maxContacts>    
-  </gazebo>
-
-
-
-<gazebo reference="camera_optical">
-    
-    
-    <material>Gazebo/Grey</material>
-    
-  </gazebo>
-
-
-
-<gazebo reference="">
-    
-    
-    <material>Gazebo/Grey</material>
-    
-  </gazebo>
-
-
-  <!-- camera -->
-  <!-- <gazebo reference="head_link">
-    <sensor type="camera" name="camera1">
-      <pose>0.050000 0.010000 0.000000 0.000000 0.000000 0.0000000</pose>
-      <update_rate>30.0</update_rate>
-      <camera name="head">
-        <horizontal_fov>1.7157</horizontal_fov>
-        <image>
-          <width>640</width>
-          <height>640</height>
-          <format>R8G8B8</format>
-        </image>
-        <clip>
-          <near>0.05</near>
-          <far>100</far>
-        </clip>
-        <noise>
-          <type>gaussian</type>
-          <mean>0.0</mean>
-          <stddev>0.007</stddev>
-        </noise>
-      </camera>
-      <visualize>1</visualize>
-
-      <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
-        <alwaysOn>true</alwaysOn>
-        <updateRate>30.0</updateRate>
-        <cameraName>rrbot/camera1</cameraName>
-		    <imageTopicName>/hardware/camera/image</imageTopicName>
-		    <cameraInfoTopicName>/hardware/camera/camera_info</cameraInfoTopicName>
-        <frameName>camera_link_optical</frameName>
-        <hackBaseline>0.0</hackBaseline>
-        <distortionK1>-0.15</distortionK1>
-        <distortionK2>0.05</distortionK2>
-        <distortionK3>0.0</distortionK3>
-        <distortionT1>0.0</distortionT1>
-        <distortionT2>0.0</distortionT2>
-        <CxPrime>0</CxPrime>
-        <Cx>1152</Cx>
-        <Cy>648</Cy>
-        <focalLength>0.00395</focalLength>
-      </plugin>
-    </sensor>
-  </gazebo> -->
-
-  <!-- <gazebo reference="imu_link">
-    <gravity>true</gravity>
-    <sensor name="imu_sensor" type="imu">
-      <always_on>true</always_on>
-      <update_rate>25</update_rate>
-      <visualize>true</visualize>
-      <topic>/imu/data_raw</topic>
-      <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
-        <topicName>imu/data_raw</topicName>
-        <bodyName>imu_link</bodyName>
-        <updateRateHZ>25.0</updateRateHZ>
-        <gaussianNoise>0.0</gaussianNoise>
-        <xyzOffset>0 0 0</xyzOffset>
-        <rpyOffset>3.14159 0 0</rpyOffset>
-        <frameName>imu_link</frameName>
-        <initialOrientationAsReference>false</initialOrientationAsReference>
-      </plugin>
-      <pose>0 0 0 0 0 0</pose>
-    </sensor>
-  </gazebo> -->
 
 </robot>
