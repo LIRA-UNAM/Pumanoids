@@ -10,6 +10,8 @@ MainWindow::MainWindow(QWidget *parent)
     image_raw_sub_      = nh_->create_subscription<sensor_msgs::msg::Image>("/camera/image_raw", 1, std::bind(&MainWindow::raw_image_callback, this, _1));
     vision_image_sub_   = nh_->create_subscription<sensor_msgs::msg::Image>("/camera/image_raw", 1, std::bind(&MainWindow::vision_image_callback, this, _1));
     pub_cmd_vel_        = nh_->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
+    pub_enable_head_ball_follower = nh_->create_publisher<std_msgs::msg::Bool>("/planning/head_ball_follower/enable", 10);
+    pub_enable_base_ball_follower = nh_->create_publisher<std_msgs::msg::Bool>("/planning/base_ball_follower/enable", 10);
 
     //UI SETUP
     ui->setupUi(this);
@@ -30,6 +32,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->button_right        ,SIGNAL(released()), this, SLOT(button_right_released()));
     connect(ui->button_turn_left    ,SIGNAL(released()), this, SLOT(button_turn_left_released()));
     connect(ui->button_turn_right   ,SIGNAL(released()), this, SLOT(button_turn_right_released()));
+
+    connect(ui->btn_head_ball_follow_enable, SIGNAL(clicked()), this, SLOT(publish_toggle_enable_head_ball_follower()));
+    connect(ui->btn_base_ball_follow_enable, SIGNAL(clicked()), this, SLOT(publish_toggle_enable_base_ball_follower()));
+    connect(ui->btn_ball_follow_enable,      SIGNAL(clicked()), this, SLOT(publish_toggle_enable_ball_follower()));
     ros_timer->start(100);
 }
 
@@ -159,4 +165,19 @@ void MainWindow::publish_cmd_vel(double linear_x, double linear_y, double angula
     cmd_vel_.linear.y = linear_y;
     cmd_vel_.angular.z =  angular;
     pub_cmd_vel_->publish(cmd_vel_);
+}
+
+void MainWindow::publish_toggle_enable_head_ball_follower()
+{
+    if(ui->btn_head_ball_follow_enable->text().toStdString().find("enable") != std::string::npos)
+    {
+    }
+}
+
+void MainWindow::publish_toggle_enable_base_ball_follower()
+{
+}
+
+void MainWindow::publish_toggle_enable_ball_follower()
+{
 }

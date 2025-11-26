@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(justina_gui LANGUAGES CXX)
+project(pumanoids_gui LANGUAGES CXX)
 
 set(ROS_DEPENDS
   ament_cmake
@@ -80,11 +80,11 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_executable(justina_gui_node ${SRCS} ${UI_HDRS} ${QT_MOC_HPP} ${QRC_RSC})
-ament_target_dependencies(justina_gui_node ${ROS_DEPENDS})
-target_link_libraries(justina_gui_node ${EXTERNAL_DEPENDS_LIB})
+add_executable(pumanoids_gui_node ${SRCS} ${UI_HDRS} ${QT_MOC_HPP} ${QRC_RSC})
+ament_target_dependencies(pumanoids_gui_node ${ROS_DEPENDS})
+target_link_libraries(pumanoids_gui_node ${EXTERNAL_DEPENDS_LIB})
 
-install(TARGETS justina_gui_node
+install(TARGETS pumanoids_gui_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
