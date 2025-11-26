@@ -35,6 +35,7 @@
 //ROS
 // #include "rclcomm.h"
 #include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 #include <cv_bridge/cv_bridge.hpp> // Include CvBridge for conversion
@@ -83,7 +84,13 @@ class MainWindow : public QMainWindow
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr  pub_cmd_vel_;
         geometry_msgs::msg::Twist cmd_vel_;
 
+        rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr pub_enable_head_ball_follower;
+        rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr pub_enable_base_ball_follower;
+
         void publish_cmd_vel(double linear_x, double linear_y, double angular);
+        void publish_toggle_enable_head_ball_follower();
+        void publish_toggle_enable_base_ball_follower();
+        void publish_toggle_enable_ball_follower();
 
         QTimer *ros_timer;        
 };
