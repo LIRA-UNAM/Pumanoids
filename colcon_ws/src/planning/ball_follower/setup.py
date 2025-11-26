@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'ball_follower = ball_follower.ball_follower:main'
+            'ball_follower = ball_follower.ball_follower:main',
+            'head_ball_follower = ball_follower.head_ball_follower:main'
         ],
     },
 )
