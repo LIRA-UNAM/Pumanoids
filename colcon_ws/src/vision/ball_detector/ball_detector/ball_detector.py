@@ -1,10 +1,12 @@
 import rclpy
 from rclpy.node import Node
+from ament_index_python.packages import get_package_share_directory
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from pumas_vision_msgs.msg import VisionObject
 import numpy
 import cv2
+import os
 from ultralytics import YOLO
 
 
@@ -32,7 +34,7 @@ class BallDetectorNode(Node):
         
         for i in range(len(idxs)):
             name=results[0].names[idxs[i]]
-            if name == "sports ball":
+            if "ball" in name:
                 confidence = confs[i]
                 x_center, y_center, width, height = bboxes[i]
                 vision_obj_msg = self.get_vision_object_msg(name, float(confidence), x_center, y_center, width, height)
@@ -47,7 +49,8 @@ class BallDetectorNode(Node):
         print("INITIALIZING BALL DETECTOR NODE - ")
         super().__init__("ball_detector")
         self.br = CvBridge()
-        self.declare_parameter('model_path', "best.pt")
+        model_path = os.path.join(get_package_share_directory("ball_detector"), "models", "ball_model.pt")
+        self.declare_parameter('model_path', model_path)
         model_path  = self.get_parameter('model_path').get_parameter_value().string_value
         self.sub_img = self.create_subscription(Image, '/camera/color/image_raw', self.callback_img, 1)
         self.pub_ball = self.create_publisher(VisionObject, '/vision/ball', 1)
