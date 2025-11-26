@@ -2,35 +2,42 @@ import rclpy
 import math
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
+from sensor_msgs.msg import JointState
 from pumas_vision_msgs.msg import VisionObject
 
 center_x = 640
 center_y = 360
 
 class BallFollowerNode(Node):
+    def callback_joint_states(self, msg):
+        self.current_head_pan = msg.position[0]
+        self.current_head_tilt = msg.position[1]
+        
     def callback_ball(self, msg):
         ball_center_x = msg.x
         ball_center_y = msg.y
-        print(f"Ball detected at x: {ball_center_x}, y: {ball_center_y}")
+        #print(f"Ball detected at x: {ball_center_x}, y: {ball_center_y}")
         
-        error_x = (ball_center_x - center_x)/640
+        error_x = (-ball_center_x + center_x)/640
         if error_x < 0:
             error_x = -math.sqrt(-error_x)
-        
         else:
             error_x = math.sqrt(error_x)
         
         cmd_vel_msg = Twist()
-        cmd_vel_msg.linear.x = 0.2
-        cmd_vel_msg.angular.z = -0.8 * error_x
+        cmd_vel_msg.linear.x = 0.5
+        cmd_vel_msg.angular.z = 1.2 * (error_x + self.current_head_pan)
         self.pub_cmd_vel.publish(cmd_vel_msg)
         
         
     def __init__(self):
         print("INITIALIZING BALL FOLLOWER NODE - ")
         super().__init__("ball_follower")
+        self.current_head_pan  = 0
+        self.current_head_tilt = 0
         self.sub_ball = self.create_subscription(VisionObject, '/vision/ball', self.callback_ball, 1)
         self.pub_cmd_vel = self.create_publisher(Twist, '/cmd_vel', 1)
+        self.sub_joints  = self.create_subscription(JointState, "/joint_states", self.callback_joint_states, 1)
     
 
 def main(args=None):
