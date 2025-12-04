@@ -8,8 +8,8 @@ def generate_launch_description():
             executable='ball_detector',
             output='screen'),
         Node(
-            package='ball_detector',
-            executable='ball_follower.head_ball_follower',
+            package='ball_follower',
+            executable='head_ball_follower',
             output='screen'),
         Node(
             package='twist_to_t1',
