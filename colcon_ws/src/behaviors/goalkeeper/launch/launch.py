@@ -6,13 +6,13 @@ def generate_launch_description():
         Node(
             package='ball_detector',
             executable='ball_detector',
-            output=''),
+            output='screen'),
         Node(
             package='ball_detector',
             executable='head_ball_follower',
-            output=''),
+            output='screen'),
         Node(
             package='twist_to_t1',
             executable='pantilt_to_t1',
-            output='')
+            output='screen')
     ])
