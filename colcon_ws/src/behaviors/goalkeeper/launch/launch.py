@@ -9,7 +9,7 @@ def generate_launch_description():
             output='screen'),
         Node(
             package='ball_detector',
-            executable='head_ball_follower',
+            executable='ball_follower.head_ball_follower',
             output='screen'),
         Node(
             package='twist_to_t1',
