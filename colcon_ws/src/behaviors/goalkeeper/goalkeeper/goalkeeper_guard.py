@@ -32,9 +32,10 @@ class GoalkeeperGuard(Node):
 
     def __init__(self):
         super().__init__("goalkeeper_guard")
+        self.get_logger().info("INITIALIZING GOAL KEEEPER GUARD NODE - ")
+        self.enable = False
         self.current_head_pan  = 0
         self.current_head_tilt = 0
-        self.enable = False
         self.sub_enable  = self.create_subscription(Bool, "/behaviors/goalkeeper_guard/enable", self.callback_enable, 1)
         self.sub_ball = self.create_subscription(VisionObject, '/vision/ball', self.callback_ball, 1)
         self.pub_cmd_vel = self.create_publisher(Twist, '/cmd_vel', 1)
