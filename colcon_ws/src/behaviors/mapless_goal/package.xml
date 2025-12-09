@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>mapless_goal</name>
+  <version>0.0.0</version>
+  <description>A package for compressing point clouds and managing local occupancy grids</description>
+
+  <maintainer email="lir.pumas@gmail.com">booster</maintainer>
+  <license>MIT</license>  <!-- Or whichever license applies to your project -->
+
+  <!-- Build tool -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- ROS 2 package dependencies -->
+  <depend>rclcpp</depend>         <!-- Core ROS2 C++ library -->
+  <depend>sensor_msgs</depend>    <!-- PointCloud2, Image, etc. -->
+  <depend>nav_msgs</depend>       <!-- OccupancyGrid and other navigation messages -->
+  <depend>std_msgs</depend>       <!-- Standard messages like Int32, Float32 -->
+  <depend>tf2_ros</depend>        <!-- Transform library for handling frames -->
+  <depend>tf2_geometry_msgs</depend> <!-- Quaternion to matrix, and other TF-related functionality -->
+  
+  <!-- Zlib is required for compression (and decompression) of point cloud data -->
+  <depend>zlib</depend>
+
+  <!-- Python3 dependencies -->
+  <exec_depend>python3</exec_depend> <!-- Python 3 interpreter -->
+
+  <!-- Test dependencies (optional) -->
+  <test_depend>ament_copyright</test_depend>  <!-- License checks -->
+  <test_depend>ament_flake8</test_depend>     <!-- Python style checks -->
+  <test_depend>ament_pep257</test_depend>     <!-- Python docstring style checks -->
+  <test_depend>ament_lint_auto</test_depend>  <!-- Automatic linting setup -->
+  <test_depend>ament_lint_common</test_depend> <!-- Common linting tools -->
+
+  <!-- Export build type -->
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
+
