@@ -21,8 +21,8 @@ class LocalOccGrid(Node):
 
         self.get_logger().info("INITIALIZING LOCAL OCCUPANCY GRID NODE")
 
-        self.declare_parameter("use_lidar", True)
-        self.declare_parameter("use_cloud", False)
+        self.declare_parameter("use_lidar", False)
+        self.declare_parameter("use_cloud", True)
         self.declare_parameter("min_x", 0.0)
         self.declare_parameter("max_x", 4.0)
         self.declare_parameter("min_y", -2.0)
@@ -33,8 +33,8 @@ class LocalOccGrid(Node):
         self.declare_parameter("lidar_downsampling", 1)
         self.declare_parameter("cloud_downsampling", 9)
         self.declare_parameter("laser_scan_topic", "/scan")
-        self.declare_parameter("point_cloud_topic", "/point_cloud")
-        self.declare_parameter("base_link_name", "base_link")
+        self.declare_parameter("point_cloud_topic", "/camera/depth/points")
+        self.declare_parameter("base_link_name", "camera_link")
 
         self.use_lidar = self.get_parameter("use_lidar").value
         self.use_cloud = self.get_parameter("use_cloud").value
