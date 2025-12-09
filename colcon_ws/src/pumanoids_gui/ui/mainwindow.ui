@@ -992,6 +992,33 @@ background-color: rgb(26, 95, 180);
                      </property>
                     </widget>
                    </item>
+                  <item> <!-- BOOL -->
+                      <widget class="QPushButton" name="toggleEnableButton">
+                          <property name="sizePolicy">
+                              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                                  <horstretch>0</horstretch>
+                                  <verstretch>0</verstretch>
+                              </sizepolicy>
+                          </property>
+                          <property name="styleSheet">
+                              <string notr="true">QPushButton
+                  {
+                  background-color: rgb(220, 53, 69);
+                  color: rgb(255, 255, 255);
+                  border-color: rgb(255, 255, 255);
+                  }
+
+                  QPushButton:pressed
+                  {
+                  background-color: rgb(180, 35, 50);
+                  }</string>
+                          </property>
+                          <property name="text">
+                              <string>DISABLE</string>
+                          </property>
+                      </widget>
+                  </item><!-- FIN BOOL -->
+
                   </layout>
                  </widget>
                 </item>

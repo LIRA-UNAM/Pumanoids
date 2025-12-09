@@ -74,6 +74,8 @@ class MainWindow : public QMainWindow
         void button_turn_left_released();
         void button_center_released();
 
+        void on_toggle_enable_clicked(); //bool
+
     private:
         Ui::MainWindow *ui;
         // ROS Variables
@@ -86,13 +88,17 @@ class MainWindow : public QMainWindow
 
         rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr pub_enable_head_ball_follower;
         rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr pub_enable_base_ball_follower;
+        rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr pub_enable_gui;
 
         void publish_cmd_vel(double linear_x, double linear_y, double angular);
         void publish_toggle_enable_head_ball_follower();
         void publish_toggle_enable_base_ball_follower();
         void publish_toggle_enable_ball_follower();
+        void publish_gui_enable_state(bool state);
 
-        QTimer *ros_timer;        
+        QTimer *ros_timer;
+
+        bool gui_enable_state_;  // true = ENABLE, false = DISABLE
 };
 
 #endif // MAINWINDOW_H
