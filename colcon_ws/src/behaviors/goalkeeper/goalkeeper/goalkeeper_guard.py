@@ -118,16 +118,16 @@ class GoalkeeperGuard(Node):
                             state = SM_LOOK_FOR_BALL
 
                 elif state == SM_GOAL_KEEPER_GUARD:
-		    self.get_looger().info("SM_GOAL_KEEEPER_GUARD")
+                    self.get_looger().info("SM_GOAL_KEEEPER_GUARD")
                     center_x = 640
                     #print(f"Ball detected at x: {ball_center_x}, y: {ball_center_y}")
                     error_x = (-self.ball_center_x + center_x)/640
                     if error_x < 0:
                         error_x = -math.sqrt(-error_x)
-			self.get_logger().info("error_x < 0 = " + error_x)
+                        self.get_logger().info("error_x < 0 = " + error_x)
                     else:
                         error_x = math.sqrt(error_x)
-			self.get_logger().info("error_x > 0 = " + error_x)
+                        self.get_logger().info("error_x > 0 = " + error_x)
                     
                     cmd_vel_msg = Twist()
                     cmd_vel_msg.linear.x = 0.2
