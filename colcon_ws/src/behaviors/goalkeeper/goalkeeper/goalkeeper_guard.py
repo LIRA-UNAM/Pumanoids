@@ -79,6 +79,7 @@ class GoalkeeperGuard(Node):
                         None
 
                 elif state == SM_LOOK_FOR_BALL:
+                    self.get_logger().info("SM_LOOK_FOR_BALL")
                     if not self.new_ball_data:
                         head_pose = self.look_for_poses.pop(0)
                         self.look_for_poses.append(head_pose)
@@ -100,6 +101,7 @@ class GoalkeeperGuard(Node):
                         state = SM_LOOK_AT_BALL
 
                 elif state == SM_LOOK_AT_BALL:
+                    self.get_logger().info("SM_LOOK_AT_BALL")
                     if self.new_ball_data:
                         self.new_ball_data = False
                         no_new_data_counter = 0
@@ -116,18 +118,21 @@ class GoalkeeperGuard(Node):
                             state = SM_LOOK_FOR_BALL
 
                 elif state == SM_GOAL_KEEPER_GUARD:
+		    self.get_looger().info("SM_GOAL_KEEEPER_GUARD")
                     center_x = 640
                     #print(f"Ball detected at x: {ball_center_x}, y: {ball_center_y}")
                     error_x = (-self.ball_center_x + center_x)/640
                     if error_x < 0:
                         error_x = -math.sqrt(-error_x)
+			self.get_logger().info("error_x < 0 = " + error_x)
                     else:
                         error_x = math.sqrt(error_x)
+			self.get_logger().info("error_x > 0 = " + error_x)
                     
                     cmd_vel_msg = Twist()
                     cmd_vel_msg.linear.x = 0.2
                     #cmd_vel_msg.angular.z = 1.2 * (error_x + self.current_head_pan)
-                    self.pub_cmd_vel.publish(cmd_vel_msg)
+                    #self.pub_cmd_vel.publish(cmd_vel_msg)
             #
             # END OF IF ENABLE
             #
