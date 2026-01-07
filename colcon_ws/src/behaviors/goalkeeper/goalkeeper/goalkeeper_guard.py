@@ -41,6 +41,7 @@ class GoalkeeperGuard(Node):
         self.sub_enable  = self.create_subscription(Bool, "/behaviors/goalkeeper_guard/enable", self.callback_enable, 1)
         self.sub_ball = self.create_subscription(VisionObject, '/vision/ball', self.callback_ball, 1)
         self.pub_cmd_vel = self.create_publisher(Twist, '/cmd_vel', 1)
+        self.pub_sgn_head_ball_foll = self.create_publisher(Bool, "/planning/head_ball_follower/enable", 1)
         self.sub_joints  = self.create_subscription(JointState, "/joint_states", self.callback_joint_states, 1)
 
 
@@ -64,17 +65,23 @@ class GoalkeeperGuard(Node):
             if self.enable:
                 if state == SM_INIT:
                     self.get_logger().info("Initializing state machine for head ball follower...")
+                    flag_head_ball_foll = Bool()
+                    flag_head_ball_foll.data = 'true'
+                    self.get_logger().info("flag_head_ball_foll = ", flag_head_ball_foll.data)
+                    self.pub_sgn_head_ball_foll.publish(flag_head_ball_foll)
+
                     state = SM_WAIT_FOR_FIRST_IMAGE
 
                 elif state == SM_WAIT_FOR_FIRST_IMAGE:
                     img = self.get_single_image()
+                    self.get_logger().info("SM_WAIT_FOR_FIRST_IMAGE")
                     if img is not None:
                         self.get_logger().info(f"Image received with size {img.width}x{img.height}")
                         self.img_width  = img.width
                         self.img_height = img.height
                         self.img_goal_x = img.width/2
                         self.img_goal_y = img.height/2
-                        state = -1
+                        state = SM_LOOK_AT_BALL
                     else:
                         None
 
