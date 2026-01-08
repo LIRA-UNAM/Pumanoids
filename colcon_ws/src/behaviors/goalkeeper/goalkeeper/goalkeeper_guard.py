@@ -62,7 +62,8 @@ class GoalkeeperGuard(Node):
         state = SM_INIT
         no_new_data_counter = 0
         while rclpy.ok():
-            if self.enable:
+            #if self.enable:
+            if 1:
                 if state == SM_INIT:
                     self.get_logger().info("Initializing state machine for head ball follower...")
                     flag_head_ball_foll = Bool()
