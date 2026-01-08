@@ -67,7 +67,7 @@ class GoalkeeperGuard(Node):
                 if state == SM_INIT:
                     self.get_logger().info("Initializing state machine for head ball follower...")
                     flag_head_ball_foll = Bool()
-                    flag_head_ball_foll.data = 'true'
+                    flag_head_ball_foll.data = True
                     self.get_logger().info(f"flag_head_ball_foll = {flag_head_ball_foll.data}")
                     self.pub_sgn_head_ball_foll.publish(flag_head_ball_foll)
 
