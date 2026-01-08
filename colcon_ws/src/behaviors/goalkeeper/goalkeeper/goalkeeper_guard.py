@@ -36,6 +36,7 @@ class GoalkeeperGuard(Node):
         super().__init__("goalkeeper_guard")
         self.get_logger().info("INITIALIZING GOAL KEEEPER GUARD NODE - ")
         self.enable = False
+        self.new_ball_data = False
         self.current_head_pan  = 0
         self.current_head_tilt = 0
         self.sub_enable  = self.create_subscription(Bool, "/behaviors/goalkeeper_guard/enable", self.callback_enable, 1)
