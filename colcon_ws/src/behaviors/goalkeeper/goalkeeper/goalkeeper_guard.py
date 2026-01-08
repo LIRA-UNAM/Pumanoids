@@ -63,12 +63,12 @@ class GoalkeeperGuard(Node):
         no_new_data_counter = 0
         while rclpy.ok():
             #if self.enable:
-            if 1:
+            if 1 :
                 if state == SM_INIT:
                     self.get_logger().info("Initializing state machine for head ball follower...")
                     flag_head_ball_foll = Bool()
                     flag_head_ball_foll.data = 'true'
-                    self.get_logger().info("flag_head_ball_foll = ", flag_head_ball_foll.data)
+                    self.get_logger().info(f"flag_head_ball_foll = {flag_head_ball_foll.data}")
                     self.pub_sgn_head_ball_foll.publish(flag_head_ball_foll)
 
                     state = SM_WAIT_FOR_FIRST_IMAGE
@@ -126,16 +126,16 @@ class GoalkeeperGuard(Node):
                             state = SM_LOOK_FOR_BALL
 
                 elif state == SM_GOAL_KEEPER_GUARD:
-                    self.get_looger().info("SM_GOAL_KEEEPER_GUARD")
+                    self.get_looger().info("SM_GOAL_KEEPER_GUARD")
                     center_x = 640
                     #print(f"Ball detected at x: {ball_center_x}, y: {ball_center_y}")
                     error_x = (-self.ball_center_x + center_x)/640
                     if error_x < 0:
                         error_x = -math.sqrt(-error_x)
-                        self.get_logger().info("error_x < 0 = " + error_x)
+                        self.get_logger().info(f"error_x < 0 = {error_x}")
                     else:
                         error_x = math.sqrt(error_x)
-                        self.get_logger().info("error_x > 0 = " + error_x)
+                        self.get_logger().info(f"error_x > 0 = {error_x}")
                     
                     cmd_vel_msg = Twist()
                     cmd_vel_msg.linear.x = 0.2
