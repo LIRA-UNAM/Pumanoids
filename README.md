@@ -67,3 +67,8 @@ sudo netplan apply
 The static IP is now set to `10.42.0.2`. You can now do `ssh humanoid@10.42.0.2` to connect with Ethernet cable directly to the humanoid.
 
 </details>
+
+
+### For video
+
+ros2 run kick_off kick_off
