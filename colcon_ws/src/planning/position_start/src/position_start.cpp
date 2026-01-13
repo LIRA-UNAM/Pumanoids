@@ -1,3 +1,4 @@
+#include <chrono>
 #include <iostream>
 #include <string>
 
@@ -6,7 +7,6 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include <yaml-cpp/yaml.h>
-// Commented out due to compilation errors
 
 class PositionStart : public rclcpp::Node
 {
@@ -18,16 +18,21 @@ public:
         subscriber_ = this->create_subscription<booster_interface::msg::Odometer>("/odometer_state", 10, std::bind(&PositionStart::topic_callback, this, std::placeholders::_1));
         publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
 
+        timer_ = create_timer(std::chrono::seconds(2), std::bind(&PositionStart::timer_callback, this));
+
         RCLCPP_INFO(this->get_logger(), "position_start node started");
     }
 
 private:
     rclcpp::Subscription<booster_interface::msg::Odometer>::SharedPtr subscriber_;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
+    rclcpp::TimerBase::SharedPtr timer_;
+    
     
     std::string target_position_;
     double target_x_ = 0.0;
     double target_y_ = 0.0;
+    size_t count_;
 
     bool YAML_success = true;
 
@@ -63,10 +68,15 @@ private:
         }
     }
 
+    void timer_callback()
+    {
+        RCLCPP_INFO(this->get_logger(), "Timer");
+    }
+
 
     void topic_callback(const booster_interface::msg::Odometer::SharedPtr msg)
     {
-        if (YAML_success)
+        if (YAML_success && false)
         {
             RCLCPP_INFO(this->get_logger(), "x: %f\ty: %f\ttheta: %f", msg->x, msg->y, msg->theta);
         }
