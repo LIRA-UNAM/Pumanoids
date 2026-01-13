@@ -3,9 +3,7 @@ from rclpy.node import Node
 
 from std_msgs.msg import Bool
 
-
 class KickoffNode(Node):
-
     def __init__(self):
         super().__init__('kickoff_listener')
         self.subscription = self.create_subscription(
@@ -14,9 +12,21 @@ class KickoffNode(Node):
             self.listener_callback,
             10)
         self.subscription  # prevent unused variable warning
+        self.publisher = self.create_publisher(Bool, 'ball_follower/enable', 10)
+
+    def start_kick(self):
+        print("Starting kicking sequence")
+        self.publisher.publish(Bool(data=True))
+
+    def wait_kick(self):
+        print("Waiting for kickoff timeout")
 
     def listener_callback(self, msg):
         self.get_logger().info('I heard: "%s"' % msg.data)
+        if msg.data:
+            self.start_kick()
+        else:
+            self.wait_kick()
 
 
 def main(args=None):
