@@ -8,9 +8,10 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(booster_interface)
+find_package(booster_interface REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(ament_index_cpp REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 add_executable(position_start src/position_start.cpp)
 target_include_directories(position_start PUBLIC
@@ -20,13 +21,22 @@ target_compile_features(position_start PUBLIC c_std_99 cxx_std_17)  # Require C9
 ament_target_dependencies(
   position_start
   "rclcpp"
-  "std_msgs"
-  "sensor_msgs"
   "booster_interface"
+  "geometry_msgs"
+  "ament_index_cpp"
+)
+
+target_link_libraries(position_start
+  yaml-cpp
 )
 
 install(TARGETS position_start
   DESTINATION lib/${PROJECT_NAME})
+
+install(DIRECTORY config/
+  DESTINATION share/${PROJECT_NAME}/config
+)
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
