@@ -27,8 +27,8 @@ class GoalkeeperGuard(Node):
     def __init__(self):
         super().__init__("goalkeeper_guard")
         self.get_logger().info("INITIALIZING GOAL KEEEPER GUARD NODE - ")
-        self.ball_center_x = None
-        self.ball_center_y = None
+        self.ball_center_x = 0
+        self.ball_center_y = 0
         self.current_head_pan  = 0
         self.current_head_tilt = 0
         self.center_x = 640
@@ -70,6 +70,7 @@ class GoalkeeperGuard(Node):
 
                 elif state == SM_WAIT_BALL_CENTER:
                     self.get_logger().info("SM_WAIT_BALL_CENTER")
+                                
                     state = SM_ERROR_CALCULATION
 
 
@@ -87,7 +88,7 @@ class GoalkeeperGuard(Node):
 
 
                 elif state == SM_BALL_TRACKING:
-                    self.get_looger().info("SM_BALL_TRACKING")
+                    self.get_logger().info("SM_BALL_TRACKING")
                     cmd_vel_msg = Twist()
                     cmd_vel_msg.linear.x = 0.2
                     #self.pub_cmd_vel.publish(cmd_vel_msg)
