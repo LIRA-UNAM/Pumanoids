@@ -70,7 +70,7 @@ class GoalkeeperGuard(Node):
 
                 elif state == SM_WAIT_BALL_CENTER:
                     self.get_logger().info("SM_WAIT_BALL_CENTER")
-                                
+
                     state = SM_ERROR_CALCULATION
 
 
@@ -80,9 +80,11 @@ class GoalkeeperGuard(Node):
                     if error_x < 0:
                         error_x = -math.sqrt(-error_x)
                         self.get_logger().info(f"error_x < 0 = {error_x}")
+                        time.sleep(1)
                     else:
                         error_x = math.sqrt(error_x)
                         self.get_logger().info(f"error_x > 0 = {error_x}")
+                        time.sleep(1)
 
                     state = SM_BALL_TRACKING
 
