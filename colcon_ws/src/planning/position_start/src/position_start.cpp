@@ -20,7 +20,7 @@ public:
     {
         loadConfiguration("config/positions_demo.yaml");
 
-        state_mach_sub_ = this->create_subscription<std_msgs::msg::Bool>("enable", 10, std::bind(&PositionStart::sm_enable, this));
+        state_mach_sub_ = this->create_subscription<std_msgs::msg::Bool>("enable", 10, std::bind(&PositionStart::sm_enable, this, std::placeholders::_1));
         state_mach_pub_ = this->create_publisher<std_msgs::msg::Bool>("finish", 10);
 
         subscriber_ = this->create_subscription<booster_interface::msg::Odometer>("/odometer_state", 10, std::bind(&PositionStart::odometer_callback, this, std::placeholders::_1));
@@ -38,6 +38,8 @@ private:
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr state_mach_pub_;
 
     rclcpp::TimerBase::SharedPtr timer_;
+
+    
 
     // Variables
     int timer_period = 500;
@@ -66,7 +68,9 @@ private:
         FINISHED
     };
 
-    State current_state_ = State::WAITING_FOR_STATE_MACHINE;
+
+    State current_state_ = State::WAITING_FOR_STATE_MACHINE; //UNCOMMENT WHEN USING WITH THE STATE MACHINE
+    //State current_state_ = State::INITIAL_POSE; //LEAVE THIS COMMENTED
 
     bool YAML_success = true;
 
@@ -158,20 +162,24 @@ private:
         }
 
 
-        //auto twist_msg = geometry_msgs::msg::Twist();
+        auto twist_msg = geometry_msgs::msg::Twist();
         
         switch (current_state_)
         {
             case State::MOVING_X:
-                if (current_timer_pos_x < target_x_) {
-                    // Move forward along X axis
-                    /*
-                    twist_msg.linear.x = 0.1; // Your desired forward speed
+                if (current_timer_pos_x < target_x_)
+                {
+                    twist_msg.linear.x = 0.4; // Your desired forward speed
                     current_timer_pos_x += timer_period / 1000.0; // Convert ms to seconds
                     publisher_->publish(twist_msg);
-                    */
+                    
                     RCLCPP_INFO(this->get_logger(), "Moving X: %f/%f s", current_timer_pos_x, target_x_);
-                } else {
+                }
+                else
+                {
+                    // Stop the robot
+                    twist_msg.linear.x = 0;
+                    publisher_->publish(twist_msg);
                     // Finished moving in X, start rotation
                     current_state_ = State::ROTATING;
                     RCLCPP_INFO(this->get_logger(), "X movement complete, starting rotation");
@@ -180,32 +188,53 @@ private:
             case State::ROTATING:
                 if (current_angle < target_range[0] && current_angle < target_range[1])
                 {
-                    //GIRAR A LA IZQUIERDA
+                    // Rotate to the left
+                    twist_msg.angular.z = 0.6;
+                    publisher_->publish(twist_msg);
                 }
                 else if (current_angle > target_range[0] && current_angle > target_range[1])
                 {
-                    //GIRAR A LA DERECHA
+                    // Rotate to the right
+                    twist_msg.angular.z = -0.6;
+                    publisher_->publish(twist_msg);
                 }
                 else if (current_angle < target_range[0] && current_angle > target_range[1])
                 {
-                    //DETENERSE
+                    // Stop rotation
+                    twist_msg.angular.z = 0;
+                    publisher_->publish(twist_msg);
                     current_state_ = State::MOVING_Y;
                 }
                 break;
             case State::MOVING_Y:
-                if (current_timer_pos_y < target_y_) {
-                    // Move forward along X axis
-                    /*
-                    twist_msg.linear.x = 0.1; // Your desired forward speed
-                    current_timer_pos_x += timer_period / 1000.0; // Convert ms to seconds
+                if (current_timer_pos_y < target_y_)
+                {
+                    // Move forward along -Y axis
+
+                    twist_msg.linear.x = 0.4; // Your desired forward speed
+                    current_timer_pos_y += timer_period / 1000.0; // Convert ms to seconds
                     publisher_->publish(twist_msg);
-                    */
+
                     RCLCPP_INFO(this->get_logger(), "Moving Y: %f/%f s", current_timer_pos_y, target_y_);
-                } else {
-                    // Finished moving in X, start rotation
-                    current_state_ = State::ROTATING;
-                    RCLCPP_INFO(this->get_logger(), "Y movement complete.");
                 }
+                else
+                {
+                    // Stop the robot
+                    twist_msg.linear.x = 0;
+                    publisher_->publish(twist_msg);
+                    // Finished moving in Y, start rotation
+                    current_state_ = State::FINISHED;
+                    RCLCPP_INFO(this->get_logger(), "Y movement complete.");
+                    auto bool_msg = std_msgs::msg::Bool();
+                    bool_msg.data = true;
+                    state_mach_pub_->publish(bool_msg); // Publishes a true in the "finish" topic
+                }
+                break;
+            default:
+                    // Stop the robot
+                    twist_msg.linear.x = 0;
+                    twist_msg.angular.z = 0;
+                    publisher_->publish(twist_msg);
                 break;
         }
 
@@ -231,7 +260,9 @@ private:
 
         }
     }
-}
+
+
+};
 
 int main(int argc, char * argv[])
 {
