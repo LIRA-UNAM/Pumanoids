@@ -18,9 +18,12 @@ class PositionStart : public rclcpp::Node
 public:
     PositionStart(const std::string& target_position) : Node("position_start"), target_position_(target_position)
     {
+        std::cout<<"Check point constructor1 "<<std::endl;
         loadConfiguration("config/positions_demo.yaml");
+        std::cout<<"Check point constructor 2 "<<std::endl;
+        
 
-        state_mach_sub_ = this->create_subscription<std_msgs::msg::Bool>("enable", 10, std::bind(&PositionStart::sm_enable, this, std::placeholders::_1));
+        state_mach_sub_ = this->create_subscription<std_msgs::msg::Bool>("position_start/enable", 10, std::bind(&PositionStart::sm_enable, this, std::placeholders::_1));
         state_mach_pub_ = this->create_publisher<std_msgs::msg::Bool>("finish", 10);
 
         subscriber_ = this->create_subscription<booster_interface::msg::Odometer>("/odometer_state", 10, std::bind(&PositionStart::odometer_callback, this, std::placeholders::_1));
@@ -76,6 +79,7 @@ private:
 
     void sm_enable(const std_msgs::msg::Bool::SharedPtr msg)
     {
+        std::cout<<"Enable received"<<std::endl;
         if (msg->data && current_state_ == State::WAITING_FOR_STATE_MACHINE)
         {
             // The state machine enable is true
@@ -140,9 +144,10 @@ private:
 
     void timer_callback()
     {
+        std::cout<<"Check point timer callback"<<std::endl;
         if (!YAML_success || current_state_ == State::FINISHED)
         {
-            RCLCPP_INFO(this->get_logger(), "Timer returning");
+            RCLCPP_DEBUG(this->get_logger(), "Timer returning");
             return;
         }
         
@@ -267,6 +272,7 @@ private:
 int main(int argc, char * argv[])
 {
     std::string target_position = "no_input"; //Setting a safe default to avoid unfunny errors
+    std::cout<<"Check point 1"<<std::endl;
     if (argc > 1) 
     {
         target_position = argv[1];  // First argument after node name
@@ -274,6 +280,7 @@ int main(int argc, char * argv[])
 
     rclcpp::init(argc, argv);
     auto node = std::make_shared<PositionStart>(target_position);
+    std::cout<<"Check point 2"<<std::endl;
     rclcpp::spin(node);
     rclcpp::shutdown();    
     return 0;
