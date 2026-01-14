@@ -72,3 +72,5 @@ The static IP is now set to `10.42.0.2`. You can now do `ssh humanoid@10.42.0.2`
 ### For video
 
 ros2 run kick_off kick_off
+
+ros2 run goalkeeper_guard_executable
