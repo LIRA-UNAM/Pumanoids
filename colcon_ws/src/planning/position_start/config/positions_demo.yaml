@@ -1,0 +1,11 @@
+position_start:
+  ros__parameters:
+    center:
+      x: 2
+      y: 2.5
+    left:
+      x: 1.5
+      y: 2
+    right:
+      x: 2.5
+      y: 2
