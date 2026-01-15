@@ -21,7 +21,8 @@ setup(
     entry_points={
         'console_scripts': [
             'twist_to_t1 = twist_to_t1.twist_to_t1:main',
-            'pantilt_to_t1 = twist_to_t1.pantilt_to_t1:main'
+            'pantilt_to_t1 = twist_to_t1.pantilt_to_t1:main',
+            'odom_to_tf = twist_to_t1.odom_to_tf:main'
         ],
     },
 )
