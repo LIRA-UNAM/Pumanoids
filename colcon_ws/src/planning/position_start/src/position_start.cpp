@@ -18,13 +18,10 @@ class PositionStart : public rclcpp::Node
 public:
     PositionStart(const std::string& target_position) : Node("position_start"), target_position_(target_position)
     {
-        std::cout<<"Check point constructor1 "<<std::endl;
         loadConfiguration("config/positions_demo.yaml");
-        std::cout<<"Check point constructor 2 "<<std::endl;
-        
 
-        state_mach_sub_ = this->create_subscription<std_msgs::msg::Bool>("position_start/enable", 10, std::bind(&PositionStart::sm_enable, this, std::placeholders::_1));
-        state_mach_pub_ = this->create_publisher<std_msgs::msg::Bool>("finish", 10);
+        state_mach_sub_ = this->create_subscription<std_msgs::msg::Bool>("/position_start/enable", 10, std::bind(&PositionStart::sm_enable, this, std::placeholders::_1));
+        state_mach_pub_ = this->create_publisher<std_msgs::msg::Bool>("/position_start/finish", 10);
 
         subscriber_ = this->create_subscription<booster_interface::msg::Odometer>("/odometer_state", 10, std::bind(&PositionStart::odometer_callback, this, std::placeholders::_1));
         publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
@@ -41,8 +38,6 @@ private:
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr state_mach_pub_;
 
     rclcpp::TimerBase::SharedPtr timer_;
-
-    
 
     // Variables
     int timer_period = 500;
@@ -61,6 +56,8 @@ private:
     double target_y_ = 0.0;
     size_t count_;
 
+    bool YAML_success = true;
+
     // States of the position_start
     enum class State {
         WAITING_FOR_STATE_MACHINE,
@@ -71,15 +68,14 @@ private:
         FINISHED
     };
 
+    // When using this node with the robot's state machine, uncomment the following line
+    State current_state_ = State::WAITING_FOR_STATE_MACHINE; 
+    // When running this node standalone (without the state machine), uncomment the following line
+    //State current_state_ = State::INITIAL_POSE;
 
-    State current_state_ = State::WAITING_FOR_STATE_MACHINE; //UNCOMMENT WHEN USING WITH THE STATE MACHINE
-    //State current_state_ = State::INITIAL_POSE; //LEAVE THIS COMMENTED
-
-    bool YAML_success = true;
 
     void sm_enable(const std_msgs::msg::Bool::SharedPtr msg)
     {
-        std::cout<<"Enable received"<<std::endl;
         if (msg->data && current_state_ == State::WAITING_FOR_STATE_MACHINE)
         {
             // The state machine enable is true
@@ -144,7 +140,6 @@ private:
 
     void timer_callback()
     {
-        std::cout<<"Check point timer callback"<<std::endl;
         if (!YAML_success || current_state_ == State::FINISHED)
         {
             RCLCPP_DEBUG(this->get_logger(), "Timer returning");
@@ -214,7 +209,7 @@ private:
             case State::MOVING_Y:
                 if (current_timer_pos_y < target_y_)
                 {
-                    // Move forward along -Y axis
+                    // Move forward along Y axis
 
                     twist_msg.linear.x = 0.4; // Your desired forward speed
                     current_timer_pos_y += timer_period / 1000.0; // Convert ms to seconds
@@ -272,7 +267,6 @@ private:
 int main(int argc, char * argv[])
 {
     std::string target_position = "no_input"; //Setting a safe default to avoid unfunny errors
-    std::cout<<"Check point 1"<<std::endl;
     if (argc > 1) 
     {
         target_position = argv[1];  // First argument after node name
@@ -280,7 +274,6 @@ int main(int argc, char * argv[])
 
     rclcpp::init(argc, argv);
     auto node = std::make_shared<PositionStart>(target_position);
-    std::cout<<"Check point 2"<<std::endl;
     rclcpp::spin(node);
     rclcpp::shutdown();    
     return 0;
