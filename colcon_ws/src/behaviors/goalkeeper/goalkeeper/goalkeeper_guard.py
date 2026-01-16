@@ -29,6 +29,7 @@ class GoalkeeperGuard(Node):
         self.get_logger().info("INITIALIZING GOAL KEEEPER GUARD NODE - ")
         self.ball_center_x = 0
         self.ball_center_y = 0
+        self.move = 0
         self.current_head_pan  = 0
         self.current_head_tilt = 0
         self.center_x = 640
