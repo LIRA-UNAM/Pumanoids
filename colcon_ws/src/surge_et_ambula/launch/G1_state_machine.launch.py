@@ -27,6 +27,20 @@ def generate_launch_description():
         ),
 
         Node(
+            package = 'twist_to_g1',
+            executable = 'odom_to_tf',
+            name = 'odom_to_tf',
+            output = 'screen',
+        ),
+
+        Node(
+            package = 'ball_detector',
+            executable = 'ball_detector',
+            name = 'ball_detector',
+            output = 'screen',
+        ),
+
+        Node(
             package = 'position_start',
             executable = 'position_start',
             name = 'position_start',
