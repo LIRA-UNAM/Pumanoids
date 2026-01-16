@@ -76,15 +76,15 @@ class GoalkeeperGuard(Node):
 
                 elif state == SM_ERROR_CALCULATION:
                     self.get_logger().info("SM_WAIT_BALL_CENTER")
-                    error_x = (-self.ball_center_x + self.center_x)/640
-                    if error_x < 0:
-                        error_x = -math.sqrt(-error_x)
-                        self.get_logger().info(f"error_x < 0 = {error_x}")
-                        time.sleep(1)
-                    else:
-                        error_x = math.sqrt(error_x)
-                        self.get_logger().info(f"error_x > 0 = {error_x}")
-                        time.sleep(1)
+                    if self.ball_center_y > 0.02:
+                        self.get_logger().info("mueve a la derecha")
+                        time.sleep(0.5)
+                        move = 0.2
+                        
+                    if self.ball_center_y < -0.02:
+                        self.get_logger().info("mueve a la izquierda")
+                        time.sleep(0.5)
+                        move = -0.2
 
                     state = SM_BALL_TRACKING
 
@@ -92,8 +92,8 @@ class GoalkeeperGuard(Node):
                 elif state == SM_BALL_TRACKING:
                     self.get_logger().info("SM_BALL_TRACKING")
                     cmd_vel_msg = Twist()
-                    cmd_vel_msg.linear.x = 0.2
-                    #self.pub_cmd_vel.publish(cmd_vel_msg)
+                    cmd_vel_msg.linear.y = move
+                    self.pub_cmd_vel.publish(cmd_vel_msg)
                     state = SM_INIT
             #
             # END
