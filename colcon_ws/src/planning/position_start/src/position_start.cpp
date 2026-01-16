@@ -2,8 +2,12 @@
 #include <iostream>
 #include <string>
 
+
+#include "tf2/exceptions.hpp"
+#include "tf2_ros/transform_listener.hpp"
+#include "tf2_ros/buffer.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "booster_interface/msg/odometer.hpp"
+//#include "booster_interface/msg/odometer.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
@@ -23,7 +27,12 @@ public:
         state_mach_sub_ = this->create_subscription<std_msgs::msg::Bool>("/position_start/enable", 10, std::bind(&PositionStart::sm_enable, this, std::placeholders::_1));
         state_mach_pub_ = this->create_publisher<std_msgs::msg::Bool>("/position_start/finish", 10);
 
-        subscriber_ = this->create_subscription<booster_interface::msg::Odometer>("/odometer_state", 10, std::bind(&PositionStart::odometer_callback, this, std::placeholders::_1));
+        //subscriber_ = this->create_subscription<booster_interface::msg::Odometer>("/odometer_state", 10, std::bind(&PositionStart::odometer_callback, this, std::placeholders::_1));
+
+        tf_buffer_ =std::make_unique<tf2_ros::Buffer>(this->get_clock());
+        tf_listener_ =std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
+
         publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
         timer_ = this->create_wall_timer(std::chrono::milliseconds(timer_period),std::bind(&PositionStart::timer_callback, this));
 
@@ -32,10 +41,14 @@ public:
 
 private:
     // ROS2 objects declarations
-    rclcpp::Subscription<booster_interface::msg::Odometer>::SharedPtr subscriber_;
+    //rclcpp::Subscription<booster_interface::msg::Odometer>::SharedPtr subscriber_;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr state_mach_sub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr state_mach_pub_;
+
+    std::shared_ptr<tf2_ros::TransformListener> tf_listener_{nullptr};
+    std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
+
 
     rclcpp::TimerBase::SharedPtr timer_;
 
@@ -70,6 +83,7 @@ private:
 
     // When using this node with the robot's state machine, uncomment the following line
     State current_state_ = State::WAITING_FOR_STATE_MACHINE; 
+
     // When running this node standalone (without the state machine), uncomment the following line
     //State current_state_ = State::INITIAL_POSE;
 
@@ -145,7 +159,21 @@ private:
             RCLCPP_DEBUG(this->get_logger(), "Timer returning");
             return;
         }
-        
+
+        geometry_msgs::msg::TransformStamped t;
+
+        try
+        {
+            t = tf_buffer_->lookupTransform("odom", "base_link",tf2::TimePointZero);
+            current_angle = atan2(t.transform.rotation.z, t.transform.rotation.w)*2;
+        }
+        catch (const tf2::TransformException & ex)
+        {
+            RCLCPP_ERROR(this->get_logger(), "Could not transform odom to base_link: %s", ex.what());
+            return;
+        }
+
+        RCLCPP_INFO(this->get_logger(),"ANGLE: %f", current_angle);
         
         if (current_state_ == State::INITIAL_POSE) {
             if (has_initial_theta_)
@@ -239,7 +267,7 @@ private:
         }
 
     }
-
+    /*
     void odometer_callback(const booster_interface::msg::Odometer::SharedPtr msg)
     {
         if (YAML_success)
@@ -260,6 +288,7 @@ private:
 
         }
     }
+        */
 
 
 };

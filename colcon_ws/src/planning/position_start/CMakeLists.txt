@@ -12,6 +12,8 @@ find_package(booster_interface REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 add_executable(position_start src/position_start.cpp)
 target_include_directories(position_start PUBLIC
@@ -24,6 +26,8 @@ ament_target_dependencies(
   "booster_interface"
   "geometry_msgs"
   "ament_index_cpp"
+  "tf2"
+  "tf2_ros"
 )
 
 target_link_libraries(position_start
