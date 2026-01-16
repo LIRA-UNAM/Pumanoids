@@ -103,6 +103,8 @@ private:
 
     void loadConfiguration(const std::string& config_file)
     {
+        
+
         try
         {
             std::string package_share_dir = ament_index_cpp::get_package_share_directory("position_start");
@@ -175,6 +177,17 @@ private:
 
         RCLCPP_INFO(this->get_logger(),"ANGLE: %f", current_angle);
         
+        if (!has_initial_theta_ && !has_started_moving_)
+        {
+            initial_theta_ = current_angle;
+            target_angle = initial_theta_ + DEG2RAD(90.0);
+            target_range[0] = target_angle + 0.2;
+            target_range[1] = target_angle - 0.2;
+            has_initial_theta_ = true;
+            RCLCPP_INFO(this->get_logger(), "Initial theta captured: %f radians (%f degrees)", initial_theta_, RAD2DEG(initial_theta_));
+        }
+
+
         if (current_state_ == State::INITIAL_POSE) {
             if (has_initial_theta_)
             {
