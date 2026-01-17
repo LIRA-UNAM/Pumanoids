@@ -2,10 +2,10 @@ import rclpy
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
 from sensor_msgs.msg import Image
+import cv2
 from cv_bridge import CvBridge
 from pumas_vision_msgs.msg import VisionObject
 import numpy
-import cv2
 import os
 from ultralytics import YOLO
 
