@@ -61,6 +61,7 @@ private:
     bool has_initial_theta_ = false;
     bool has_started_moving_ = false;
     float target_angle = 0.0f;
+    float angular_error = 0.0f;
     float target_range[2] = {0, 0};
     float current_angle = 0.0f;
 
@@ -82,10 +83,10 @@ private:
     };
 
     // When using this node with the robot's state machine, uncomment the following line
-    State current_state_ = State::WAITING_FOR_STATE_MACHINE; 
+    //State current_state_ = State::WAITING_FOR_STATE_MACHINE; 
 
     // When running this node standalone (without the state machine), uncomment the following line
-    //State current_state_ = State::INITIAL_POSE;
+    State current_state_ = State::INITIAL_POSE;
 
 
     void sm_enable(const std_msgs::msg::Bool::SharedPtr msg)
@@ -167,7 +168,8 @@ private:
         try
         {
             t = tf_buffer_->lookupTransform("odom", "base_link",tf2::TimePointZero);
-            current_angle = atan2(t.transform.rotation.z, t.transform.rotation.w)*2;
+            current_angle = normalizeAngle(atan2(t.transform.rotation.z, t.transform.rotation.w)*2);
+            has_initial_theta_ = true;
         }
         catch (const tf2::TransformException & ex)
         {
@@ -176,16 +178,6 @@ private:
         }
 
         RCLCPP_INFO(this->get_logger(),"ANGLE: %f", current_angle);
-        
-        if (!has_initial_theta_ && !has_started_moving_)
-        {
-            initial_theta_ = current_angle;
-            target_angle = initial_theta_ + DEG2RAD(90.0);
-            target_range[0] = target_angle + 0.2;
-            target_range[1] = target_angle - 0.2;
-            has_initial_theta_ = true;
-            RCLCPP_INFO(this->get_logger(), "Initial theta captured: %f radians (%f degrees)", initial_theta_, RAD2DEG(initial_theta_));
-        }
 
 
         if (current_state_ == State::INITIAL_POSE) {
@@ -224,27 +216,27 @@ private:
                     // Finished moving in X, start rotation
                     current_state_ = State::ROTATING;
                     RCLCPP_INFO(this->get_logger(), "X movement complete, starting rotation");
+                    target_angle = normalizeAngle(current_angle + DEG2RAD(90.0));
+                    RCLCPP_INFO(this->get_logger(), "Target angle: %f", target_angle);
                 }
                 break;
             case State::ROTATING:
-                if (current_angle < target_range[0] && current_angle < target_range[1])
+                angular_error = shortestAngularDistance(current_angle, target_angle);
+                RCLCPP_DEBUG(this->get_logger(), "Angular error: %f rad", angular_error);
+                if (fabs(angular_error) > 0.2) // Rotation tolerance of 0.2 rad
                 {
-                    // Rotate to the left
-                    twist_msg.angular.z = 0.6;
+                    float angular_vel = 0.6 * angular_error / fabs(angular_error);
+                    twist_msg.angular.z = angular_vel;
                     publisher_->publish(twist_msg);
+                    RCLCPP_DEBUG(this->get_logger(), "Rotating, error: %f rad, angular vel: %f", angular_error, angular_vel);
                 }
-                else if (current_angle > target_range[0] && current_angle > target_range[1])
-                {
-                    // Rotate to the right
-                    twist_msg.angular.z = -0.6;
-                    publisher_->publish(twist_msg);
-                }
-                else if (current_angle < target_range[0] && current_angle > target_range[1])
+                else
                 {
                     // Stop rotation
                     twist_msg.angular.z = 0;
                     publisher_->publish(twist_msg);
                     current_state_ = State::MOVING_Y;
+                    RCLCPP_INFO(this->get_logger(), "Rotation complete, starting Y movement");
                 }
                 break;
             case State::MOVING_Y:
@@ -280,6 +272,26 @@ private:
         }
 
     }
+
+    float normalizeAngle(float angle) 
+    {
+        angle = fmod(angle + M_PI, 2.0 * M_PI);
+        if (angle < 0)
+            angle += 2.0 * M_PI;
+        return angle - M_PI;
+    }
+
+    float shortestAngularDistance(float from, float to)
+    {
+        float diff = normalizeAngle(to - from);
+        if (diff > M_PI)
+            diff -= 2.0 * M_PI;
+        else if (diff < -M_PI)
+            diff += 2.0 * M_PI;
+        return diff;
+    }
+
+
     /*
     void odometer_callback(const booster_interface::msg::Odometer::SharedPtr msg)
     {
