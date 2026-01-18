@@ -1,158 +1,111 @@
+#!/usr/bin/env python3
+
 import rclpy
 import socket
-#from gamestate import GameState
 from rclpy.node import Node
-
+from game_planner import gamestate
+from construct import Enum
 from std_msgs.msg import Bool
 
+SOURCE_PORT = 3838
+DESTINATION_PORT = 3939
+COACH_PORT = 3839
 
-from construct import Byte, Struct, Enum, Bytes, Const, Array, Int16ul, Int16ub, Int32ul, PaddedString, Flag, Int16sl
-
-Short = Int16ul
-
-RobotInfo = "robot_info" / Struct(
-    "penalty" / Byte,
-    "secs_till_unpenalized" / Byte,
-    "number_of_warnings" / Byte,
-    "number_of_yellow_cards" / Byte,
-    "number_of_red_cards" / Byte,
-    "goalkeeper" / Byte
-)
-
-TeamInfo = "team" / Struct(
-    "team_number" / Byte,
-    "field_player_colour" / Enum(Byte,
-                        BLUE=0,
-                        RED=1,
-                        YELLOW=2,
-                        BLACK=3,
-                        WHITE=4,
-                        GREEN=5,
-                        ORANGE=6,
-                        PURPLE=7,
-                        BROWN=8,
-                        GRAY=9
-                        ),
-    "score" / Byte,
-    "penalty_shot" / Byte,  # penalty shot counter
-    "single_shots" / Short,  # bits represent penalty shot success
-    "coah_sequence" / Byte,
-    "coach_message" / Bytes(253),
-    "coach" / RobotInfo,
-    "players" / Array(11, RobotInfo)
-)
-
-GameState = "gamedata" / Struct(
-    "header" / Const(b'RGme'),
-    "version" / Const(12, Short),
-    "packet_number" / Byte,
-    "players_per_team" / Byte,
-    "game_type" / Byte,
-    "game_state" / Enum(Byte,
-                        STATE_INITIAL=0,
-                        # auf startposition gehen
-                        STATE_READY=1,
-                        # bereithalten
-                        STATE_SET=2,
-                        # spielen
-                        STATE_PLAYING=3,
-                        # spiel zu ende
-                        STATE_FINISHED=4
-                        ),
-    "first_half" / Flag,
-    "kick_of_team" / Byte,
-    "secondary_state" / Enum(Byte,
-                             STATE_NORMAL=0,
-                             STATE_PENALTYSHOOT=1,
-                             STATE_OVERTIME=2,
-                             STATE_TIMEOUT=3,
-                             STATE_DIRECT_FREEKICK=4,
-                             STATE_INDIRECT_FREEKICK=5,
-                             STATE_PENALTYKICK=6,
-                             STATE_CORNERKICK=7,
-                             STATE_GOALKICK=8,
-                             STATE_THROWIN=9,
-                             DROPBALL=128,
-                             UNKNOWN=255
-                             ),
-    "secondary_state_info" / Bytes(4),
-    "drop_in_team" / Flag,
-    "drop_in_time" / Short,
-    "seconds_remaining" / Int16sl,
-    "secondary_seconds_remaining" / Int16sl,
-    "teams" / Array(2, "team" / TeamInfo)
-)
-
-GAME_CONTROLLER_RESPONSE_VERSION = 2
-
-ReturnData = Struct(
-    "header" / Const(b"RGrt"),
-    "version" / Byte,
-    "team" / Byte,
-    "player" / Byte,
-    "message" / Byte
-)
-
-
-
-
+class State(Enum):
+    WAITING_CONNECTION = 0
+    START = 1 
+    POSITION_START = 2
+    IDLE = 3
+    ERROR = 4
 
 class PlannerNode(Node):
     def __init__(self):
-        super().__init__('Planner_listener')
-        self.subscription = self.create_subscription(
-            Bool,
-            '/position_start/finish',
-            self.listener_callback,
-            10)
-        self.subscription  # prevent unused variable warning
-        self.publisher = self.create_publisher(Bool, '/position_start/enable', 10)
-        self.send = True
+        super().__init__('planner_node')
+        self.get_logger().info('PlannerNode iniciado. Esperando Ctrl+C para cerrar.')
+        #Publicadores
+        self.position_start_enable_publisher = self.create_publisher(Bool, '/position/start/enable', 10)
+        #Suscriptores 
+        self.subscriber_ = self.create_subscription(Bool, '/position_start_finish', self.position_start_callback, 10)
+        #Parametros 
+        self.declare_parameter('host', "0.0.0.0")
+        self.host = self.get_parameter('host').value
+        self.get_logger().info(f'IP del host en {self.host}')
+        #Variables
+        self.position_start = False
+        self.game_controller = None
+        self.timer = self.create_timer(0.1, self.rustic_smach)
+        self.state = State.START
+        #Socket
 
-    def read(self, state):
-        if state == "STATE_READY":
-            self.publisher.publish(Bool(data = True))
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        self.server_socket.bind((self.host,SOURCE_PORT))
 
-    def listener_callback(self, msg):
-        self.get_logger().info('I heard: "%s"' % msg.data)
-        if msg.data:
-            self.publisher.publish(Bool(data = False))
-            self.send = False
+        self.server_socket.settimeout(0.5)
+
+    def position_start_callback(self, msg):
+        self.position_start = msg.data
+    
+    def rustic_smach(self):
+
+        try:
+            data, addr = self.server_socket.recvfrom(1024)
+            try:
+                self.game_controller = gamestate.GameState.parse(data)
+            except Exception as e:
+                print(f"Un error ha ocurrido {e}")
+                self.state = State.ERROR
+        except socket.timeout:
+            self.state = State.WAITING_CONNECTION
+
+
+        if self.state == State.WAITING_CONNECTION:
+            self.wait_state()
+        elif self.state == State.START:
+            self.start_state()
+        elif self.state == State.POSITION_START:
+            self.position_start_state()
+        elif self.state == State.IDLE:
+            self.idle_state()
+        elif self.state == State.ERROR:
+            self.error_state()
+    
+    def idle_state(self):
+        self.get_logger().info("IDLE_STATE new states comming soon")
+        self.state = State.IDLE
+
+    def wait_state(self):
+        self.get_logger().info("WAITING_CONNECTION waiting for game controller conection")
+        self.state = State.START
+
+    def start_state(self):
+        self.get_logger().info("START_STATE waiting for ready from game controller")
+        if self.game_controller.game_state == "STATE_READY":
+            self.position_start_enable_publisher.publish(Bool(data = True))
+            self.state = State.POSITION_START
+        else:
+            self.state = State.START
+
+    def position_start_state(self):
+        self.get_logger().info("POSITION_START_STATE walking to my position")
+        if self.position_start:
+            self.state = State.IDLE
+        else:
+            self.state = State.POSITION_START
+
+    def error_state(self):
+        self.get_logger().info("ERROR you shouldn't be here :c")
+        self.state = State.IDLE
 
 
 def main(args=None):
-    host = "0.0.0.0"
-    port = 3838
-    print('Initializing')
     rclpy.init(args=args)
 
     node = PlannerNode()
 
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-    server_socket.bind((host,port))
-
-    server_socket.settimeout(0.5)
-
-    while rclpy.ok():
-        rclpy.spin_once(node, timeout_sec=0.0)
-
-        try:
-            data, addr = server_socket.recvfrom(1024)
-        except socket.timeout:
-            continue
-
-        try:
-            gamestate = GameState.parse(data)
-        except Exception as e:
-            node.get_logger().warn(f"Un error ha ocurrido {e}")
-            continue
-        
-
-        if node.send:
-            node.read(gamestate.game_state)
-
-    Plannernode.destroy_node()
+    rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()
+
 
 
 if __name__ == '__main__':
