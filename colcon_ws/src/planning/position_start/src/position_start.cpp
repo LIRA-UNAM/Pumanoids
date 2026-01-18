@@ -83,10 +83,10 @@ private:
     };
 
     // When using this node with the robot's state machine, uncomment the following line
-    //State current_state_ = State::WAITING_FOR_STATE_MACHINE; 
+    State current_state_ = State::WAITING_FOR_STATE_MACHINE; 
 
     // When running this node standalone (without the state machine), uncomment the following line
-    State current_state_ = State::INITIAL_POSE;
+    //State current_state_ = State::INITIAL_POSE;
 
 
     void sm_enable(const std_msgs::msg::Bool::SharedPtr msg)

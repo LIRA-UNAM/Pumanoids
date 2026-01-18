@@ -7,7 +7,7 @@ This is package contains the `position_start` node. This node walks the robots f
 
 The robots must be placed on the right edge of the field (on the right touch line in the team's side, close to the corner mark).
 
-For the Booster T1, the `twist_to_t1` node must be running.
+For the Booster T1, the `twist_to_t1` node must be running.   --packages-ignore dynamixel gazebo_env
 
     ros2 run twist_to_t1 twist_to_t1
 
