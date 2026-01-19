@@ -9,3 +9,6 @@ position_start:
     right:
       x: 2.5
       y: 2
+    taco:
+      x: 1.01
+      y: 0.99

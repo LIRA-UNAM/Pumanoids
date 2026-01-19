@@ -7,9 +7,27 @@ This is package contains the `position_start` node. This node walks the robots f
 
 The robots must be placed on the right edge of the field (on the right touch line in the team's side, close to the corner mark).
 
-For the Booster T1, the `twist_to_t1` node must be running.   --packages-ignore dynamixel gazebo_env
+### Booster T1
+
+The `twist_to_t1`  must be running.
 
     ros2 run twist_to_t1 twist_to_t1
+
+and `odom_to_tf` too
+
+    ros2 run twist_to_t1 odom_to_tf
+
+### Unitree G1
+
+The `twist_to_G1`  must be running.
+
+    ros2 run twist_to_g1 twist_to_g1
+
+and `odom_to_tf` too
+
+    ros2 run twist_to_g1 odom_to_tf
+
+### Running the node
 
 To run the `position_start` node:
 
@@ -56,7 +74,7 @@ In order for the node to parse the YAML file, it must have the following structu
 
 You can add as many targets as you need.
 
-> ✅ There's **no** need for re-building the package after modifying a YAML file. Just save it and run again.
+> ✅ You **need** to re-compile the package after modifying the YAML file.
 
 ### YAML file selection
 
