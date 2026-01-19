@@ -7,7 +7,6 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/buffer.h"
 #include "rclcpp/rclcpp.hpp"
-//#include "booster_interface/msg/odometer.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
@@ -27,11 +26,8 @@ public:
         state_mach_sub_ = this->create_subscription<std_msgs::msg::Bool>("/position_start/enable", 10, std::bind(&PositionStart::sm_enable, this, std::placeholders::_1));
         state_mach_pub_ = this->create_publisher<std_msgs::msg::Bool>("/position_start/finish", 10);
 
-        //subscriber_ = this->create_subscription<booster_interface::msg::Odometer>("/odometer_state", 10, std::bind(&PositionStart::odometer_callback, this, std::placeholders::_1));
-
         tf_buffer_ =std::make_unique<tf2_ros::Buffer>(this->get_clock());
         tf_listener_ =std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-
 
         publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
         timer_ = this->create_wall_timer(std::chrono::milliseconds(timer_period),std::bind(&PositionStart::timer_callback, this));
@@ -41,14 +37,12 @@ public:
 
 private:
     // ROS2 objects declarations
-    //rclcpp::Subscription<booster_interface::msg::Odometer>::SharedPtr subscriber_;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr state_mach_sub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr state_mach_pub_;
 
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_{nullptr};
     std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
-
 
     rclcpp::TimerBase::SharedPtr timer_;
 
@@ -62,7 +56,6 @@ private:
     bool has_started_moving_ = false;
     float target_angle = 0.0f;
     float angular_error = 0.0f;
-    float target_range[2] = {0, 0};
     float current_angle = 0.0f;
 
     std::string target_position_;
@@ -104,52 +97,50 @@ private:
 
     void loadConfiguration(const std::string& config_file)
     {
-        
-
         try
         {
+            // Loading the file
             std::string package_share_dir = ament_index_cpp::get_package_share_directory("position_start");
             std::string full_path = package_share_dir + "/" + config_file;
-            
             RCLCPP_INFO(this->get_logger(), full_path.c_str());
-
             YAML::Node config = YAML::LoadFile(full_path);
+
+            // Parsing
             YAML::Node position_params = config["position_start"]["ros__parameters"];
 
-            if (target_position_ == "center")
+            try
             {
-                target_x_ = position_params["center"]["x"].as<float>();
-                target_y_ = position_params["center"]["y"].as<float>();
-            }
-            else if (target_position_ == "left")
-            {
-                target_x_ = position_params["left"]["x"].as<float>();
-                target_y_ = position_params["left"]["y"].as<float>();
-            }
-            else if (target_position_ == "right")
-            {
-                target_x_ = position_params["right"]["x"].as<float>();
-                target_y_ = position_params["right"]["y"].as<float>();
-            }
-            else
-            {
-                YAML_success = false;
                 if (target_position_ == "no_input")
                 {
+                    // User didnt specified a target
+                    YAML_success = false;
                     RCLCPP_WARN(this->get_logger(), "TARGET NOT SPECIFIED");
                     RCLCPP_WARN(this->get_logger(), "Specify a target ('center', 'left' or 'right')");
                 }
+                else
+                {
+                    // Store x and y
+                    target_x_ = position_params[target_position_]["x"].as<float>();
+                    target_y_ = position_params[target_position_]["y"].as<float>();
+                }
+            }
+            catch (const YAML::Exception& ex)
+            {
+                // Target wasnt found in the yaml
+                YAML_success = false;
                 RCLCPP_ERROR(this->get_logger(), "Unknown target position: %s", target_position_.c_str());
             }
             
 
             if (YAML_success)
             {
+                // Successsss
                 RCLCPP_INFO(this->get_logger(), "Target %s: x=%f, y=%f", target_position_.c_str(), target_x_, target_y_);
             }
         } 
         catch (const YAML::Exception& e)
         {
+            // Yaml file not found
             YAML_success = false;
             RCLCPP_ERROR(this->get_logger(), "Error loading YAML: %s", e.what());
         }
@@ -159,12 +150,14 @@ private:
     {
         if (!YAML_success || current_state_ == State::FINISHED)
         {
+            // No need to run the whole callback when finish or when error
             RCLCPP_DEBUG(this->get_logger(), "Timer returning");
             return;
         }
 
         geometry_msgs::msg::TransformStamped t;
 
+        // Get the robot rotation angle (yaw)
         try
         {
             t = tf_buffer_->lookupTransform("odom", "base_link",tf2::TimePointZero);
@@ -179,7 +172,7 @@ private:
 
         RCLCPP_INFO(this->get_logger(),"ANGLE: %f", current_angle);
 
-
+        // Dont move unitl we have the initial angle
         if (current_state_ == State::INITIAL_POSE) {
             if (has_initial_theta_)
             {
@@ -202,7 +195,7 @@ private:
             case State::MOVING_X:
                 if (current_timer_pos_x < target_x_)
                 {
-                    twist_msg.linear.x = 0.4; // Your desired forward speed
+                    twist_msg.linear.x = 0.4; // Robot forward speed
                     current_timer_pos_x += timer_period / 1000.0; // Convert ms to seconds
                     publisher_->publish(twist_msg);
                     
@@ -290,31 +283,6 @@ private:
             diff += 2.0 * M_PI;
         return diff;
     }
-
-
-    /*
-    void odometer_callback(const booster_interface::msg::Odometer::SharedPtr msg)
-    {
-        if (YAML_success)
-        {
-            RCLCPP_DEBUG(this->get_logger(), "x: %f\ty: %f\ttheta: %f", msg->x, msg->y, msg->theta);
-
-            if (!has_initial_theta_ && !has_started_moving_)
-            {
-                initial_theta_ = msg->theta;
-                target_angle = initial_theta_ + DEG2RAD(90.0);
-                target_range[0] = target_angle + 0.2;
-                target_range[1] = target_angle - 0.2;
-                has_initial_theta_ = true;
-                RCLCPP_INFO(this->get_logger(), "Initial theta captured: %f radians (%f degrees)", initial_theta_, RAD2DEG(initial_theta_));
-            }
-
-            current_angle = msg->theta;
-
-        }
-    }
-        */
-
 
 };
 
