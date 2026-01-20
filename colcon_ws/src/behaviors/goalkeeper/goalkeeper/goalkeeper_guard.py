@@ -103,6 +103,7 @@ class GoalkeeperGuard(Node):
                 elif state == SM_BALL_TRACKING:
                     self.get_logger().info("SM_BALL_TRACKING")
                     cmd_vel_msg = Twist()
+                    self.get_logger().info(str(self.move))
                     cmd_vel_msg.linear.y = float(self.move)
                     self.pub_cmd_vel.publish(cmd_vel_msg)
                     state = SM_INIT
