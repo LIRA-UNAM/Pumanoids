@@ -22,7 +22,7 @@ class GoalkeeperGuard(Node):
 
     def callback_ball(self, msg):
         self.ball_center_x = msg.x
-        self.ball_center_y = msg.y
+        self.ball_center_y = msg.pose.position.y
 
     def __init__(self):
         super().__init__("goalkeeper_guard")
