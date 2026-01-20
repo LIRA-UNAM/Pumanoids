@@ -83,17 +83,17 @@ class GoalkeeperGuard(Node):
                     self.get_logger().info("SM_WAIT_BALL_CENTER")
 
                     if self.ball_center_y > 0.02:
-                        self.get_logger().info("mueve a la derecha")
+                        self.get_logger().info("mueve a la izquierda")
                         time.sleep(0.5)
                         self.move = 0.2
 
                     elif self.ball_center_y < -0.02:
-                        self.get_logger().info("mueve a la izquierda")
+                        self.get_logger().info("mueve a la derecha")
                         time.sleep(0.5)
                         self.move = -0.2
                         
                     else:
-                        self.get_logger().info("mueve a la izquierda")
+                        self.get_logger().info("sin movimiento")
                         time.sleep(0.5)
                         self.move = 0.0
 
