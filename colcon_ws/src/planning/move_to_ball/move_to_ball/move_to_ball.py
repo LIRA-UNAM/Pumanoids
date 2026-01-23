@@ -4,7 +4,7 @@ import rclpy
 from rclpy.node import Node
 import math
 from enum import Enum
-from std_msgs.std_msgs import Bool
+from std_msgs.msg import Bool
 from geometry_msgs.msg import Twist
 import tf2_ros
 from tf2_ros import TransformException
