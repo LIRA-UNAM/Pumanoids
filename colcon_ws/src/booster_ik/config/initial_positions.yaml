@@ -1,0 +1,26 @@
+# Default initial positions for T1's ros2_control fake system
+
+initial_positions:
+  AAHead_yaw: 0
+  Head_pitch: 0
+  Left_Ankle_Pitch: 0
+  Left_Ankle_Roll: 0
+  Left_Elbow_Pitch: 0
+  Left_Elbow_Yaw: 0
+  Left_Hip_Pitch: 0
+  Left_Hip_Roll: 0
+  Left_Hip_Yaw: 0
+  Left_Knee_Pitch: 0
+  Left_Shoulder_Pitch: 0
+  Left_Shoulder_Roll: 0
+  Right_Ankle_Pitch: 0
+  Right_Ankle_Roll: 0
+  Right_Elbow_Pitch: 0
+  Right_Elbow_Yaw: 0
+  Right_Hip_Pitch: 0
+  Right_Hip_Roll: 0
+  Right_Hip_Yaw: 0
+  Right_Knee_Pitch: 0
+  Right_Shoulder_Pitch: 0
+  Right_Shoulder_Roll: 0
+  Waist: 0
