@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--This does not replace URDF, and is not an extension of URDF.
+    This is a format for representing semantic information about the robot structure.
+    A URDF file must exist for this robot as well, where the joints and the links that are referenced are defined
+-->
+<robot name="T1">
+    <!--GROUPS: Representation of a set of joints and links. This can be useful for specifying DOF to plan for, defining arms, end effectors, etc-->
+    <!--LINKS: When a link is specified, the parent joint of that link (if it exists) is automatically included-->
+    <!--JOINTS: When a joint is specified, the child link of that joint (which will always exist) is automatically included-->
+    <!--CHAINS: When a chain is specified, all the links along the chain (including endpoints) are included in the group. Additionally, all the joints that are parents to included links are also included. This means that joints along the chain and the parent joint of the base link are included in the group-->
+    <!--SUBGROUPS: Groups can also be formed by referencing to already defined group names-->
+    <group name="r_arm">
+        <joint name="Right_Shoulder_Pitch"/>
+        <joint name="Right_Shoulder_Roll"/>
+        <joint name="Right_Elbow_Pitch"/>
+        <joint name="Right_Elbow_Yaw"/>
+        <chain base_link="AR1" tip_link="right_hand_link"/>
+    </group>
+    <group name="l_arm">
+        <joint name="Left_Shoulder_Pitch"/>
+        <joint name="Left_Shoulder_Roll"/>
+        <joint name="Left_Elbow_Pitch"/>
+        <joint name="Left_Elbow_Yaw"/>
+        <chain base_link="AL1" tip_link="left_hand_link"/>
+    </group>
+    <group name="torso">
+        <joint name="Waist"/>
+    </group>
+    <group name="r_leg">
+        <joint name="Right_Hip_Pitch"/>
+        <joint name="Right_Hip_Roll"/>
+        <joint name="Right_Hip_Yaw"/>
+        <joint name="Right_Knee_Pitch"/>
+        <joint name="Right_Ankle_Pitch"/>
+        <joint name="Right_Ankle_Roll"/>
+        <chain base_link="Hip_Pitch_Right" tip_link="right_foot_link"/>
+    </group>
+    <group name="l_leg">
+        <joint name="Left_Hip_Pitch"/>
+        <joint name="Left_Hip_Roll"/>
+        <joint name="Left_Hip_Yaw"/>
+        <joint name="Left_Knee_Pitch"/>
+        <joint name="Left_Ankle_Pitch"/>
+        <joint name="Left_Ankle_Roll"/>
+        <chain base_link="Hip_Pitch_Left" tip_link="left_foot_link"/>
+    </group>
+    <group name="head">
+        <joint name="AAHead_yaw"/>
+        <joint name="Head_pitch"/>
+        <chain base_link="H1" tip_link="H2"/>
+    </group>
+    <group name="booster_T1">
+        <joint name="AAHead_yaw"/>
+        <joint name="Head_pitch"/>
+        <joint name="Left_Ankle_Pitch"/>
+        <joint name="Left_Ankle_Roll"/>
+        <joint name="Left_Elbow_Pitch"/>
+        <joint name="Left_Elbow_Yaw"/>
+        <joint name="Left_Hip_Pitch"/>
+        <joint name="Left_Hip_Roll"/>
+        <joint name="Left_Hip_Yaw"/>
+        <joint name="Left_Knee_Pitch"/>
+        <joint name="Left_Shoulder_Pitch"/>
+        <joint name="Left_Shoulder_Roll"/>
+        <joint name="Right_Ankle_Pitch"/>
+        <joint name="Right_Ankle_Roll"/>
+        <joint name="Right_Elbow_Pitch"/>
+        <joint name="Right_Elbow_Yaw"/>
+        <joint name="Right_Hip_Pitch"/>
+        <joint name="Right_Hip_Roll"/>
+        <joint name="Right_Hip_Yaw"/>
+        <joint name="Right_Knee_Pitch"/>
+        <joint name="Right_Shoulder_Pitch"/>
+        <joint name="Right_Shoulder_Roll"/>
+        <joint name="Waist"/>
+        <chain base_link="Trunk" tip_link="right_foot_link"/>
+        <group name="r_arm"/>
+        <group name="l_arm"/>
+        <group name="torso"/>
+        <group name="r_leg"/>
+        <group name="l_leg"/>
+        <group name="head"/>
+    </group>
+    <!--GROUP STATES: Purpose: Define a named state for a particular group, in terms of joint values. This is useful to define states like 'folded arms'-->
+    <group_state name="r_arm_zero_pose" group="r_arm">
+        <joint name="Right_Elbow_Pitch" value="0"/>
+        <joint name="Right_Elbow_Yaw" value="0"/>
+        <joint name="Right_Shoulder_Pitch" value="0"/>
+        <joint name="Right_Shoulder_Roll" value="0"/>
+    </group_state>
+    <group_state name="l_arm_zero_pose" group="l_arm">
+        <joint name="Left_Elbow_Pitch" value="0"/>
+        <joint name="Left_Elbow_Yaw" value="0"/>
+        <joint name="Left_Shoulder_Pitch" value="0"/>
+        <joint name="Left_Shoulder_Roll" value="0"/>
+    </group_state>
+    <group_state name="torso_zero_pose" group="torso">
+        <joint name="Waist" value="0"/>
+    </group_state>
+    <group_state name="r_leg_zero_pose" group="r_leg">
+        <joint name="Right_Ankle_Pitch" value="0"/>
+        <joint name="Right_Ankle_Roll" value="0"/>
+        <joint name="Right_Hip_Pitch" value="0"/>
+        <joint name="Right_Hip_Roll" value="0"/>
+        <joint name="Right_Hip_Yaw" value="0"/>
+        <joint name="Right_Knee_Pitch" value="0"/>
+    </group_state>
+    <group_state name="l_leg_zero_pose" group="l_leg">
+        <joint name="Left_Ankle_Pitch" value="0"/>
+        <joint name="Left_Ankle_Roll" value="0"/>
+        <joint name="Left_Hip_Pitch" value="0"/>
+        <joint name="Left_Hip_Roll" value="0"/>
+        <joint name="Left_Hip_Yaw" value="0"/>
+        <joint name="Left_Knee_Pitch" value="0"/>
+    </group_state>
+    <group_state name="head_zero_pose" group="head">
+        <joint name="AAHead_yaw" value="0"/>
+        <joint name="Head_pitch" value="0"/>
+    </group_state>
+    <group_state name="zero_pose" group="booster_T1">
+        <joint name="AAHead_yaw" value="0"/>
+        <joint name="Head_pitch" value="0"/>
+        <joint name="Left_Ankle_Pitch" value="0"/>
+        <joint name="Left_Ankle_Roll" value="0"/>
+        <joint name="Left_Elbow_Pitch" value="0"/>
+        <joint name="Left_Elbow_Yaw" value="0"/>
+        <joint name="Left_Hip_Pitch" value="0"/>
+        <joint name="Left_Hip_Roll" value="0"/>
+        <joint name="Left_Hip_Yaw" value="0"/>
+        <joint name="Left_Knee_Pitch" value="0"/>
+        <joint name="Left_Shoulder_Pitch" value="0"/>
+        <joint name="Left_Shoulder_Roll" value="0"/>
+        <joint name="Right_Ankle_Pitch" value="0"/>
+        <joint name="Right_Ankle_Roll" value="0"/>
+        <joint name="Right_Elbow_Pitch" value="0"/>
+        <joint name="Right_Elbow_Yaw" value="0"/>
+        <joint name="Right_Hip_Pitch" value="0"/>
+        <joint name="Right_Hip_Roll" value="0"/>
+        <joint name="Right_Hip_Yaw" value="0"/>
+        <joint name="Right_Knee_Pitch" value="0"/>
+        <joint name="Right_Shoulder_Pitch" value="0"/>
+        <joint name="Right_Shoulder_Roll" value="0"/>
+        <joint name="Waist" value="0"/>
+    </group_state>
+    <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
+    <end_effector name="r_hand" parent_link="right_hand_link" group="r_arm"/>
+    <end_effector name="l_hand" parent_link="left_hand_link" group="l_arm"/>
+    <end_effector name="r_foot" parent_link="right_foot_link" group="r_leg"/>
+    <end_effector name="l_foot" parent_link="left_foot_link" group="l_leg"/>
+    <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
+    <disable_collisions link1="AL3" link2="AR3" reason="Never"/>
+    <disable_collisions link1="AL3" link2="Hip_Yaw_Left" reason="Never"/>
+    <disable_collisions link1="AL3" link2="Hip_Yaw_Right" reason="Never"/>
+    <disable_collisions link1="AL3" link2="Trunk" reason="Adjacent"/>
+    <disable_collisions link1="AL3" link2="left_hand_link" reason="Adjacent"/>
+    <disable_collisions link1="AL3" link2="right_hand_link" reason="Never"/>
+    <disable_collisions link1="AR3" link2="Hip_Yaw_Left" reason="Never"/>
+    <disable_collisions link1="AR3" link2="Hip_Yaw_Right" reason="Never"/>
+    <disable_collisions link1="AR3" link2="Shank_Left" reason="Never"/>
+    <disable_collisions link1="AR3" link2="Trunk" reason="Adjacent"/>
+    <disable_collisions link1="AR3" link2="left_hand_link" reason="Never"/>
+    <disable_collisions link1="AR3" link2="right_hand_link" reason="Adjacent"/>
+    <disable_collisions link1="H2" link2="Hip_Yaw_Left" reason="Never"/>
+    <disable_collisions link1="H2" link2="Hip_Yaw_Right" reason="Never"/>
+    <disable_collisions link1="H2" link2="Shank_Left" reason="Never"/>
+    <disable_collisions link1="H2" link2="Shank_Right" reason="Never"/>
+    <disable_collisions link1="H2" link2="Trunk" reason="Adjacent"/>
+    <disable_collisions link1="H2" link2="left_foot_link" reason="Never"/>
+    <disable_collisions link1="H2" link2="right_foot_link" reason="Never"/>
+    <disable_collisions link1="Hip_Yaw_Left" link2="Hip_Yaw_Right" reason="Adjacent"/>
+    <disable_collisions link1="Hip_Yaw_Left" link2="Shank_Left" reason="Adjacent"/>
+    <disable_collisions link1="Hip_Yaw_Left" link2="Trunk" reason="Adjacent"/>
+    <disable_collisions link1="Hip_Yaw_Left" link2="left_foot_link" reason="Never"/>
+    <disable_collisions link1="Hip_Yaw_Right" link2="Shank_Right" reason="Adjacent"/>
+    <disable_collisions link1="Hip_Yaw_Right" link2="Trunk" reason="Adjacent"/>
+    <disable_collisions link1="Hip_Yaw_Right" link2="right_foot_link" reason="Never"/>
+    <disable_collisions link1="Shank_Left" link2="left_foot_link" reason="Adjacent"/>
+    <disable_collisions link1="Shank_Right" link2="right_foot_link" reason="Adjacent"/>
+</robot>

@@ -1,0 +1,10 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: booster_ik
+    relative_path: urdf/T1_serial.urdf.xarco
+  srdf:
+    relative_path: config/T1.srdf
+  package_settings:
+    author_name: LIRA UNAM
+    author_email: lira.unam@gmail.com
+    generated_timestamp: 1769404424
