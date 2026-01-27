@@ -162,10 +162,12 @@ private:
         {
             t = tf_buffer_->lookupTransform("odom", "base_link",tf2::TimePointZero);
             current_angle = normalizeAngle(atan2(t.transform.rotation.z, t.transform.rotation.w)*2);
+            // Has initial angle. Can start moving
             has_initial_theta_ = true;
         }
         catch (const tf2::TransformException & ex)
         {
+            // It won't move if there's no angle
             RCLCPP_ERROR(this->get_logger(), "Could not transform odom to base_link: %s", ex.what());
             return;
         }
@@ -195,9 +197,10 @@ private:
             case State::MOVING_X:
                 if (current_timer_pos_x < target_x_)
                 {
-                    twist_msg.linear.x = 0.4; // Robot forward speed
-                    current_timer_pos_x += timer_period / 1000.0; // Convert ms to seconds
+                    // Moving forward along the X axis
+                    twist_msg.linear.x = 0.4; // Walk speed
                     publisher_->publish(twist_msg);
+                    current_timer_pos_x += timer_period / 1000.0; // Convert ms to seconds
                     
                     RCLCPP_INFO(this->get_logger(), "Moving X: %f/%f s", current_timer_pos_x, target_x_);
                 }
@@ -216,7 +219,7 @@ private:
             case State::ROTATING:
                 angular_error = shortestAngularDistance(current_angle, target_angle);
                 RCLCPP_DEBUG(this->get_logger(), "Angular error: %f rad", angular_error);
-                if (fabs(angular_error) > 0.2) // Rotation tolerance of 0.2 rad
+                if (fabs(angular_error) > 0.1) // Rotation tolerance of 0.1 rad
                 {
                     float angular_vel = 0.6 * angular_error / fabs(angular_error);
                     twist_msg.angular.z = angular_vel;
@@ -236,10 +239,9 @@ private:
                 if (current_timer_pos_y < target_y_)
                 {
                     // Move forward along Y axis
-
-                    twist_msg.linear.x = 0.4; // Your desired forward speed
-                    current_timer_pos_y += timer_period / 1000.0; // Convert ms to seconds
+                    twist_msg.linear.x = 0.4; // Walk speed
                     publisher_->publish(twist_msg);
+                    current_timer_pos_y += timer_period / 1000.0; // Convert ms to seconds
 
                     RCLCPP_INFO(this->get_logger(), "Moving Y: %f/%f s", current_timer_pos_y, target_y_);
                 }
