@@ -1,7 +1,18 @@
+/*
+*   
+*
+*
+*
+*
+*
+*/
+
+
 #include <chrono>
 #include <iostream>
 #include <string>
-
+#include <getopt.h>
+#include <yaml-cpp/yaml.h>
 
 #include "tf2/exceptions.h"
 #include "tf2_ros/transform_listener.h"
@@ -10,30 +21,67 @@
 #include "std_msgs/msg/bool.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
-#include <yaml-cpp/yaml.h>
 
 #define RAD2DEG(x) ((x)*180/M_PI)
 #define DEG2RAD(x) ((x)*M_PI/180.)
 
+// Do NOT change this variables manually
+// Used for command options
+bool inverse_rotation_mode = false; // To rotate to the left (clockwise) instead of the right (counterclockwise)
+bool standalone_mode = false; // To run the node without the robot state machine
+bool debug_mode = false; // To lower the verbose level to DEBUG
+std::string target_position; // To store the user-specified target position
 
 class PositionStart : public rclcpp::Node
 {
 public:
     PositionStart(const std::string& target_position) : Node("position_start"), target_position_(target_position)
     {
-        loadConfiguration("config/positions_demo.yaml");
+        if (debug_mode)
+        {
+            // Set logger to debug level if -d option is used
+            this->get_logger().set_level(rclcpp::Logger::Level::Debug);
+        }
+        else
+        {
+            // Default logger level
+            this->get_logger().set_level(rclcpp::Logger::Level::Info);
+        }
 
+        loadConfiguration("config/positions_demo.yaml"); // YAML file parsing function
+
+        // Publisher and subscriber for state machine topics
         state_mach_sub_ = this->create_subscription<std_msgs::msg::Bool>("/position_start/enable", 10, std::bind(&PositionStart::sm_enable, this, std::placeholders::_1));
         state_mach_pub_ = this->create_publisher<std_msgs::msg::Bool>("/position_start/finish", 10);
 
+        // Coordinate transformation
         tf_buffer_ =std::make_unique<tf2_ros::Buffer>(this->get_clock());
         tf_listener_ =std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
+        // Publisher for robot movement
         publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
+
+        // Timer for the node operation
         timer_ = this->create_wall_timer(std::chrono::milliseconds(timer_period),std::bind(&PositionStart::timer_callback, this));
 
+        // Node initialization success feedback
         RCLCPP_INFO(this->get_logger(), "position_start node started");
-    }
+        RCLCPP_DEBUG(this->get_logger(), "Debug mode enabled");
+
+        // Set standalone_mode if specified
+        if (!standalone_mode)
+            {
+                // Using the state machine
+                RCLCPP_INFO(this->get_logger(), "Waiting for state machine...");
+                current_state_ = State::WAITING_FOR_STATE_MACHINE;
+            }
+            else
+            {
+                // Not using the state machine
+                RCLCPP_INFO(this->get_logger(), "Using node in standalone mode (without state machine)");
+                current_state_ = State::INITIAL_POSE;
+            }
+        }
 
 private:
     // ROS2 objects declarations
@@ -47,7 +95,7 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
 
     // Variables
-    int timer_period = 500;
+    int timer_period = 500; // Timer callback period
     float current_timer_pos_x = 0;
     float current_timer_pos_y = 0;
 
@@ -58,10 +106,9 @@ private:
     float angular_error = 0.0f;
     float current_angle = 0.0f;
 
-    std::string target_position_;
-    double target_x_ = 0.0;
-    double target_y_ = 0.0;
-    size_t count_;
+    std::string target_position_; 
+    double target_x_ = 0.0; // Target in the X axis
+    double target_y_ = 0.0; // Target in the Y axis
 
     bool YAML_success = true;
 
@@ -75,12 +122,7 @@ private:
         FINISHED
     };
 
-    // When using this node with the robot's state machine, uncomment the following line
-    State current_state_ = State::WAITING_FOR_STATE_MACHINE; 
-
-    // When running this node standalone (without the state machine), uncomment the following line
-    //State current_state_ = State::INITIAL_POSE;
-
+    State current_state_ = State::WAITING_FOR_STATE_MACHINE;
 
     void sm_enable(const std_msgs::msg::Bool::SharedPtr msg)
     {
@@ -102,7 +144,7 @@ private:
             // Loading the file
             std::string package_share_dir = ament_index_cpp::get_package_share_directory("position_start");
             std::string full_path = package_share_dir + "/" + config_file;
-            RCLCPP_INFO(this->get_logger(), full_path.c_str());
+            RCLCPP_DEBUG(this->get_logger(), full_path.c_str());
             YAML::Node config = YAML::LoadFile(full_path);
 
             // Parsing
@@ -134,8 +176,8 @@ private:
 
             if (YAML_success)
             {
-                // Successsss
-                RCLCPP_INFO(this->get_logger(), "Target %s: x=%f, y=%f", target_position_.c_str(), target_x_, target_y_);
+                // Success
+                RCLCPP_INFO(this->get_logger(), "Target %s: x=%0.2f, y=%0.2f", target_position_.c_str(), target_x_, target_y_);
             }
         } 
         catch (const YAML::Exception& e)
@@ -172,7 +214,7 @@ private:
             return;
         }
 
-        RCLCPP_INFO(this->get_logger(),"ANGLE: %f", current_angle);
+        RCLCPP_DEBUG(this->get_logger(),"ANGLE: %0.3f", current_angle);
 
         // Dont move unitl we have the initial angle
         if (current_state_ == State::INITIAL_POSE) {
@@ -184,7 +226,7 @@ private:
             }
             else
             {
-                RCLCPP_INFO(this->get_logger(), "Waiting for initial theta from odometer...");
+                RCLCPP_DEBUG(this->get_logger(), "Waiting for initial theta from odometer...");
                 return;
             }
         }
@@ -202,18 +244,26 @@ private:
                     publisher_->publish(twist_msg);
                     current_timer_pos_x += timer_period / 1000.0; // Convert ms to seconds
                     
-                    RCLCPP_INFO(this->get_logger(), "Moving X: %f/%f s", current_timer_pos_x, target_x_);
+                    RCLCPP_DEBUG(this->get_logger(), "Moving X: %f/%f s", current_timer_pos_x, target_x_);
                 }
                 else
                 {
                     // Stop the robot
                     twist_msg.linear.x = 0;
+                    twist_msg.angular.z = 0;
                     publisher_->publish(twist_msg);
                     // Finished moving in X, start rotation
                     current_state_ = State::ROTATING;
                     RCLCPP_INFO(this->get_logger(), "X movement complete, starting rotation");
-                    target_angle = normalizeAngle(current_angle + DEG2RAD(90.0));
-                    RCLCPP_INFO(this->get_logger(), "Target angle: %f", target_angle);
+                    if (inverse_rotation_mode)
+                    {
+                        target_angle = normalizeAngle(current_angle - DEG2RAD(90.0));
+                    }
+                    else
+                    {
+                        target_angle = normalizeAngle(current_angle + DEG2RAD(90.0));
+                    }
+                    RCLCPP_DEBUG(this->get_logger(), "Target angle: %f", target_angle);
                 }
                 break;
             case State::ROTATING:
@@ -222,6 +272,7 @@ private:
                 if (fabs(angular_error) > 0.1) // Rotation tolerance of 0.1 rad
                 {
                     float angular_vel = 0.6 * angular_error / fabs(angular_error);
+                    // Rotate
                     twist_msg.angular.z = angular_vel;
                     publisher_->publish(twist_msg);
                     RCLCPP_DEBUG(this->get_logger(), "Rotating, error: %f rad, angular vel: %f", angular_error, angular_vel);
@@ -243,7 +294,7 @@ private:
                     publisher_->publish(twist_msg);
                     current_timer_pos_y += timer_period / 1000.0; // Convert ms to seconds
 
-                    RCLCPP_INFO(this->get_logger(), "Moving Y: %f/%f s", current_timer_pos_y, target_y_);
+                    RCLCPP_DEBUG(this->get_logger(), "Moving Y: %f/%f s", current_timer_pos_y, target_y_);
                 }
                 else
                 {
@@ -288,14 +339,50 @@ private:
 
 };
 
-int main(int argc, char * argv[])
-{
-    std::string target_position = "no_input"; //Setting a safe default to avoid unfunny errors
-    if (argc > 1) 
-    {
-        target_position = argv[1];  // First argument after node name
+
+void parse_arguments(int argc, char* argv[]) {
+    int opt;
+    while ((opt = getopt(argc, argv, "isdh")) != -1) {
+        switch (opt) {
+            case 'i':
+                inverse_rotation_mode = true;
+                break;
+            case 's':
+                standalone_mode = true;
+                break;
+            case 'd':
+                debug_mode = true;
+                break;
+            case 'h':
+                std::cout << "Usage: position_start [-i] [-s] [-d] <target_position>\n"
+                          << "Options:\n"
+                          << "  -i    Inverse rotation mode (rotate clockwise)\n"
+                          << "  -s    Standalone mode (without state machine)\n"
+                          << "  -d    Enable debug mode (verbose output)\n"
+                          << "  -h    Show this help message\n";
+                exit(0);
+                break;
+            case '?':
+                std::cerr << "Unknown option: -" << char(optopt) << std::endl;
+                break;
+            default:
+                break;
+        }
     }
 
+    // The target position should be after options
+    if (optind < argc)
+    {
+        target_position = argv[optind];
+    } else
+    {
+        target_position = "no_input";
+    }
+}
+
+int main(int argc, char * argv[])
+{
+    parse_arguments(argc, argv);
     rclcpp::init(argc, argv);
     auto node = std::make_shared<PositionStart>(target_position);
     rclcpp::spin(node);
