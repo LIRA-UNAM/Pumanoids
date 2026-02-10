@@ -11,7 +11,7 @@ The robots must be placed on the right edge of the field (on the right touch lin
 
 To run the `position_start` node:
 
-    ros2 run position_start position_start <target>
+    ros2 run position_start position_start <target> <options>
 
 Where `<target>` can be:
 
@@ -19,7 +19,13 @@ Where `<target>` can be:
 - `left`
 - `right`
 
-Or any other target position specified in the [YAML](config/positions.yaml) file
+Or any other target position specified in the [YAML](config/) file
+
+Additionally, the following `<options>` are available:
+
+- `-d` run with logging level set to `DEBUG`
+- `-s` run in standalone mode (without the state machine)
+- `-i` run with rotation to the right (clockwise) instead of left (counterclockwise)
 
 ### Booster T1
 
