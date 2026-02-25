@@ -37,6 +37,8 @@ class PositionStart : public rclcpp::Node
 public:
     PositionStart(const std::string& target_position) : Node("position_start"), target_position_(target_position)
     {
+        /*
+        // DOESN'T WORK ON ROS2 FOXY (unitree)
         if (debug_mode)
         {
             // Set logger to debug level if -d option is used
@@ -47,6 +49,7 @@ public:
             // Default logger level
             this->get_logger().set_level(rclcpp::Logger::Level::Info);
         }
+        */
 
         loadConfiguration("config/positions_demo.yaml"); // YAML file parsing function
 
