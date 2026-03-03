@@ -9,12 +9,12 @@ import numpy
 import os
 from ultralytics import YOLO
 
-HFOV = (86 * 3.14159265358979323846) / 180.0
-VFOV = (57 * 3.14159265358979323846) / 180.0
-ball_radious = 0.11
+HFOV = (87 * 3.14159265358979323846) / 180.0
+VFOV = (58 * 3.14159265358979323846) / 180.0
+ball_radious = 0.07
 head_x = 0.0
 head_y = 0.0
-head_z = 1.05
+head_z = 1.25
 POST_HEIGHT = 0.56
 FOCAL_LENGTH = 600
 

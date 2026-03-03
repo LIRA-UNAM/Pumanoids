@@ -3,11 +3,11 @@ import math
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import JointState
-from sensor_msgs.msg import Bool
+from std_msgs.msg import Bool
 from pumas_vision_msgs.msg import VisionObject
 
 center_x = 640
-center_y = 360
+center_y = 480
 
 class BallFollowerNode(Node):
     def callback_joint_states(self, msg):
@@ -29,8 +29,8 @@ class BallFollowerNode(Node):
             error_x = math.sqrt(error_x)
         
         cmd_vel_msg = Twist()
-        cmd_vel_msg.linear.x = 0.5
-        cmd_vel_msg.angular.z = 1.2 * (error_x + self.current_head_pan)
+        cmd_vel_msg.linear.x = 0.2
+        cmd_vel_msg.angular.z = 0.8 * (error_x + self.current_head_pan)
         self.pub_cmd_vel.publish(cmd_vel_msg)
         
         
