@@ -9,14 +9,14 @@ import numpy
 import os
 from ultralytics import YOLO
 
-HFOV = (87 * 3.14159265358979323846) / 180.0
-VFOV = (58 * 3.14159265358979323846) / 180.0
-ball_radious = 0.07
+HFOV = (86 * 3.14159265358979323846) / 180.0
+VFOV = (57 * 3.14159265358979323846) / 180.0
+ball_radious = 0.11
 head_x = 0.0
 head_y = 0.0
-head_z = 1.25
+head_z = 1.05
 POST_HEIGHT = 0.56
-FOCAL_LENGTH = 600
+FOCAL_LENGTH = 580
 
 
 class BallDetectorNode(Node):
@@ -52,7 +52,7 @@ class BallDetectorNode(Node):
         
         for i in range(len(idxs)):
             name=results[0].names[idxs[i]]
-            if "ball" in name:
+            if "ball" in name and confs[i] > 0.60:
                 confidence = confs[i]
                 x_center, y_center, width, height = bboxes[i]
                 ball_x, ball_y = self.get_ball_position(x_center, y_center, msg.width, msg.height)
@@ -63,16 +63,20 @@ class BallDetectorNode(Node):
                 x_center, y_center, width, height = bboxes[i]
                 post_x, post_y = self.get_goalpost_position(x_center, height, msg.width)
                 
+                img_base_y = y_center + (height / 2.0)
+                
                 detected_goalposts.append({
                     'x': post_x,
                     'y': post_y,
                     'confidence': confidence,
                     'img_x': x_center,
-                    'img_y': y_center,
+                    'img_y': img_base_y,
                     'width': width,
                     'height': height
                 })
                 
+        annotated_frame = results[0].plot()
+        
         if len(detected_goalposts) >= 2:
                 detected_goalposts.sort(key=lambda p: p['confidence'], reverse=True)
                 p1 = detected_goalposts[0]
@@ -88,14 +92,17 @@ class BallDetectorNode(Node):
                 avg_confidence = (p1['confidence'] + p2['confidence']) / 2.0
                 
                 vision_obj_msg = self.get_vision_object_msg("goal_center", float(avg_confidence), avg_img_x, avg_img_y, avg_width, avg_height, goal_center_x, goal_center_y)
-                self.pub_ball.publish(vision_obj_msg)
+                self.pub_goal.publish(vision_obj_msg)
+                
+                cv2.circle(annotated_frame, (int(avg_img_x), int(avg_img_y)), 10, (0, 255, 0), -1)
+                cv2.putText(annotated_frame, "GOAL CENTER", (int(avg_img_x) - 40, int(avg_img_y) - 15), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
         elif len(detected_goalposts) == 1:
                 p = detected_goalposts[0]
                 vision_obj_msg = self.get_vision_object_msg("goalpost", float(p['confidence']), p['img_x'], p['img_y'], p['width'], p['height'], p['x'], p['y'])
                 self.pub_goal.publish(vision_obj_msg)
         
 
-        annotated_frame = results[0].plot()
         cv2.imshow("YOLO Detection", annotated_frame)
         cv2.waitKey(1)
     
