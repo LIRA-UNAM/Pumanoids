@@ -24,6 +24,9 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'twist_to_k1_node = twist_to_k1.twist_to_k1_node:main',
+            'pantilt_to_k1 = twist_to_k1.pantilt_to_k1:main',
+            'odom_to_tf = twist_to_k1.odom_to_tf:main'
         ],
     },
 )
