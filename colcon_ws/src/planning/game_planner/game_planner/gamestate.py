@@ -31,7 +31,7 @@ TeamInfo = "team" / Struct(
     "score" / Byte,
     "penalty_shot" / Byte,  # penalty shot counter
     "single_shots" / Short,  # bits represent penalty shot success
-    "coah_sequence" / Byte,
+    "coach_sequence" / Byte,
     "coach_message" / Bytes(253),
     "coach" / RobotInfo,
     "players" / Array(11, RobotInfo)
@@ -70,7 +70,7 @@ GameState = "gamedata" / Struct(
                              DROPBALL=128,
                              UNKNOWN=255
                              ),
-    "secondary_state_info" / Bytes(4),
+    "secondary_state_info" / Bytes(4), #1er byte numero del equipo que solicitó/ entro al estado secundario 2do byte el sub estado del estado 1,2,3. 3er y 4to byte NPI
     "drop_in_team" / Flag,
     "drop_in_time" / Short,
     "seconds_remaining" / Int16sl,
