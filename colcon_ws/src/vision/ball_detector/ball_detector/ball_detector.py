@@ -141,7 +141,7 @@ class BallDetectorNode(Node):
         self.current_head_pan = 0.0
         self.current_head_tilt = 0.0
         self.br = CvBridge()
-        model_path = os.path.join(get_package_share_directory("ball_detector"), "models", "ball_model.pt")
+        model_path = os.path.join(get_package_share_directory("ball_detector"), "models", "yolov8_center.pt")
         self.declare_parameter('model_path', model_path)
         model_path  = self.get_parameter('model_path').get_parameter_value().string_value
         self.sub_img = self.create_subscription(Image, '/camera/color/image_raw', self.callback_img, 1)
