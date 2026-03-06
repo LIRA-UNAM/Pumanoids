@@ -1,3 +1,4 @@
+# You HAVE to re-build the package to apply changes in this file.
 position_start:
   ros__parameters:
     center:
