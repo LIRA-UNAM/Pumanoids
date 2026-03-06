@@ -20,7 +20,7 @@ def generate_launch_description():
                 os.path.join(
                 get_package_share_directory('twist_to_t1'),
                 'launch',
-                't1_twist_launch.py'),
+                't1_twist.launch.py'),
             )
         ),
 
@@ -30,7 +30,7 @@ def generate_launch_description():
                 os.path.join(
                 get_package_share_directory('ball_follower'),
                 'launch',
-                'ball_follower_launch.py'),
+                'ball_follower.launch.py'),
             )
         ),
 
