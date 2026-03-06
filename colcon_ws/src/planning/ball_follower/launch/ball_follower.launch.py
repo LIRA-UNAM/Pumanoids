@@ -1,12 +1,23 @@
+import os
+from ament_index_python import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
 
 def generate_launch_description():
+    model_path = os.path.join(
+        get_package_share_directory('ball_detector'),
+        'models',
+        'ball_model.pt' # <-- Change this to the model you want to use
+    )
     return LaunchDescription([
         Node(
             package='ball_detector',
             executable='ball_detector',
             name='ball_detector',
+            parameters=[{
+                'show_debug_window': True,
+                'model_path': model_path
+            }],
             output='screen'),
         Node(
             package='ball_follower',
