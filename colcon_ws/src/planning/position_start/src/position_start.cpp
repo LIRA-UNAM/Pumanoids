@@ -92,7 +92,7 @@ public:
 private:
     // -- ROS2 OBJECTS DECLARATIONS --
     // Movement publisher
-    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
+    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr movement_publisher_;
     // State machine subscriber and publisher
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr state_mach_sub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr state_mach_pub_;
