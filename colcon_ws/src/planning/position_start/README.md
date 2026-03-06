@@ -27,36 +27,43 @@ Additionally, the following `<options>` are available:
 - `-s` run in standalone mode (without the state machine)
 - `-i` run with rotation to the right (clockwise) instead of left (counterclockwise)
 
-### Booster T1
+### Node dependencies
 
-The `twist_to_t1` and `odom_to_tf` nodes must be running.
+#### Unitree G1
 
-    ros2 run twist_to_t1 twist_to_t1
+| Package | Node |
+| ------- | ---- |
+| `twist_to_g1` | `twist_to_g1` |
+| `twist_to_g1` | `odom_to_tf` |
 
-    ros2 run twist_to_t1 odom_to_tf
+#### Booster T1
 
-### Unitree G1
+| Package | Node |
+| ------- | ---- |
+| `twist_to_t1` | `twist_to_t1` |
+| `twist_to_t1` | `odom_to_tf` |
 
-The `twist_to_G1` and `odom_to_tf` nodes must be running.
+#### Booster K1
 
-    ros2 run twist_to_g1 twist_to_g1
-
-    ros2 run twist_to_g1 odom_to_tf
+| Package | Node |
+| ------- | ---- |
+| `twist_to_k1` | `twist_to_k1` |
+| `twist_to_k1` | `odom_to_tf` |
 
 
 ## Topics
 
-| Topic | Role | Type | Description |
-| ----- | ---- | ---- | ----------- |
-| `/position_start/enable` | Subscriber | `std_msgs/msg/Bool` | Get the signal to start moving the robot. |
-| `/position_start/finish` | Publisher | `std_msgs/msg/Bool` | Signals the machine state that the robot has finished moving. |
-| `/cmd_vel` | Publisher | `geometry_msgs/msg/Twist` | Sends the movement instructions to the `twist_to_t1` / `twist_to_g1` node. |
+| Topic | Role | Type | Description | Node related |
+| ----- | ---- | ---- | ----------- | ------------ |
+| `/position_start/enable` | Subscriber | `std_msgs/msg/Bool` | Get the signal to start moving the robot. | `game_planner` |
+| `/position_start/finish` | Publisher | `std_msgs/msg/Bool` | Signals the machine state that the robot has finished moving. | `game_planner` |
+| `/cmd_vel` | Publisher | `geometry_msgs/msg/Twist` | Sends the movement instructions to the `twist_to_t1` / `twist_to_g1` node. | `twist_to_t1` / `twist_to_g1` / `twist_to_k1` |
 
 ### Coordinate transformations
 
-| Source frame | Target frame | Description |
-| :----------: | :----------: | ----------- |
-| `odom` | `base_link` | Transformation by the `odom_to_tf` node. Used for rotation feedback. |
+| Source frame | Target frame | Description | Node related |
+| :----------: | :----------: | ----------- | ------------ |
+| `odom` | `base_link` | Transformation by the `odom_to_tf` node. Used for rotation feedback. | `odom_to_tf` |
 
 ## Positions
 
