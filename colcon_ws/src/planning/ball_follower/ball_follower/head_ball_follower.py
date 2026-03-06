@@ -65,7 +65,10 @@ class HeadBallFollowerNode(Node):
         self.current_pan  = 0
         self.current_tilt = 0
         self.look_for_poses = [[0.0,0.7], [-0.8, 0.7], [-0.8, 0.2], [0.0, 0.2], [0.8, 0.2], [0.8,0.7]]
-        self.sub_enable  = self.create_subscription(Bool, "/planning/head_ball_follower/enable", self.callback_enable, 1)
+
+        # Declare timestamp variable
+        self.last_image_time = rclpy.time.Time(nanoseconds=0, clock_type=self.get_clock().clock_type)
+        self.sub_enable  = self.create_subscription(Bool, "/head_ball_follower/enable", self.callback_enable, 1)
         self.sub_ball    = self.create_subscription(VisionObject, '/vision/ball', self.callback_ball, 1)
         self.sub_joints  = self.create_subscription(JointState, "/joint_states", self.callback_joint_states, 1)
         self.pub_pantilt = self.create_publisher(Float32MultiArray, '/hardware/head/goal_pose', 1)
@@ -95,14 +98,15 @@ class HeadBallFollowerNode(Node):
                         
                 elif state == SM_LOOK_FOR_BALL:
                     if not self.new_ball_data:
-                        head_pose = self.look_for_poses.pop(0)
-                        self.look_for_poses.append(head_pose)
-                        self.get_logger().info(f"Looking for ball at ({head_pose[0]},{head_pose[1]})")
-                        pantilt_msg = Float32MultiArray()
-                        pantilt_msg.data = head_pose
-                        self.pub_pantilt.publish(pantilt_msg)
-                        time.sleep(0.5)
-                        rclpy.spin_once(self, timeout_sec=0.5)
+                        if self.get_clock().now() - self.last_image_time > rclpy.duration.Duration(seconds=2):
+                            head_pose = self.look_for_poses.pop(0)
+                            self.look_for_poses.append(head_pose)
+                            self.get_logger().info(f"Looking for ball at ({head_pose[0]},{head_pose[1]})")
+                            pantilt_msg = Float32MultiArray()
+                            pantilt_msg.data = head_pose
+                            self.pub_pantilt.publish(pantilt_msg)
+                            time.sleep(0.5)
+                            rclpy.spin_once(self, timeout_sec=0.5)
                     else:
                         self.get_logger().info(f"Found ball at position ({self.img_ball_x},{self.img_ball_y}) with head at ({self.current_pan},{self.current_tilt})")
                         self.goal_pan  = -0.65*(self.img_ball_x - self.img_goal_x) / (self.img_width  / 2) + self.current_pan
@@ -116,6 +120,7 @@ class HeadBallFollowerNode(Node):
                         
                 elif state == SM_LOOK_AT_BALL:
                     if self.new_ball_data:
+                        self.last_image_time = self.get_clock().now()
                         self.new_ball_data = False
                         no_new_data_counter = 0
                         pantilt_msg = Float32MultiArray()
