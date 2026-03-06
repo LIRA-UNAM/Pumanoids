@@ -47,6 +47,8 @@ class PlannerNode(Node):
         
         # -- PUBLISHERS --
         # position_start
+        self.head_ball_follower_enable_publisher = self.create_publisher(Bool, '/head_ball_follower/enable', 10)
+        self.ball_follower_enable_publisher = self.create_publisher(Bool, '/ball_follower/enable', 10)
         self.position_start_enable_publisher = self.create_publisher(Bool, '/position_start/enable', 10)
         
         # -- SUBSCRIBERS --
@@ -202,6 +204,7 @@ class PlannerNode(Node):
         self.get_logger().info("KICKOFF_STATE Let's play")
         if self.goalkeeper:
             self.current_state = State.PLAYING
+            self.last_available_state = self.current_state
             
         self.team_array_pos =0
         for team in self.game_controller.teams:
@@ -212,10 +215,12 @@ class PlannerNode(Node):
         if self.player_number == 2:
             print(f"Palyer{self.player_number} going for the kick off")
             self.current_state = State.PLAYING
+            self.last_available_state = self.current_state
         else:
             print("waiit for ball moving or pass the time")
             if self.move_ball or self.game_controller.secondary_seconds_remaining==0:
                 self.current_state = State.PLAYING
+                self.last_available_state = self.current_state
             else:
                 self.current_state = State.KICKOFF
     
@@ -225,9 +230,17 @@ class PlannerNode(Node):
             print("goal keeping") #TODO goal keeper guard enable publisher
         print("Following the ball") #TODO ball follower enable and a way to not crash ones with others
 
+        self.head_ball_follower_enable_publisher.publish(Bool(data = True))
+        self.ball_follower_enable_publisher.publish(Bool(data = True))
+
         if self.game_controller.game_state == "STATE_FINISHED":
             self.get_logger().info("FINISH_STATE good half game")
             self.current_state = State.FINISH
+            self.ball_follower_enable_publisher.publish(Bool(data = False))
+            self.head_ball_follower_enable_publisher.publish(Bool(data = False))
+            self.last_available_state = self.current_state
+        
+
 
     def finish_state(self):
         self.get_logger().info("THE END going with team")      
