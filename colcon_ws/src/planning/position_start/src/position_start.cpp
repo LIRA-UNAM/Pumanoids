@@ -118,7 +118,6 @@ private:
     float angular_error = 0.0f; // Error in angular position
     float current_angle = 0.0f; // Current rotation angle of the robot
     geometry_msgs::msg::TransformStamped t; // TransformStamped object for TF2 transformations
-    auto twist_msg = geometry_msgs::msg::Twist(); // Twist message for robot movement commands.
 
     // Target position parameters
     std::string target_position_; // Target position specified by the user
@@ -270,6 +269,8 @@ private:
                 return;
             }
         }
+
+        auto twist_msg = geometry_msgs::msg::Twist(); // Twist message for robot movement commands.
 
         // Switch for the different moving states of the node.
         // The node goes from moving along the X axis, to rotating,
