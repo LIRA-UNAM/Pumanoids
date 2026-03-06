@@ -14,23 +14,16 @@ def generate_launch_description():
                 os.path.join(
                 get_package_share_directory('twist_to_t1'),
                 'launch',
-                't1_twist_launch.py'),
+                't1_twist.launch.py'),
             )
         ),
-        Node(
-            package='ball_detector',
-            executable='ball_detector',
-            name='ball_detector',
-            parameters=[{'show_debug_window': True}],
-            output='screen'),
-        Node(
-            package='ball_follower',
-            executable='head_ball_follower',
-            name='head_ball_follower',
-            output='screen'),
-        Node(
-            package='ball_follower',
-            executable='ball_follower',
-            name='ball_follower',
-            output='screen'),
+        # Include the ball_follower launch
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(
+                get_package_share_directory('ball_follower'),
+                'launch',
+                'ball_follower.launch.py'),
+            )
+        )
     ])
