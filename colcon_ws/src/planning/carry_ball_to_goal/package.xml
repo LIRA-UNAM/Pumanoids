@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>carry_ball_to_goal</name>
+  <version>0.0.0</version>
+  <description>Launch para llevar la pelota al arco (T1 state machine + ball_detector + goal_detector)</description>
+  <maintainer email="booster@todo.todo">booster</maintainer>
+  <license>MIT</license>
+
+  <depend>rclpy</depend>
+  <depend>pumas_vision_msgs</depend>
+  <depend>sensor_msgs</depend>
+
+  <exec_depend>surge_et_ambula</exec_depend>
+  <exec_depend>ball_detector</exec_depend>
+  <exec_depend>ball_follower</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

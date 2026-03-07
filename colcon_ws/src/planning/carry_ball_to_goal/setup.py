@@ -2,7 +2,7 @@ import os
 from glob import glob
 from setuptools import find_packages, setup
 
-package_name = 'twist_to_t1'
+package_name = 'carry_ball_to_goal'
 
 setup(
     name=package_name,
@@ -17,15 +17,12 @@ setup(
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='booster',
-    maintainer_email='lir.pumas@gmail.com',
-    description='TODO: Package description',
+    maintainer_email='booster@todo.todo',
+    description='Launch para llevar la pelota al arco',
     license='MIT',
-    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'twist_to_t1 = twist_to_t1.twist_to_t1:main',
-            'pantilt_to_t1 = twist_to_t1.pantilt_to_t1:main',
-            'odom_to_tf = twist_to_t1.odom_to_tf:main'
+            'goal_robot_pose = carry_ball_to_goal.goal_robot_pose:main',
         ],
     },
 )
