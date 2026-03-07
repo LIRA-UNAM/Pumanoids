@@ -36,6 +36,9 @@ class GoalDetectorNode(Node):
         self.current_head_pan = msg.position[0]
         self.current_head_tilt = msg.position[1]
 
+    def callback_goal_robot_pose(self, msg):
+        self.latest_goal_robot_pose = msg
+
     def callback_img(self, msg):
         img_bgr = self.br.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         results = self.model(img_bgr, verbose=False)
@@ -51,7 +54,7 @@ class GoalDetectorNode(Node):
 
         for i in range(len(idxs)):
             name = results[0].names[idxs[i]]
-            if "goalpost" in name:
+            if "goal" in name:
                 confidence = confs[i]
                 x_center, y_center, width, height = bboxes[i]
                 post_x, post_y = self.get_goalpost_position(x_center, height, msg.width)
@@ -105,6 +108,13 @@ class GoalDetectorNode(Node):
                     annotated_frame, "GOAL CENTER", (int(avg_img_x) - 40, int(avg_img_y) - 15),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2
                 )
+            if self.latest_goal_robot_pose is not None:
+                gx, gy = self.latest_goal_robot_pose.x, self.latest_goal_robot_pose.y
+                cv2.circle(annotated_frame, (gx, gy), 10, (255, 165, 0), -1)
+                cv2.putText(
+                    annotated_frame, "GOAL ROBOT POSE", (gx - 50, gy - 15),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 165, 0), 2
+                )
             cv2.imshow("Goal Detection", annotated_frame)
             cv2.waitKey(1)
 
@@ -132,8 +142,12 @@ class GoalDetectorNode(Node):
         model_path = self.get_parameter('model_path').get_parameter_value().string_value
         self.sub_img = self.create_subscription(Image, '/camera/color/image_raw', self.callback_img, 1)
         self.sub_joints = self.create_subscription(JointState, '/joint_states', self.callback_joint_states, 1)
+        self.sub_goal_robot_pose = self.create_subscription(
+            VisionObject, '/goal_robot_pose', self.callback_goal_robot_pose, 1
+        )
         self.pub_goal = self.create_publisher(VisionObject, '/vision/goal_center', 1)
         self.model = YOLO(model_path)
+        self.latest_goal_robot_pose = None
 
 
 def main(args=None):
