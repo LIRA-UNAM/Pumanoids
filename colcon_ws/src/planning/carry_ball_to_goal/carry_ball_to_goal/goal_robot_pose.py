@@ -53,8 +53,10 @@ class GoalRobotPoseNode(Node):
             VisionObject, "/goal_robot_pose", 10
         )
 
-        self.timer = self.create_timer(3.0, self.timer_callback)
-
+        self.declare_parameter("update_period_s", 3.0)
+        period = self.get_parameter("update_period_s").value
+        self.timer = self.create_timer(period, self.timer_callback)
+    
     def callback_ball(self, msg: VisionObject):
         self.ball_x = msg.pose.position.x
         self.ball_y = msg.pose.position.y

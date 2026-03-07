@@ -44,6 +44,14 @@ def generate_launch_description():
             package='carry_ball_to_goal',
             executable='goal_robot_pose',
             name='goal_robot_pose',
+            parameters=[{'update_period_s': 1.0}],
             output='screen',
         ),
+        # Nodo go_to_goal_pose (navega al punto y se orienta hacia la portería)
+        # Node(
+        #     package='carry_ball_to_goal',
+        #     executable='go_to_goal_pose',
+        #     name='go_to_goal_pose',
+        #     output='screen',
+        # ),
     ])
