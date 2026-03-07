@@ -23,6 +23,7 @@ setup(
     entry_points={
         'console_scripts': [
             'goal_robot_pose = carry_ball_to_goal.goal_robot_pose:main',
+            'go_to_goal_pose = carry_ball_to_goal.go_to_goal_pose:main',
         ],
     },
 )

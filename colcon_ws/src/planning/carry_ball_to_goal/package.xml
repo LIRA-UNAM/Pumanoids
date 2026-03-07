@@ -8,8 +8,10 @@
   <license>MIT</license>
 
   <depend>rclpy</depend>
+  <depend>geometry_msgs</depend>
   <depend>pumas_vision_msgs</depend>
   <depend>sensor_msgs</depend>
+  <depend>tf2_ros</depend>
 
   <exec_depend>surge_et_ambula</exec_depend>
   <exec_depend>ball_detector</exec_depend>
