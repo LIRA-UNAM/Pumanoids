@@ -1,0 +1,69 @@
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/image.hpp>
+#include <cv_bridge/cv_bridge.h>
+
+#include <jetson-utils/cudaColorspace.h>
+#include <jetson-utils/cudaMappedMemory.h>
+
+class NV12ConverterNode : public rclcpp::Node {
+public:
+    NV12ConverterNode() : Node("nv12_converter_node") {
+        std::string input_topic = "/booster_camera_bridge/StereoNetNode/rectified_image";
+        std::string output_topic = "/camera/color/image_raw";
+
+        sub_ = this->create_subscription<sensor_msgs::msg::Image>(
+            input_topic, 10, std::bind(&NV12ConverterNode::image_callback, this, std::placeholders::_1));
+
+        pub_ = this->create_publisher<sensor_msgs::msg::Image>(output_topic, 10);
+
+        RCLCPP_INFO(this->get_logger(), "GPU Converter Started: %s -> %s", 
+                    input_topic.c_str(), output_topic.c_str());
+    }
+
+private:
+    void image_callback(const sensor_msgs::msg::Image::SharedPtr msg) {
+        if (!cuda_out_ || last_width_ != msg->width || last_height_ != msg->height) {
+            if (cuda_out_) cudaFreeHost(cuda_out_);
+            
+            if (!cudaAllocMapped(&cuda_out_, msg->width * msg->height * sizeof(uchar3))) {
+                RCLCPP_ERROR(this->get_logger(), "Failed to allocate CUDA memory");
+                return;
+            }
+            last_width_ = msg->width;
+            last_height_ = msg->height;
+        }
+
+        if (CUDA_FAILED(cudaConvertColor(msg->data.data(), IMAGE_NV12,
+                                         cuda_out_, IMAGE_RGB8,
+                                         msg->width, msg->height))) {
+            RCLCPP_ERROR(this->get_logger(), "GPU Conversion Failed");
+            return;
+        }
+
+        auto out_msg = std::make_shared<sensor_msgs::msg::Image>();
+        out_msg->header = msg->header;
+        out_msg->height = msg->height;
+        out_msg->width = msg->width;
+        out_msg->encoding = "rgb8";
+        out_msg->step = msg->width * 3;
+        size_t size = out_msg->step * out_msg->height;
+        out_msg->data.resize(size);
+        memcpy(out_msg->data.data(), cuda_out_, size);
+
+        pub_->publish(*out_msg);
+    }
+
+    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr sub_;
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr pub_;
+
+    void* cuda_out_ = nullptr;
+    uint32_t last_width_ = 0;
+    uint32_t last_height_ = 0;
+};
+
+int main(int argc, char** argv) {
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<NV12ConverterNode>());
+    rclcpp::shutdown();
+    return 0;
+}
