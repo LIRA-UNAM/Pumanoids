@@ -5,8 +5,6 @@ import rclpy
 from rclpy.node import Node
 from pumas_vision_msgs.msg import VisionObject
 from sensor_msgs.msg import Image, JointState
-import tf2_ros
-from tf2_ros import TransformException
 
 
 HFOV = (86 * 3.14159265358979323846) / 180.0
@@ -27,10 +25,8 @@ class GoalRobotPoseNode(Node):
         super().__init__("goal_robot_pose")
 
         self.declare_parameter("distance_from_ball_m", 0.25)
-        self.declare_parameter("ball_move_threshold_m", 0.3)
 
         self.distance_from_ball = self.get_parameter("distance_from_ball_m").value
-        self.ball_move_threshold = self.get_parameter("ball_move_threshold_m").value
 
         self.ball_x = None
         self.ball_y = None
@@ -40,11 +36,6 @@ class GoalRobotPoseNode(Node):
         self.head_tilt = 0.0
         self.img_width = 640
         self.img_height = 480
-        self.last_published_ball_odom_x = None
-        self.last_published_ball_odom_y = None
-
-        self.tf_buffer = tf2_ros.Buffer()
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
         self.sub_ball = self.create_subscription(
             VisionObject, "/vision/ball", self.callback_ball, 10
@@ -82,28 +73,6 @@ class GoalRobotPoseNode(Node):
         self.img_width = msg.width
         self.img_height = msg.height
 
-    def _ball_in_odom(self):
-        """Transforma posición del balón (base_link) a odom."""
-        if self.ball_x is None or self.ball_y is None:
-            return None, None
-        try:
-            t = self.tf_buffer.lookup_transform(
-                "odom", "base_link", rclpy.time.Time()
-            )
-            q = t.transform.rotation
-            tx = t.transform.translation.x
-            ty = t.transform.translation.y
-            yaw = math.atan2(
-                2.0 * (q.w * q.z + q.x * q.y),
-                1.0 - 2.0 * (q.y * q.y + q.z * q.z),
-            )
-            c, s = math.cos(yaw), math.sin(yaw)
-            x_odom = c * float(self.ball_x) - s * float(self.ball_y) + tx
-            y_odom = s * float(self.ball_x) + c * float(self.ball_y) + ty
-            return x_odom, y_odom
-        except (TransformException, Exception):
-            return float(self.ball_x), float(self.ball_y)
-
     def _cartesian_to_image(self, x: float, y: float):
         """Proyecta punto (x,y) en frame robot a coordenadas de imagen."""
         L = math.sqrt(x * x + y * y + HEAD_Z * HEAD_Z)
@@ -124,16 +93,6 @@ class GoalRobotPoseNode(Node):
         ):
             return
 
-        # No actualizar si el balón no se ha movido más allá del umbral en odom
-        # (evita actualizar por movimiento del robot; solo cuando el balón se mueve en el mundo)
-        ball_odom_x, ball_odom_y = self._ball_in_odom()
-        if (self.last_published_ball_odom_x is not None and self.last_published_ball_odom_y is not None
-                and ball_odom_x is not None and ball_odom_y is not None):
-            dx = ball_odom_x - self.last_published_ball_odom_x
-            dy = ball_odom_y - self.last_published_ball_odom_y
-            if math.hypot(dx, dy) < self.ball_move_threshold:
-                return
-
         # Vector de balón hacia goal_center
         dx = self.goal_x - self.ball_x
         dy = self.goal_y - self.ball_y
@@ -150,10 +109,6 @@ class GoalRobotPoseNode(Node):
         # Balón queda en medio entre el punto y el goal_center
         point_x = self.ball_x - self.distance_from_ball * ux
         point_y = self.ball_y - self.distance_from_ball * uy
-
-        if ball_odom_x is not None and ball_odom_y is not None:
-            self.last_published_ball_odom_x = ball_odom_x
-            self.last_published_ball_odom_y = ball_odom_y
 
         img_x, img_y = self._cartesian_to_image(point_x, point_y)
 
