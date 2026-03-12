@@ -48,10 +48,10 @@ def generate_launch_description():
             output='screen',
         ),
         # Nodo go_to_goal_pose (navega al punto, busca portería si se pierde)
-        Node(
-            package='carry_ball_to_goal',
-            executable='go_to_goal_pose',
-            name='go_to_goal_pose',
-            output='screen',
-        ),
+        # Node(
+        #     package='carry_ball_to_goal',
+        #     executable='go_to_goal_pose',
+        #     name='go_to_goal_pose',
+        #     output='screen',
+        # ),
     ])
