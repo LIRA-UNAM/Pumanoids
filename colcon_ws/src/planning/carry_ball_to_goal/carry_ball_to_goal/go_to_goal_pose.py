@@ -195,6 +195,14 @@ class GoToGoalPoseNode(Node):
         self.ball_y = msg.pose.position.y
         self.img_ball_x = msg.x
         self.img_ball_y = msg.y
+        # Actualizar head exactamente como head_ball_follower (incremental)
+        if self.img_ball_x is not None and self.img_ball_y is not None:
+            error_x = -(msg.x - self.img_goal_x) / (self.img_width / 2)
+            error_y = (msg.y - self.img_goal_y) / (self.img_height / 2)
+            self.goal_pan += 0.15 * error_x
+            self.goal_tilt += 0.15 * error_y
+            self.goal_pan = max(-1.0, min(1.0, self.goal_pan))
+            self.goal_tilt = max(-0.3, min(0.8, self.goal_tilt))
 
     def _callback_joints(self, msg: JointState):
         self.current_pan = msg.position[0]
@@ -251,17 +259,11 @@ class GoToGoalPoseNode(Node):
         return self.cached_target_x, self.cached_target_y
 
     def _publish_head_look_at_ball(self):
-        """Publica pose de cabeza para mirar al balón (fórmula directa como head_ball_follower)."""
+        """Publica pose de cabeza para mirar al balón (igual que head_ball_follower)."""
         if self.img_ball_x is None or self.img_ball_y is None:
             return
-        kp_pan = 0.65
-        kp_tilt = 0.50
-        goal_pan = -kp_pan * (self.img_ball_x - self.img_goal_x) / (self.img_width / 2) + self.current_pan
-        goal_tilt = kp_tilt * (self.img_ball_y - self.img_goal_y) / (self.img_height / 2) + self.current_tilt
-        goal_pan = max(-1.0, min(1.0, goal_pan))
-        goal_tilt = max(-0.3, min(0.8, goal_tilt))
         msg = Float32MultiArray()
-        msg.data = [goal_pan, goal_tilt]
+        msg.data = [self.goal_pan, self.goal_tilt]
         self.pub_head.publish(msg)
 
     def _timer_callback(self):
