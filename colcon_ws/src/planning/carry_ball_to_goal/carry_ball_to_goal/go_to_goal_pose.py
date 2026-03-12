@@ -11,7 +11,7 @@ import math
 import rclpy
 from rclpy.node import Node
 from enum import Enum
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, PointStamped
 from std_msgs.msg import Bool, Float32MultiArray
 from sensor_msgs.msg import JointState
 from pumas_vision_msgs.msg import VisionObject
@@ -139,6 +139,8 @@ class GoToGoalPoseNode(Node):
         self.goal_tilt = 0.0
         self.look_poses = list(LOOK_FOR_GOAL_POSES)
         self.last_search_pose_time = None
+        self.last_ball_odom_x = None
+        self.last_ball_odom_y = None
 
         self.get_logger().info("go_to_goal_pose node started, waiting for enable")
 
@@ -164,6 +166,10 @@ class GoToGoalPoseNode(Node):
         self.target_y = msg.pose.position.y
         self.cached_target_x = msg.pose.position.x
         self.cached_target_y = msg.pose.position.y
+        bx, by = self._ball_in_odom()
+        if bx is not None and by is not None:
+            self.last_ball_odom_x = bx
+            self.last_ball_odom_y = by
 
     def _callback_goal_center(self, msg: VisionObject):
         self.goal_x = msg.pose.position.x
@@ -177,14 +183,6 @@ class GoToGoalPoseNode(Node):
         self.ball_y = msg.pose.position.y
         self.img_ball_x = msg.x
         self.img_ball_y = msg.y
-        # Actualizar head para mirar al balón (como head_ball_follower)
-        if self.img_ball_x is not None and self.img_ball_y is not None:
-            error_x = -(self.img_ball_x - self.img_goal_x) / (self.img_width / 2)
-            error_y = (self.img_ball_y - self.img_goal_y) / (self.img_height / 2)
-            self.goal_pan += 0.15 * error_x
-            self.goal_tilt += 0.15 * error_y
-            self.goal_pan = max(-1.0, min(1.0, self.goal_pan))
-            self.goal_tilt = max(-0.3, min(0.8, self.goal_tilt))
 
     def _callback_joints(self, msg: JointState):
         self.current_pan = msg.position[0]
@@ -209,13 +207,31 @@ class GoToGoalPoseNode(Node):
         age = (self.get_clock().now() - self.last_goal_time).nanoseconds * 1e-9
         return age <= timeout
 
-    def _ball_moved_significantly(self) -> bool:
+    def _ball_in_odom(self):
+        """Transforma posición del balón (base_link) a odom. Si falla, retorna (ball_x, ball_y)."""
         if self.ball_x is None or self.ball_y is None:
+            return None, None
+        try:
+            p = PointStamped()
+            p.header.frame_id = "base_link"
+            p.header.stamp = self.get_clock().now().to_msg()
+            p.point.x = float(self.ball_x)
+            p.point.y = float(self.ball_y)
+            p.point.z = 0.0
+            p_odom = self.tf_buffer.transform(p, "odom")
+            return p_odom.point.x, p_odom.point.y
+        except TransformException:
+            return float(self.ball_x), float(self.ball_y)
+
+    def _ball_moved_significantly(self) -> bool:
+        """True si el balón se movió más allá del umbral en odom (no por movimiento del robot)."""
+        bx, by = self._ball_in_odom()
+        if bx is None or by is None:
             return False
-        if self.last_ball_x is None or self.last_ball_y is None:
+        if self.last_ball_odom_x is None or self.last_ball_odom_y is None:
             return False
-        dx = self.ball_x - self.last_ball_x
-        dy = self.ball_y - self.last_ball_y
+        dx = bx - self.last_ball_odom_x
+        dy = by - self.last_ball_odom_y
         return math.hypot(dx, dy) >= self.get_parameter("ball_move_threshold_m").value
 
     def _get_target_for_navigation(self):
@@ -224,11 +240,17 @@ class GoToGoalPoseNode(Node):
         return self.cached_target_x, self.cached_target_y
 
     def _publish_head_look_at_ball(self):
-        """Publica pose de cabeza para mirar al balón (como head_ball_follower)."""
+        """Publica pose de cabeza para mirar al balón (fórmula directa como head_ball_follower)."""
         if self.img_ball_x is None or self.img_ball_y is None:
             return
+        kp_pan = 0.65
+        kp_tilt = 0.50
+        goal_pan = -kp_pan * (self.img_ball_x - self.img_goal_x) / (self.img_width / 2) + self.current_pan
+        goal_tilt = kp_tilt * (self.img_ball_y - self.img_goal_y) / (self.img_height / 2) + self.current_tilt
+        goal_pan = max(-1.0, min(1.0, goal_pan))
+        goal_tilt = max(-0.3, min(0.8, goal_tilt))
         msg = Float32MultiArray()
-        msg.data = [self.goal_pan, self.goal_tilt]
+        msg.data = [goal_pan, goal_tilt]
         self.pub_head.publish(msg)
 
     def _timer_callback(self):
@@ -264,6 +286,10 @@ class GoToGoalPoseNode(Node):
             self.sub_state = State.Center
             self.goal_pan = self.current_pan
             self.goal_tilt = self.current_tilt
+            bx, by = self._ball_in_odom()
+            if bx is not None and by is not None:
+                self.last_ball_odom_x = bx
+                self.last_ball_odom_y = by
             self.get_logger().info("Goal found -> Following")
             return
 
