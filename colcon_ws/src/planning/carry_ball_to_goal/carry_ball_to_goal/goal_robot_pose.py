@@ -5,7 +5,6 @@ import rclpy
 from rclpy.node import Node
 from pumas_vision_msgs.msg import VisionObject
 from sensor_msgs.msg import Image, JointState
-from geometry_msgs.msg import PointStamped
 import tf2_ros
 from tf2_ros import TransformException
 
@@ -88,14 +87,20 @@ class GoalRobotPoseNode(Node):
         if self.ball_x is None or self.ball_y is None:
             return None, None
         try:
-            p = PointStamped()
-            p.header.frame_id = "base_link"
-            p.header.stamp = self.get_clock().now().to_msg()
-            p.point.x = float(self.ball_x)
-            p.point.y = float(self.ball_y)
-            p.point.z = 0.0
-            p_odom = self.tf_buffer.transform(p, "odom")
-            return p_odom.point.x, p_odom.point.y
+            t = self.tf_buffer.lookup_transform(
+                "odom", "base_link", rclpy.time.Time()
+            )
+            q = t.transform.rotation
+            tx = t.transform.translation.x
+            ty = t.transform.translation.y
+            yaw = math.atan2(
+                2.0 * (q.w * q.z + q.x * q.y),
+                1.0 - 2.0 * (q.y * q.y + q.z * q.z),
+            )
+            c, s = math.cos(yaw), math.sin(yaw)
+            x_odom = c * float(self.ball_x) - s * float(self.ball_y) + tx
+            y_odom = s * float(self.ball_x) + c * float(self.ball_y) + ty
+            return x_odom, y_odom
         except (TransformException, Exception):
             return float(self.ball_x), float(self.ball_y)
 
