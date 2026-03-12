@@ -11,7 +11,7 @@ import math
 import rclpy
 from rclpy.node import Node
 from enum import Enum
-from geometry_msgs.msg import Twist, PointStamped
+from geometry_msgs.msg import Twist
 from std_msgs.msg import Bool, Float32MultiArray
 from sensor_msgs.msg import JointState
 from pumas_vision_msgs.msg import VisionObject
@@ -35,6 +35,18 @@ def yaw_from_quaternion(q) -> float:
     siny_cosp = 2.0 * (q.w * q.z + q.x * q.y)
     cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
     return math.atan2(siny_cosp, cosy_cosp)
+
+
+def transform_point_to_frame(x: float, y: float, z: float, t) -> tuple:
+    """Aplica transform t (odom<-base_link) para llevar punto de base_link a odom."""
+    q = t.transform.rotation
+    tx = t.transform.translation.x
+    ty = t.transform.translation.y
+    yaw = math.atan2(2.0 * (q.w * q.z + q.x * q.y), 1.0 - 2.0 * (q.y * q.y + q.z * q.z))
+    c, s = math.cos(yaw), math.sin(yaw)
+    x_odom = c * x - s * y + tx
+    y_odom = s * x + c * y + ty
+    return x_odom, y_odom
 
 
 class State(Enum):
@@ -212,14 +224,13 @@ class GoToGoalPoseNode(Node):
         if self.ball_x is None or self.ball_y is None:
             return None, None
         try:
-            p = PointStamped()
-            p.header.frame_id = "base_link"
-            p.header.stamp = self.get_clock().now().to_msg()
-            p.point.x = float(self.ball_x)
-            p.point.y = float(self.ball_y)
-            p.point.z = 0.0
-            p_odom = self.tf_buffer.transform(p, "odom")
-            return p_odom.point.x, p_odom.point.y
+            t = self.tf_buffer.lookup_transform(
+                "odom", "base_link", rclpy.time.Time()
+            )
+            x_odom, y_odom = transform_point_to_frame(
+                float(self.ball_x), float(self.ball_y), 0.0, t
+            )
+            return x_odom, y_odom
         except TransformException:
             return float(self.ball_x), float(self.ball_y)
 
