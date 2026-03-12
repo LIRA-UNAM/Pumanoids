@@ -1,0 +1,117 @@
+<?xml version="1.0"?>
+<!--
+  soccer_field_test.world - Mundo mínimo para depuración.
+  Ir descomentando <include> uno por uno para probar qué modelo causa problemas.
+
+  Orden sugerido de pruebas:
+  1. Solo este archivo (sin includes) -> ¿aparece el robot?
+  2. + soft_ground_plane
+  3. + teensize_field
+  4. + teensize_ball
+  5. + teensize_goal
+  6. + teensize_goal2
+-->
+<sdf version="1.8">
+	<world name="default">
+		<light type="directional" name="my_directional_light">
+			<pose>0 0 10 0 0 0</pose>
+			<direction>-1 -2 -15</direction>
+			<intensity>1.8</intensity>
+			<diffuse>0.8 0.8 0.8 1</diffuse>
+			<specular>0.5 0.5 0.5 1</specular>
+			<cast_shadows>false</cast_shadows>
+		</light>
+		<scene>
+			<shadows>false</shadows>
+		</scene>
+		<gui fullscreen='0'>
+			<camera name="camera">
+				<pose>0.0 0.0 6.0 0.0 0.7 0.0</pose>
+			</camera>
+		</gui>
+		<physics type="ode">
+			<gravity>0 0 -9.81</gravity>
+			<real_time_update_rate>2000</real_time_update_rate>
+			<max_step_size>0.0005</max_step_size>
+			<ode>
+				<solver>
+					<type>quick</type>
+					<iters>50</iters>
+					<sor>1.4</sor>
+				</solver>
+				<constraints>
+					<cfm>0.0</cfm>
+					<erp>0.2</erp>
+					<contact_max_correcting_vel>100.0</contact_max_correcting_vel>
+					<contact_surface_layer>0.1</contact_surface_layer>
+				</constraints>
+			</ode>
+		</physics>
+
+		<!-- Plano inline mínimo (sin model://) - si el robot aparece con esto, el problema está en los modelos -->
+		<model name="ground_plane">
+			<static>true</static>
+			<link name="link">
+				<collision name="collision">
+					<geometry>
+						<plane>
+							<normal>0 0 1</normal>
+							<size>20 20</size>
+						</plane>
+					</geometry>
+					<surface>
+						<friction>
+							<ode>
+								<mu>1.0</mu>
+								<mu2>1.0</mu2>
+							</ode>
+						</friction>
+					</surface>
+				</collision>
+				<visual name="visual">
+					<geometry>
+						<plane>
+							<normal>0 0 1</normal>
+							<size>20 20</size>
+						</plane>
+					</geometry>
+					<material>
+						<ambient>0.2 0.6 0.2 1</ambient>
+						<diffuse>0.2 0.6 0.2 1</diffuse>
+						<specular>0.1 0.1 0.1 1</specular>
+					</material>
+				</visual>
+			</link>
+		</model>
+
+		<!-- Descomentar uno por uno para probar -->
+		<!--
+		<include>
+			<uri>model://soft_ground_plane</uri>
+		</include>
+		-->
+		<!--
+		<include>
+			<uri>model://teensize_field</uri>
+		</include>
+		-->
+		<!--
+		<include>
+			<uri>model://teensize_ball</uri>
+			<pose>-0.700000 -1.180000 0.095 0 0 0</pose>
+		</include>
+		-->
+		<!--
+		<include>
+			<uri>model://teensize_goal</uri>
+			<pose>4.525 0 0 0 0 0</pose>
+		</include>
+		-->
+		<!--
+		<include>
+			<uri>model://teensize_goal2</uri>
+			<pose>-4.525 0 0 0 0 3.141592</pose>
+		</include>
+		-->
+	</world>
+</sdf>

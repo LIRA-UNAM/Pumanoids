@@ -14,7 +14,8 @@
 		</scene>
 		<gui fullscreen='0'>
 			<camera name="camera">
-				<pose>3.0 0.0 1.0 0.0 0.3 3.14</pose>
+				<!-- Vista cenital inclinada: centro del campo, 6m altura, mirando hacia abajo -->
+				<pose>0.0 0.0 6.0 0.0 0.7 0.0</pose>
 			</camera>
 		</gui>
 		<physics type="ode">
