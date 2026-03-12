@@ -143,8 +143,10 @@ class GoToGoalPoseNode(Node):
         self.img_ball_y = None
         self.img_width = 640
         self.img_height = 480
-        self.img_goal_x = 320
-        self.img_goal_y = 240
+        self.img_center_x = 320
+        self.img_center_y = 240
+        self.img_goal_center_x = None
+        self.img_goal_center_y = None
         self.current_pan = 0.0
         self.current_tilt = 0.0
         self.goal_pan = 0.0
@@ -170,23 +172,38 @@ class GoToGoalPoseNode(Node):
             self.enabled = False
             self.current_state = State.Waiting
             self.finish_sent = False
+            self.target_x = None
+            self.target_y = None
             self._publish_zero()
             self.get_logger().info("Disabled -> Waiting")
 
     def _callback_goal_pose(self, msg: VisionObject):
-        self.target_x = msg.pose.position.x
-        self.target_y = msg.pose.position.y
-        self.cached_target_x = msg.pose.position.x
-        self.cached_target_y = msg.pose.position.y
-        bx, by = self._ball_in_odom()
-        if bx is not None and by is not None:
-            self.last_ball_odom_x = bx
-            self.last_ball_odom_y = by
+        # Solo actualizar target cuando estamos en Waiting o Finished (hemos llegado)
+        if self.current_state in (State.Waiting, State.Finished) or self.target_x is None:
+            self.target_x = msg.pose.position.x
+            self.target_y = msg.pose.position.y
+            self.cached_target_x = msg.pose.position.x
+            self.cached_target_y = msg.pose.position.y
+            bx, by = self._ball_in_odom()
+            if bx is not None and by is not None:
+                self.last_ball_odom_x = bx
+                self.last_ball_odom_y = by
 
     def _callback_goal_center(self, msg: VisionObject):
         self.goal_x = msg.pose.position.x
         self.goal_y = msg.pose.position.y
+        self.img_goal_center_x = msg.x
+        self.img_goal_center_y = msg.y
         self.last_goal_time = self.get_clock().now()
+        # Head mira al goal (incremental). No actualizar en Finished (ahí usamos ball)
+        if (self.current_state != State.Finished and self.img_goal_center_x is not None
+                and self.img_goal_center_y is not None):
+            error_x = -(msg.x - self.img_center_x) / (self.img_width / 2)
+            error_y = (msg.y - self.img_center_y) / (self.img_height / 2)
+            self.goal_pan += 0.15 * error_x
+            self.goal_tilt += 0.15 * error_y
+            self.goal_pan = max(-1.0, min(1.0, self.goal_pan))
+            self.goal_tilt = max(-0.3, min(0.8, self.goal_tilt))
 
     def _callback_ball(self, msg: VisionObject):
         self.last_ball_x = self.ball_x
@@ -195,10 +212,10 @@ class GoToGoalPoseNode(Node):
         self.ball_y = msg.pose.position.y
         self.img_ball_x = msg.x
         self.img_ball_y = msg.y
-        # Actualizar head exactamente como head_ball_follower (incremental)
-        if self.img_ball_x is not None and self.img_ball_y is not None:
-            error_x = -(msg.x - self.img_goal_x) / (self.img_width / 2)
-            error_y = (msg.y - self.img_goal_y) / (self.img_height / 2)
+        # Head incremental para ball cuando estamos en Finished buscando ball
+        if self.current_state == State.Finished and self.img_ball_x is not None and self.img_ball_y is not None:
+            error_x = -(msg.x - self.img_center_x) / (self.img_width / 2)
+            error_y = (msg.y - self.img_center_y) / (self.img_height / 2)
             self.goal_pan += 0.15 * error_x
             self.goal_tilt += 0.15 * error_y
             self.goal_pan = max(-1.0, min(1.0, self.goal_pan))
@@ -258,13 +275,39 @@ class GoToGoalPoseNode(Node):
             return self.target_x, self.target_y
         return self.cached_target_x, self.cached_target_y
 
-    def _publish_head_look_at_ball(self):
-        """Publica pose de cabeza para mirar al balón (igual que head_ball_follower)."""
-        if self.img_ball_x is None or self.img_ball_y is None:
-            return
+    def _publish_head_look_at_goal(self):
+        """Publica pose de cabeza: mira al goal (portería). Si no hay goal, busca con poses."""
+        if self.img_goal_center_x is not None and self.img_goal_center_y is not None:
+            msg = Float32MultiArray()
+            msg.data = [self.goal_pan, self.goal_tilt]
+            self.pub_head.publish(msg)
+        elif self.current_state == State.Finished and (self.img_ball_x is not None and self.img_ball_y is not None):
+            # Tras llegar: si tenemos ball, mirarla (incremental para encontrarla)
+            msg = Float32MultiArray()
+            msg.data = [self.goal_pan, self.goal_tilt]
+            self.pub_head.publish(msg)
+        elif self.current_state == State.Finished:
+            # Tras llegar sin ball: buscar con poses
+            self._publish_head_search_poses()
+        else:
+            self._publish_head_search_poses()
+
+    def _publish_head_search_poses(self):
+        """Publica poses de cabeza para buscar (goal o ball)."""
+        if not self.look_poses:
+            self.look_poses = list(LOOK_FOR_GOAL_POSES)
+        hold_s = self.get_parameter("search_pose_hold_s").value
+        now = self.get_clock().now()
+        if self.last_search_pose_time is not None:
+            elapsed = (now - self.last_search_pose_time).nanoseconds * 1e-9
+            if elapsed < hold_s:
+                return
+        head_pose = self.look_poses.pop(0)
+        self.look_poses.append(head_pose)
         msg = Float32MultiArray()
-        msg.data = [self.goal_pan, self.goal_tilt]
+        msg.data = head_pose
         self.pub_head.publish(msg)
+        self.last_search_pose_time = now
 
     def _timer_callback(self):
         if not self.enabled:
@@ -279,6 +322,7 @@ class GoToGoalPoseNode(Node):
                 self.finish_pub.publish(Bool(data=True))
                 self.finish_sent = True
                 self.get_logger().info("go_to_goal_pose finished")
+            self._publish_head_look_at_goal()
             return
 
         if self.current_state == State.SearchingGoal:
@@ -287,11 +331,11 @@ class GoToGoalPoseNode(Node):
 
         if self.current_state == State.GoalLost:
             self._do_goal_lost()
-            self._publish_head_look_at_ball()
+            self._publish_head_look_at_goal()
             return
 
         self._do_following()
-        self._publish_head_look_at_ball()
+        self._publish_head_look_at_goal()
 
     def _do_searching_goal(self):
         if self._goal_is_fresh():
