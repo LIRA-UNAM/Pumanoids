@@ -17,13 +17,13 @@ def generate_launch_description():
                     't1_twist_launch.py'),
             )
         ),
-        # Nodo head_ball_follower
-        Node(
-            package='ball_follower',
-            executable='head_ball_follower',
-            name='head_ball_follower',
-            output='screen',
-        ),
+        # head_ball_follower: no se usa; go_to_goal_pose controla la cabeza al buscar portería
+        # Node(
+        #     package='ball_follower',
+        #     executable='head_ball_follower',
+        #     name='head_ball_follower',
+        #     output='screen',
+        # ),
         # Nodo ball_detector
         Node(
             package='ball_detector',
@@ -47,11 +47,11 @@ def generate_launch_description():
             parameters=[{'update_period_s': 1.0}],
             output='screen',
         ),
-        # Nodo go_to_goal_pose (navega al punto y se orienta hacia la portería)
-        # Node(
-        #     package='carry_ball_to_goal',
-        #     executable='go_to_goal_pose',
-        #     name='go_to_goal_pose',
-        #     output='screen',
-        # ),
+        # Nodo go_to_goal_pose (navega al punto, busca portería si se pierde)
+        Node(
+            package='carry_ball_to_goal',
+            executable='go_to_goal_pose',
+            name='go_to_goal_pose',
+            output='screen',
+        ),
     ])
