@@ -14,7 +14,7 @@ VFOV = (57 * 3.14159265358979323846) / 180.0
 ball_radious = 0.11
 head_x = 0.0
 head_y = 0.0
-head_z = 1.05
+head_z = 0.87
 
 
 class BallDetectorNode(Node):
@@ -39,28 +39,34 @@ class BallDetectorNode(Node):
         self.current_head_tilt = msg.position[1]
     
     def callback_img(self, msg):
-        img_bgr = self.br.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-        results = self.model(img_bgr, verbose=False)
+        try:
+            img_bgr = self.br.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+            if img_bgr is None or not hasattr(img_bgr, 'shape'):
+                self.get_logger().warn("Received empty or invalid image frame")
+                return
+            results = self.model(img_bgr, verbose=False)
 
-        idxs = results[0].boxes.cls.cpu().tolist()
-        confs = results[0].boxes.conf.cpu().tolist()
-        bboxes = results[0].boxes.xywh.cpu().tolist()
+            idxs = results[0].boxes.cls.cpu().tolist()
+            confs = results[0].boxes.conf.cpu().tolist()
+            bboxes = results[0].boxes.xywh.cpu().tolist()
 
-        for i in range(len(idxs)):
-            name = results[0].names[idxs[i]]
-            if "ball" in name and confs[i] > 0.60:
-                confidence = confs[i]
-                x_center, y_center, width, height = bboxes[i]
-                ball_x, ball_y = self.get_ball_position(x_center, y_center, msg.width, msg.height)
-                vision_obj_msg = self.get_vision_object_msg(
-                    name, float(confidence), x_center, y_center, width, height, ball_x, ball_y
-                )
-                self.pub_ball.publish(vision_obj_msg)
+            for i in range(len(idxs)):
+                name = results[0].names[idxs[i]]
+                if "ball" in name and confs[i] > 0.60:
+                    confidence = confs[i]
+                    x_center, y_center, width, height = bboxes[i]
+                    ball_x, ball_y = self.get_ball_position(x_center, y_center, msg.width, msg.height)
+                    vision_obj_msg = self.get_vision_object_msg(
+                        name, float(confidence), x_center, y_center, width, height, ball_x, ball_y
+                    )
+                    self.pub_ball.publish(vision_obj_msg)
 
-        if self.get_parameter('show_debug_window').get_parameter_value().bool_value:
-            annotated_frame = results[0].plot()
-            cv2.imshow("YOLO Detection", annotated_frame)
-            cv2.waitKey(1)
+            if self.get_parameter('show_debug_window').get_parameter_value().bool_value:
+                annotated_frame = results[0].plot()
+                cv2.imshow("YOLO Detection", annotated_frame)
+                cv2.waitKey(1)
+        except Exception as e:
+            self.get_logger().error(f"Detection error: {e}")
         
 
     
@@ -96,6 +102,7 @@ class BallDetectorNode(Node):
         self.sub_joints = self.create_subscription(JointState, '/joint_states', self.callback_joint_states, 1)
         self.pub_ball = self.create_publisher(VisionObject, '/vision/ball', 1)
         self.model = YOLO(model_path)
+        self.model.to('cuda')
 
 def main(args=None):
     rclpy.init(args=args)
