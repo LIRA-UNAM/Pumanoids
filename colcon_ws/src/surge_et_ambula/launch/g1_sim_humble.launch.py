@@ -94,7 +94,7 @@ def generate_launch_description():
         robot_state_publisher_node,
 
         TimerAction(
-            period=30.0,
+            period=10.0,
             actions=[spawn_robot]
         ),
     ])
