@@ -35,9 +35,11 @@ private:
 
         if (!cuda_in_ || last_width_ != msg->width || last_height_ != msg->height) {
             if (cuda_in_) cudaFreeHost(cuda_in_);
+            if (cuda_intermediate_) cudaFreeHost(cuda_intermediate_);
             if (cuda_out_) cudaFreeHost(cuda_out_);
 
             cudaAllocMapped(&cuda_in_, nv12_size);
+            cudaAllocMapped(&cuda_intermediate_, rgb_size);
             cudaAllocMapped(&cuda_out_, rgb_size);
 
             last_width_ = msg->width;
@@ -47,9 +49,15 @@ private:
         memcpy(cuda_in_, msg->data.data(), nv12_size);
 
         if (CUDA_FAILED(cudaConvertColor(cuda_in_, IMAGE_NV12,
-                                         cuda_out_, IMAGE_RGB8,
+                                         cuda_intermediate_, IMAGE_RGB8,
                                          msg->width, msg->height))) {
             RCLCPP_ERROR(this->get_logger(), "GPU Conversion Failed");
+            return;
+        }
+        if (CUDA_FAILED(cudaConvertColor(cuda_intermediate_, IMAGE_RGB8,
+                                     cuda_out_, IMAGE_BGR8,
+                                     msg->width, msg->height))) {
+            RCLCPP_ERROR(this->get_logger(), "Step 2: RGB to BGR Failed");
             return;
         }
 
@@ -57,7 +65,7 @@ private:
         out_msg->header = msg->header;
         out_msg->height = msg->height;
         out_msg->width = msg->width;
-        out_msg->encoding = "rgb8";
+        out_msg->encoding = "bgr8";
         out_msg->step = msg->width * 3;
         out_msg->data.resize(rgb_size);
         memcpy(out_msg->data.data(), cuda_out_, rgb_size);
@@ -66,6 +74,7 @@ private:
     }
 
     void* cuda_in_ = nullptr;
+    void* cuda_intermediate_ = nullptr;
     void* cuda_out_ = nullptr;
     uint32_t last_width_ = 0;
     uint32_t last_height_ = 0;
