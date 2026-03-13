@@ -268,8 +268,8 @@
         <material>
           <pbr>
             <metal>
-              <albedo_map>materials/textures/net.png</albedo_map>
-          </metal>
+              <albedo_map>model://teensize_goal2/materials/textures/net.png</albedo_map>
+            </metal>
           </pbr>
         </material>
       </visual>
@@ -292,8 +292,8 @@
         <material>
           <pbr>
             <metal>
-              <albedo_map>materials/textures/net.png</albedo_map>
-          </metal>
+              <albedo_map>model://teensize_goal2/materials/textures/net.png</albedo_map>
+            </metal>
           </pbr>
         </material>
       </visual>
@@ -316,8 +316,8 @@
         <material>
           <pbr>
             <metal>
-              <albedo_map>materials/textures/net.png</albedo_map>
-          </metal>
+              <albedo_map>model://teensize_goal2/materials/textures/net.png</albedo_map>
+            </metal>
           </pbr>
         </material>
       </visual>

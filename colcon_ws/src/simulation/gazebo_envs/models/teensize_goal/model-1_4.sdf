@@ -254,10 +254,9 @@
       <pose>0.6 0 0.6 0 0 0</pose>
       <collision name="collision">
         <geometry>
-          <plane>
-            <normal>1 0 0</normal>
-            <size>2.7 1.2</size>
-          </plane>
+          <box>
+            <size>0.01 2.7 1.2</size>
+          </box>
         </geometry>
       </collision>
       <visual name="visual">
@@ -269,8 +268,8 @@
         <material>
           <pbr>
             <metal>
-              <albedo_map>materials/textures/net.png</albedo_map>
-          </metal>
+              <albedo_map>model://teensize_goal/materials/textures/net.png</albedo_map>
+            </metal>
           </pbr>
         </material>
       </visual>
@@ -293,8 +292,8 @@
         <material>
           <pbr>
             <metal>
-              <albedo_map>materials/textures/net.png</albedo_map>
-          </metal>
+              <albedo_map>model://teensize_goal/materials/textures/net.png</albedo_map>
+            </metal>
           </pbr>
         </material>
       </visual>
@@ -317,8 +316,8 @@
         <material>
           <pbr>
             <metal>
-              <albedo_map>materials/textures/net.png</albedo_map>
-          </metal>
+              <albedo_map>model://teensize_goal/materials/textures/net.png</albedo_map>
+            </metal>
           </pbr>
         </material>
       </visual>
