@@ -1,5 +1,5 @@
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, TimerAction, SetEnvironmentVariable
+from launch.actions import IncludeLaunchDescription, TimerAction, SetEnvironmentVariable, LogInfo
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.actions import Node
@@ -26,6 +26,12 @@ def generate_launch_description():
 
     robot_description_content = xacro.process_file(urdf_file).toxml()
 
+    # Ruta absoluta al config de control (necesaria para gz_ros2_control en Gazebo)
+    g1_control_config = os.path.join(g1_description_share, 'config', 'g1_control.yaml')
+    robot_description_content = robot_description_content.replace(
+        'CONFIG_PATH_PLACEHOLDER', g1_control_config
+    )
+
     world_file = os.path.join(
         gazebo_envs_share,
         'worlds',
@@ -50,8 +56,17 @@ def generate_launch_description():
         name='robot_state_publisher',
         output='screen',
         parameters=[{
-            'robot_description': robot_description_content
+            'robot_description': robot_description_content,
+            'use_sim_time': True
         }]
+    )
+
+    # Bridge /clock para use_sim_time (necesario para sincronía con Gazebo)
+    clock_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=['/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'],
+        output='screen',
     )
 
     spawn_robot = Node(
@@ -62,13 +77,27 @@ def generate_launch_description():
             '-world', 'default',
             '-topic', '/robot_description',
             '-name', 'G1',
-            '-x', '0.0',
+            '-x', '-4.0',
             '-y', '0.0',
-            '-z', '1.5',
-            '-R', '0.0',
-            '-P', '0.0',
-            '-Y', '0.0'
+            '-z', '0.8',
+            '-Y', '1.5708'
         ]
+    )
+
+    # Spawn controladores: plugin configurado con namespace / para controller_manager en raíz
+    spawn_joint_state_broadcaster = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['joint_state_broadcaster', '-c', '/controller_manager'],
+        output='screen',
+        parameters=[{'use_sim_time': True}],
+    )
+    spawn_trajectory_controller = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['g1_trajectory_controller', '-c', '/controller_manager'],
+        output='screen',
+        parameters=[{'use_sim_time': True}],
     )
 
     return LaunchDescription([
@@ -85,16 +114,26 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(gz_sim_launch),
             launch_arguments={
-                'gz_args': f'-r {world_file}',
+                'gz_args': world_file,  # Sin -r: sim pausada al inicio
                 'on_exit_shutdown': 'false',
-                'paused': 'false'
+                'paused': 'true'
             }.items(),
         ),
 
         robot_state_publisher_node,
+        clock_bridge,
 
         TimerAction(
             period=10.0,
             actions=[spawn_robot]
+        ),
+        # Spawn controladores ~5s después del robot
+        TimerAction(
+            period=15.0,
+            actions=[
+                LogInfo(msg='[G1 Sim] Cargando controladores... Espera "Successfully loaded" y luego pulsa Play en Gazebo.'),
+                spawn_joint_state_broadcaster,
+                spawn_trajectory_controller,
+            ]
         ),
     ])
