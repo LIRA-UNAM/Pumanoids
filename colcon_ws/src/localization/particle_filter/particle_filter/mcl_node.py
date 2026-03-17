@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from geometry_msgs.msg import PoseArray, Pose, Quaternion, Point
-from vision_msgs_def.msg import VisionLandmarkArray
+from localization_msg.msg import VisionLandmarkArray
 from nav_msgs.msg import Odometry
 import numpy as np
 import math

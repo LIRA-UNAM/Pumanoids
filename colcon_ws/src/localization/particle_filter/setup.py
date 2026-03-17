@@ -26,7 +26,7 @@ setup(
         'console_scripts': [
         'map_node = particle_filter.map:main',
         'mcl_node=particle_filter.mcl_node:main',
-        'detector = landmarks_detection.detector_node:main',
+        'detector = particle_filter.detector_node:main',
         ],
     },
 )
