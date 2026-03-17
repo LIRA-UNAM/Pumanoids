@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
-from vision_msgs_def.msg import VisionLandmark, VisionLandmarkArray
+from localization_msg.msg import VisionLandmark, VisionLandmarkArray
 from sensor_msgs.msg import Image, JointState
 from cv_bridge import CvBridge
 import math
@@ -10,11 +10,11 @@ from ultralytics import YOLO
 
 class YoloDetectorNode(Node):
     def __init__(self):
-        super().__init__("yolo_detector_node")
+        super().__init__("detector_node")
         
         # Parámetros
-        self.declare_parameter("checkpoint", "/home/roboworks/ruthmced/final_models/yolov8/weights/best.pt")
-        self.declare_parameter("visualize", True)
+        self.declare_parameter("checkpoint", "/home/booster/Pumanoids/colcon_ws/src/vision/ball_detector/models/yolov8_center.pt")
+        self.declare_parameter("visualize", False)
         self.visualize = self.get_parameter("visualize").value
         
         model_path = self.get_parameter("checkpoint").value
@@ -26,11 +26,11 @@ class YoloDetectorNode(Node):
         
         self.head_yaw = 0.0
         self.bridge = CvBridge()
-        self.camera_fov = math.radians(53.7)
+        self.camera_fov = math.radians(83)
         
         # Suscriptores
         self.joint_sub = self.create_subscription(JointState, "/joint_states", self.joint_callback, 10)
-        self.subscription = self.create_subscription(Image, "/camera/front/image_raw", self.image_callback, qos_profile_sensor_data)
+        self.subscription = self.create_subscription(Image, "/camera/color/image_raw", self.image_callback, qos_profile_sensor_data)
         
         # Publicadores
         self.obs_pub = self.create_publisher(VisionLandmarkArray, '/vision/landmarks', 10)
@@ -51,7 +51,7 @@ class YoloDetectorNode(Node):
         h, w, _ = cv_img.shape
 
         # Inferencia
-        results = self.model.predict(cv_img, conf=0.58, verbose=False)
+        results = self.model.predict(cv_img, conf=0.5, verbose=False)
         
         msg_out = VisionLandmarkArray()
         detections_by_class = {}
@@ -140,100 +140,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-# import rclpy
-# from rclpy.node import Node
-# from sensor_msgs.msg import Image
-# from cv_bridge import CvBridge
-# import torch
-# import time
-# import numpy as np
-# from ultralytics import YOLO
 
-# class YOLODetectorNode(Node):
-
-#     def __init__(self):
-#         super().__init__('yolo_detector_node')
-
-#         self.bridge = CvBridge()
-#         self.subscription = self.create_subscription(
-#             Image,
-#             '/camera/image_raw',
-#             self.image_callback,
-#             10
-#         )
-
-#         # -------- MODEL --------
-#         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-#         self.model = YOLO('/home/roboworks/ruthmced/final_models/yolov8/weights/best.pt')
-#         self.model.to(self.device)
-
-#         # -------- METRICS --------
-#         self.frame_count = 0
-#         self.inf_accum = 0.0
-#         self.total_accum = 0.0
-
-#         self.get_logger().info("YOLO detector ready.")
-
-#     def image_callback(self, msg):
-
-#         start_total = time.perf_counter()
-
-#         # Convert ROS image to OpenCV
-#         cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-
-#         # -------- INFERENCE --------
-#         if self.device == 'cuda':
-#             torch.cuda.synchronize()
-
-#         start_inf = time.perf_counter()
-
-#         with torch.no_grad():
-#             results = self.model.predict(
-#                 cv_image,
-#                 device=self.device,
-#                 verbose=False
-#             )
-
-#         if self.device == 'cuda':
-#             torch.cuda.synchronize()
-
-#         end_inf = time.perf_counter()
-#         end_total = time.perf_counter()
-
-#         # -------- METRICS --------
-#         inf_time = end_inf - start_inf
-#         total_time = end_total - start_total
-
-#         self.frame_count += 1
-#         self.inf_accum += inf_time
-#         self.total_accum += total_time
-
-#         if self.frame_count % 100 == 0:
-
-#             avg_inf = self.inf_accum / self.frame_count
-#             avg_total = self.total_accum / self.frame_count
-
-#             fps_inf = 1.0 / avg_inf
-#             fps_total = 1.0 / avg_total
-
-#             self.get_logger().info(
-#                 f"[YOLO] Over {self.frame_count} frames → "
-#                 f"Inference: {avg_inf*1000:.2f} ms ({fps_inf:.2f} FPS) | "
-#                 f"Total: {avg_total*1000:.2f} ms ({fps_total:.2f} FPS)"
-#             )
-
-#             if self.device == 'cuda':
-#                 mem = torch.cuda.max_memory_allocated() / 1024**2
-#                 self.get_logger().info(f"[YOLO] GPU Memory: {mem:.2f} MB")
-
-
-# def main(args=None):
-#     rclpy.init(args=args)
-#     node = YOLODetectorNode()
-#     rclpy.spin(node)
-#     node.destroy_node()
-#     rclpy.shutdown()
-
-
-# if __name__ == '__main__':
-#     main()
