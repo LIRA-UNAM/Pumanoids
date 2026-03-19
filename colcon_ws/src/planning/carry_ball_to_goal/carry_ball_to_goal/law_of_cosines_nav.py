@@ -89,9 +89,14 @@ class LawOfCosinesNavNode(Node):
         self.declare_parameter("kp_yaw", 1.0)
         self.declare_parameter("max_lin_x", 0.3)
         self.declare_parameter("max_ang_z", 0.9)
+        self.declare_parameter("turn_step_ang_vel", 0.8)
+        self.declare_parameter("turn_step_time_min", 0.3)
+        self.declare_parameter("walk_step_time", 0.8)
+        self.declare_parameter("walk_step_vel", 0.18)
         self.declare_parameter("ball_timeout_s", 0.5)
         self.declare_parameter("goal_timeout_s", 2.0)
         self.declare_parameter("search_pose_hold_s", 2.0)
+        self.declare_parameter("walk_fraction", 1.0)  # Fracción de a a caminar (0-1); al terminar recalcula β, γ, a
 
         self.cmd_pub = self.create_publisher(
             Twist, self.get_parameter("cmd_vel_topic").value, 10
@@ -154,6 +159,12 @@ class LawOfCosinesNavNode(Node):
         self.target_odom_x = None
         self.target_odom_y = None
         self.distance_to_walk = None
+        self.walk_distance = None
+        self.walk_start_time = None
+        self.walk_duration = None
+        self.turn_start_time = None
+        self.turn_duration = None
+        self.turn_angular_z = 0.0
         self.turn_angle_1 = None   # β: giro para mirar goal_robot_pose
         self.turn_angle_2 = None    # γ: giro al llegar para alinear con goal
 
@@ -302,14 +313,19 @@ class LawOfCosinesNavNode(Node):
         yaw_at_c_to_a = math.atan2(ay - cy, ax - cx)
         turn_2 = shortest_angular_distance(yaw_at_c_to_b, yaw_at_c_to_a)
 
+        frac = self.get_parameter("walk_fraction").value
+        frac = max(0.01, min(1.0, frac))
+        walk_a = a * frac
+
         self.target_odom_x = cx
         self.target_odom_y = cy
         self.distance_to_walk = a
+        self.walk_distance = walk_a
         self.turn_angle_1 = turn_1
         self.turn_angle_2 = turn_2
 
         self.get_logger().info(
-            f"Plan: a={a:.2f}m, β={math.degrees(turn_1):.1f}°, γ={math.degrees(turn_2):.1f}°"
+            f"Plan: a={a:.2f}m, walk={walk_a:.2f}m (frac={frac:.2f}), β={math.degrees(turn_1):.1f}°, γ={math.degrees(turn_2):.1f}°"
         )
         return True
 
@@ -365,85 +381,120 @@ class LawOfCosinesNavNode(Node):
             self.get_logger().warn("Planning failed -> Searching")
 
     def _do_turn_to_target(self):
-        t = self._get_tf_odom_base()
-        if t is None:
+        if self.turn_angle_1 is None:
             self._publish_zero()
+            self.current_state = State.Searching
             return
-        yaw = self._get_robot_yaw()
-        if yaw is None:
-            self._publish_zero()
-            return
-        bx, by = t.transform.translation.x, t.transform.translation.y
-        desired_yaw = math.atan2(
-            self.target_odom_y - by, self.target_odom_x - bx
-        )
-        err = shortest_angular_distance(yaw, desired_yaw)
-        yaw_tol = self.get_parameter("yaw_tol_rad").value
-        kp_yaw = self.get_parameter("kp_yaw").value
-        max_ang_z = self.get_parameter("max_ang_z").value
 
-        if abs(err) < yaw_tol:
+        max_ang_z = self.get_parameter("max_ang_z").value
+        turn_speed = self.get_parameter("turn_step_ang_vel").value
+        desired_ang = self.turn_angle_1
+
+        if abs(desired_ang) < self.get_parameter("yaw_tol_rad").value:
             self._publish_zero()
+            self.turn_start_time = None
+            self.turn_duration = None
             self.current_state = State.Walk
-            self.get_logger().info("Turn done -> Walk")
+            self.get_logger().info("Turn beta was negligible -> Walk")
             return
+
+        if self.turn_start_time is None:
+            sign = 1.0 if desired_ang > 0 else -1.0
+            self.turn_angular_z = clamp(sign * turn_speed, -max_ang_z, max_ang_z)
+            self.turn_duration = max(abs(desired_ang) / abs(self.turn_angular_z), self.get_parameter("turn_step_time_min").value)
+            self.turn_start_time = self.get_clock().now()
+            self.get_logger().info(
+                f"Turn β open-loop: ang_vel={self.turn_angular_z:.3f}rad/s dur={self.turn_duration:.3f}s"
+            )
+
+        elapsed = (self.get_clock().now() - self.turn_start_time).nanoseconds * 1e-9
+        if elapsed >= self.turn_duration:
+            self._publish_zero()
+            self.turn_start_time = None
+            self.turn_duration = None
+            self.current_state = State.Walk
+            self.get_logger().info("Beta turn done -> Walk")
+            return
+
         twist = Twist()
-        twist.angular.z = clamp(kp_yaw * err, -max_ang_z, max_ang_z)
+        twist.angular.z = self.turn_angular_z
         self.cmd_pub.publish(twist)
 
     def _do_walk(self):
-        t = self._get_tf_odom_base()
-        if t is None:
-            self._publish_zero()
-            return
-        bx = t.transform.translation.x
-        by = t.transform.translation.y
-        dist = math.hypot(self.target_odom_x - bx, self.target_odom_y - by)
-        pos_tol = self.get_parameter("position_tol_m").value
-        kp_fwd = self.get_parameter("kp_forward").value
-        max_lin_x = self.get_parameter("max_lin_x").value
-
-        if dist <= pos_tol:
+        if self.walk_distance is None or self.walk_distance < 1e-6:
             self._publish_zero()
             self.current_state = State.TurnToGoal
-            self.get_logger().info("Arrived -> TurnToGoal")
             return
+
+        walk_step_vel = self.get_parameter("walk_step_vel").value
+        max_lin_x = self.get_parameter("max_lin_x").value
+
+        if self.walk_start_time is None:
+            self.walk_duration = max(self.walk_distance / walk_step_vel, 0.01)
+            self.walk_start_time = self.get_clock().now()
+            self.get_logger().info(
+                f"Walk open-loop: vel={min(walk_step_vel,max_lin_x):.3f}m/s dur={self.walk_duration:.3f}s"
+            )
+
+        elapsed = (self.get_clock().now() - self.walk_start_time).nanoseconds * 1e-9
+        if elapsed >= self.walk_duration:
+            self._publish_zero()
+            self.walk_start_time = None
+            self.walk_duration = None
+            self.current_state = State.TurnToGoal
+            self.get_logger().info("Walk step done -> TurnToGoal")
+            return
+
         twist = Twist()
-        twist.linear.x = clamp(kp_fwd * dist, 0.05, max_lin_x)
+        twist.linear.x = clamp(walk_step_vel, 0.0, max_lin_x)
         self.cmd_pub.publish(twist)
 
     def _do_turn_to_goal(self):
-        yaw = self._get_robot_yaw()
-        if yaw is None:
+        if self.turn_angle_2 is None:
             self._publish_zero()
+            self.current_state = State.Searching
             return
-        t = self._get_tf_odom_base()
-        if t is None:
-            self._publish_zero()
-            return
-        bx = t.transform.translation.x
-        by = t.transform.translation.y
-        ax, ay = transform_point_to_frame(self.goal_x, self.goal_y, 0.0, t)
-        desired_yaw = math.atan2(ay - by, ax - bx)
-        err = shortest_angular_distance(yaw, desired_yaw)
-        yaw_tol = self.get_parameter("yaw_tol_rad").value
-        kp_yaw = self.get_parameter("kp_yaw").value
-        max_ang_z = self.get_parameter("max_ang_z").value
 
-        if abs(err) < yaw_tol:
+        max_ang_z = self.get_parameter("max_ang_z").value
+        turn_speed = self.get_parameter("turn_step_ang_vel").value
+        desired_ang = self.turn_angle_2
+
+        if abs(desired_ang) < self.get_parameter("yaw_tol_rad").value:
             self._publish_zero()
+            self.turn_start_time = None
+            self.turn_duration = None
             self.current_state = State.CheckAlign
-            self.look_poses = list(LOOK_POSES)
-            self.get_logger().info("Aligned -> CheckAlign")
+            self.get_logger().info("Gamma negligible -> CheckAlign")
             return
+
+        if self.turn_start_time is None:
+            sign = 1.0 if desired_ang > 0 else -1.0
+            self.turn_angular_z = clamp(sign * turn_speed, -max_ang_z, max_ang_z)
+            self.turn_duration = max(abs(desired_ang) / abs(self.turn_angular_z), self.get_parameter("turn_step_time_min").value)
+            self.turn_start_time = self.get_clock().now()
+            self.get_logger().info(
+                f"Turn γ open-loop: ang_vel={self.turn_angular_z:.3f}rad/s dur={self.turn_duration:.3f}s"
+            )
+
+        elapsed = (self.get_clock().now() - self.turn_start_time).nanoseconds * 1e-9
+        if elapsed >= self.turn_duration:
+            self._publish_zero()
+            self.turn_start_time = None
+            self.turn_duration = None
+            self.current_state = State.CheckAlign
+            self.get_logger().info("Gamma turn done -> CheckAlign (buscar balón/goal, recalcular β γ a)")
+            return
+
         twist = Twist()
-        twist.angular.z = clamp(kp_yaw * err, -max_ang_z, max_ang_z)
+        twist.angular.z = self.turn_angular_z
         self.cmd_pub.publish(twist)
 
     def _do_check_align(self):
         if not self._ball_is_fresh() or not self._goal_is_fresh():
             self._publish_zero()
-            self._publish_head_search()
+            self.current_state = State.Searching
+            self.look_poses = list(LOOK_POSES)
+            self.get_logger().info("CheckAlign: sin balón/goal -> Searching (recalcular β γ a)")
             return
         if self.ball_x is None or self.ball_y is None or self.goal_x is None or self.goal_y is None:
             self._publish_zero()
