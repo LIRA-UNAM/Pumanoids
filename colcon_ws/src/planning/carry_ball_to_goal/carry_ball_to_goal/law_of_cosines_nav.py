@@ -4,12 +4,15 @@
 Nodo law_of_cosines_nav: usa ley de los cosenos con vértices
   A = goal_center, B = robot, C = goal_robot_pose.
 
-1. Fija x,y de goal_robot_pose para el ciclo.
-2. Calcula: ángulo de giro (β en B), distancia a caminar (a = BC), ángulo de alineación (γ en C).
-3. Gira β, avanza distancia a, gira γ para quedar alineado con balón y goal.
-4. Al llegar: busca balón y goal_center, verifica alineación (umbral).
-5. Si alineado: finish. Si no: repite ley de cosenos.
+MODO TEST (TEST_MODE=True): secuencia fija para probar en real:
+  1. Gira 45°, avanza 0.5m
+  2. Gira -45°, avanza 0.5m
+  3. Gira 45°, retrocede 0.5m
+  4. Gira -45°, retrocede 0.5m
+
+MODO NORMAL: ley de cosenos (ver docstring original abajo).
 """
+TEST_MODE = True  # True = secuencia de prueba; False = ley de cosenos
 
 import math
 import rclpy
@@ -64,6 +67,19 @@ class State(Enum):
     Finished = 7
 
 
+class TestStep(Enum):
+    """Secuencia de prueba: gira 45, avanza 0.5, gira -45, avanza 0.5, gira 45, retrocede 0.5, gira -45, retrocede 0.5"""
+    Turn45 = 0
+    WalkFwd1 = 1
+    TurnM45 = 2
+    WalkFwd2 = 3
+    Turn45_2 = 4
+    WalkBack1 = 5
+    TurnM45_2 = 6
+    WalkBack2 = 7
+    Done = 8
+
+
 LOOK_POSES = [
     [0.0, 0.7], [-0.8, 0.7], [-0.8, 0.2], [0.0, 0.2], [0.8, 0.2], [0.8, 0.7]
 ]
@@ -97,6 +113,7 @@ class LawOfCosinesNavNode(Node):
         self.declare_parameter("goal_timeout_s", 2.0)
         self.declare_parameter("search_pose_hold_s", 2.0)
         self.declare_parameter("walk_fraction", 1.0)  # Fracción de a a caminar (0-1); al terminar recalcula β, γ, a
+        self.declare_parameter("invert_angular_z", 1.0)  # 1=normal, -1 si el robot gira al revés (solo un sentido)
 
         self.cmd_pub = self.create_publisher(
             Twist, self.get_parameter("cmd_vel_topic").value, 10
@@ -133,6 +150,8 @@ class LawOfCosinesNavNode(Node):
         self.enabled = True  # Sin activación por topic; cancelar nodo detiene
         self.finish_sent = False
         self.current_state = State.Searching
+        self.test_step = TestStep.Turn45
+        self.test_start_time = None
 
         self.ball_x = None
         self.ball_y = None
@@ -168,7 +187,10 @@ class LawOfCosinesNavNode(Node):
         self.turn_angle_1 = None   # β: giro para mirar goal_robot_pose
         self.turn_angle_2 = None    # γ: giro al llegar para alinear con goal
 
-        self.get_logger().info("law_of_cosines_nav started (no enable topic)")
+        if TEST_MODE:
+            self.get_logger().info("law_of_cosines_nav started in TEST_MODE: 45°→0.5m→-45°→0.5m→45°→-0.5m→-45°→-0.5m")
+        else:
+            self.get_logger().info("law_of_cosines_nav started (no enable topic)")
 
     # def _callback_enable(self, msg: Bool):
     #     ...
@@ -332,8 +354,12 @@ class LawOfCosinesNavNode(Node):
     def _timer_callback(self):
         if not self.enabled:
             return
-        # if self.current_state == State.Waiting:
-        #     return
+
+        if TEST_MODE:
+            self._do_test_sequence()
+            return
+
+        # === LÓGICA LEY DE COSENOS (comentada cuando TEST_MODE) ===
         if self.current_state == State.Finished:
             self._publish_zero()
             if not self.finish_sent:
@@ -360,6 +386,114 @@ class LawOfCosinesNavNode(Node):
         if self.current_state == State.CheckAlign:
             self._do_check_align()
             return
+
+    def _do_test_sequence(self):
+        """Secuencia de prueba: gira 45, avanza 0.5, gira -45, avanza 0.5, gira 45, retrocede 0.5, gira -45, retrocede 0.5"""
+        turn_vel = self.get_parameter("turn_step_ang_vel").value
+        walk_vel = self.get_parameter("walk_step_vel").value
+        max_lin = self.get_parameter("max_lin_x").value
+        inv = self.get_parameter("invert_angular_z").value
+
+        turn_45_rad = math.radians(45)
+        walk_dist = 0.5
+        turn_dur = turn_45_rad / abs(turn_vel)
+        walk_dur = walk_dist / min(walk_vel, max_lin)
+
+        if self.test_step == TestStep.Done:
+            self._publish_zero()
+            if not self.finish_sent:
+                self.finish_pub.publish(Bool(data=True))
+                self.finish_sent = True
+                self.get_logger().info("Test sequence DONE")
+            return
+
+        if self.test_start_time is None:
+            self.test_start_time = self.get_clock().now()
+            desc = "turn 45°" if "Turn45" in self.test_step.name and "M45" not in self.test_step.name else "turn -45°" if "TurnM45" in self.test_step.name else "walk fwd 0.5m" if "WalkFwd" in self.test_step.name else "walk back 0.5m"
+            self.get_logger().info(f"Test step {self.test_step.name}: {desc}")
+
+        elapsed = (self.get_clock().now() - self.test_start_time).nanoseconds * 1e-9
+
+        if self.test_step == TestStep.Turn45:
+            if elapsed >= turn_dur:
+                self._publish_zero()
+                self.test_step = TestStep.WalkFwd1
+                self.test_start_time = None
+                return
+            twist = Twist()
+            twist.angular.z = inv * turn_vel
+            self.cmd_pub.publish(twist)
+
+        elif self.test_step == TestStep.WalkFwd1:
+            if elapsed >= walk_dur:
+                self._publish_zero()
+                self.test_step = TestStep.TurnM45
+                self.test_start_time = None
+                return
+            twist = Twist()
+            twist.linear.x = min(walk_vel, max_lin)
+            self.cmd_pub.publish(twist)
+
+        elif self.test_step == TestStep.TurnM45:
+            if elapsed >= turn_dur:
+                self._publish_zero()
+                self.test_step = TestStep.WalkFwd2
+                self.test_start_time = None
+                return
+            twist = Twist()
+            twist.angular.z = inv * (-turn_vel)
+            self.cmd_pub.publish(twist)
+
+        elif self.test_step == TestStep.WalkFwd2:
+            if elapsed >= walk_dur:
+                self._publish_zero()
+                self.test_step = TestStep.Turn45_2
+                self.test_start_time = None
+                return
+            twist = Twist()
+            twist.linear.x = min(walk_vel, max_lin)
+            self.cmd_pub.publish(twist)
+
+        elif self.test_step == TestStep.Turn45_2:
+            if elapsed >= turn_dur:
+                self._publish_zero()
+                self.test_step = TestStep.WalkBack1
+                self.test_start_time = None
+                return
+            twist = Twist()
+            twist.angular.z = inv * turn_vel
+            self.cmd_pub.publish(twist)
+
+        elif self.test_step == TestStep.WalkBack1:
+            if elapsed >= walk_dur:
+                self._publish_zero()
+                self.test_step = TestStep.TurnM45_2
+                self.test_start_time = None
+                return
+            twist = Twist()
+            twist.linear.x = -min(walk_vel, max_lin)
+            self.cmd_pub.publish(twist)
+
+        elif self.test_step == TestStep.TurnM45_2:
+            if elapsed >= turn_dur:
+                self._publish_zero()
+                self.test_step = TestStep.WalkBack2
+                self.test_start_time = None
+                return
+            twist = Twist()
+            twist.angular.z = inv * (-turn_vel)
+            self.cmd_pub.publish(twist)
+
+        elif self.test_step == TestStep.WalkBack2:
+            if elapsed >= walk_dur:
+                self._publish_zero()
+                self.test_step = TestStep.Done
+                self.test_start_time = None
+                self.get_logger().info("Test sequence complete")
+                return
+            twist = Twist()
+            twist.linear.x = -min(walk_vel, max_lin)
+            self.cmd_pub.publish(twist)
 
     def _do_searching(self):
         if (self._ball_is_fresh() and self._goal_is_fresh() and self._goal_pose_is_fresh()
@@ -399,12 +533,14 @@ class LawOfCosinesNavNode(Node):
             return
 
         if self.turn_start_time is None:
+            # desired_ang>0 → girar izq (ang_z>0 en ROS); desired_ang<0 → girar der (ang_z<0)
             sign = 1.0 if desired_ang > 0 else -1.0
-            self.turn_angular_z = clamp(sign * turn_speed, -max_ang_z, max_ang_z)
+            inv = self.get_parameter("invert_angular_z").value
+            self.turn_angular_z = inv * clamp(sign * turn_speed, -max_ang_z, max_ang_z)
             self.turn_duration = max(abs(desired_ang) / abs(self.turn_angular_z), self.get_parameter("turn_step_time_min").value)
             self.turn_start_time = self.get_clock().now()
             self.get_logger().info(
-                f"Turn β open-loop: ang_vel={self.turn_angular_z:.3f}rad/s dur={self.turn_duration:.3f}s"
+                f"Turn β: ang={math.degrees(desired_ang):.1f}° ang_vel={self.turn_angular_z:.3f}rad/s dur={self.turn_duration:.3f}s"
             )
 
         elapsed = (self.get_clock().now() - self.turn_start_time).nanoseconds * 1e-9
@@ -469,11 +605,12 @@ class LawOfCosinesNavNode(Node):
 
         if self.turn_start_time is None:
             sign = 1.0 if desired_ang > 0 else -1.0
-            self.turn_angular_z = clamp(sign * turn_speed, -max_ang_z, max_ang_z)
+            inv = self.get_parameter("invert_angular_z").value
+            self.turn_angular_z = inv * clamp(sign * turn_speed, -max_ang_z, max_ang_z)
             self.turn_duration = max(abs(desired_ang) / abs(self.turn_angular_z), self.get_parameter("turn_step_time_min").value)
             self.turn_start_time = self.get_clock().now()
             self.get_logger().info(
-                f"Turn γ open-loop: ang_vel={self.turn_angular_z:.3f}rad/s dur={self.turn_duration:.3f}s"
+                f"Turn γ: ang={math.degrees(desired_ang):.1f}° ang_vel={self.turn_angular_z:.3f}rad/s dur={self.turn_duration:.3f}s"
             )
 
         elapsed = (self.get_clock().now() - self.turn_start_time).nanoseconds * 1e-9
