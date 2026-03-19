@@ -314,9 +314,10 @@ class LawOfCosinesNavNode(Node):
             return None
         turn_1 = shortest_angular_distance(current_yaw, desired_yaw)
 
-        yaw_at_c_to_b = math.atan2(by - cy, bx - cx)
+        # Al llegar a C venimos de B, así que miramos en dirección B→C (no C→B)
+        yaw_facing_at_c = math.atan2(cy - by, cx - bx)
         yaw_at_c_to_a = math.atan2(ay - cy, ax - cx)
-        turn_2 = shortest_angular_distance(yaw_at_c_to_b, yaw_at_c_to_a)
+        turn_2 = shortest_angular_distance(yaw_facing_at_c, yaw_at_c_to_a)
 
         return (a, turn_1, turn_2)
 
@@ -364,10 +365,10 @@ class LawOfCosinesNavNode(Node):
             return False
         turn_1 = shortest_angular_distance(current_yaw, desired_yaw)
 
-        # Ángulo para girar en C hacia A (alineación)
-        yaw_at_c_to_b = math.atan2(by - cy, bx - cx)
+        # Ángulo para girar en C hacia A (alineación). Al llegar venimos de B, miramos B→C
+        yaw_facing_at_c = math.atan2(cy - by, cx - bx)
         yaw_at_c_to_a = math.atan2(ay - cy, ax - cx)
-        turn_2 = shortest_angular_distance(yaw_at_c_to_b, yaw_at_c_to_a)
+        turn_2 = shortest_angular_distance(yaw_facing_at_c, yaw_at_c_to_a)
 
         frac = self.get_parameter("walk_fraction").value
         frac = max(0.01, min(1.0, frac))
