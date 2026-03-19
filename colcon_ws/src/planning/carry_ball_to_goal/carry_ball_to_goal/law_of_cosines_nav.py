@@ -4,15 +4,12 @@
 Nodo law_of_cosines_nav: usa ley de los cosenos con vértices
   A = goal_center, B = robot, C = goal_robot_pose.
 
-MODO TEST (TEST_MODE=True): secuencia fija para probar en real:
-  1. Gira 45°, avanza 0.5m
-  2. Gira -45°, avanza 0.5m
-  3. Gira 45°, retrocede 0.5m
-  4. Gira -45°, retrocede 0.5m
-
-MODO NORMAL: ley de cosenos (ver docstring original abajo).
+MODOS:
+  "test"  - Secuencia fija: gira 45°, avanza 0.5m, gira -45°, avanza 0.5m, etc.
+  "print" - Robot parado, imprime β γ a cada 1s (para verificar cálculos)
+  "normal" - Ley de cosenos (navegación completa)
 """
-TEST_MODE = True  # True = secuencia de prueba; False = ley de cosenos
+MODE = "print"  # "test" | "print" | "normal"
 
 import math
 import rclpy
@@ -152,6 +149,7 @@ class LawOfCosinesNavNode(Node):
         self.current_state = State.Searching
         self.test_step = TestStep.Turn45
         self.test_start_time = None
+        self.print_last_time = None
 
         self.ball_x = None
         self.ball_y = None
@@ -187,10 +185,12 @@ class LawOfCosinesNavNode(Node):
         self.turn_angle_1 = None   # β: giro para mirar goal_robot_pose
         self.turn_angle_2 = None    # γ: giro al llegar para alinear con goal
 
-        if TEST_MODE:
-            self.get_logger().info("law_of_cosines_nav started in TEST_MODE: 45°→0.5m→-45°→0.5m→45°→-0.5m→-45°→-0.5m")
+        if MODE == "test":
+            self.get_logger().info("law_of_cosines_nav started in TEST mode: 45°→0.5m→-45°→0.5m→45°→-0.5m→-45°→-0.5m")
+        elif MODE == "print":
+            self.get_logger().info("law_of_cosines_nav started in PRINT mode: robot parado, imprime β γ a cada 1s")
         else:
-            self.get_logger().info("law_of_cosines_nav started (no enable topic)")
+            self.get_logger().info("law_of_cosines_nav started (modo normal)")
 
     # def _callback_enable(self, msg: Bool):
     #     ...
@@ -286,6 +286,40 @@ class LawOfCosinesNavNode(Node):
         msg.data = [self.goal_pan, self.goal_tilt]
         self.pub_head.publish(msg)
 
+    def _compute_beta_gamma_a(self):
+        """Calcula y retorna (a, turn_1=β, turn_2=γ) o None si no hay datos."""
+        t = self._get_tf_odom_base()
+        if t is None:
+            return None
+        if self.goal_x is None or self.goal_y is None or self.goal_pose_x is None or self.goal_pose_y is None:
+            return None
+
+        # Transformar a odom
+        bx = t.transform.translation.x
+        by = t.transform.translation.y
+        ax, ay = transform_point_to_frame(self.goal_x, self.goal_y, 0.0, t)
+        cx, cy = transform_point_to_frame(self.goal_pose_x, self.goal_pose_y, 0.0, t)
+
+        # Triángulo: A=goal_center, B=robot, C=goal_robot_pose
+        a = math.hypot(cx - bx, cy - by)
+        b = math.hypot(ax - cx, ay - cy)
+        c = math.hypot(ax - bx, ay - by)
+
+        if a < 1e-6 or b < 1e-6 or c < 1e-6:
+            return None
+
+        desired_yaw = math.atan2(cy - by, cx - bx)
+        current_yaw = self._get_robot_yaw()
+        if current_yaw is None:
+            return None
+        turn_1 = shortest_angular_distance(current_yaw, desired_yaw)
+
+        yaw_at_c_to_b = math.atan2(by - cy, bx - cx)
+        yaw_at_c_to_a = math.atan2(ay - cy, ax - cx)
+        turn_2 = shortest_angular_distance(yaw_at_c_to_b, yaw_at_c_to_a)
+
+        return (a, turn_1, turn_2)
+
     def _compute_triangle_and_plan(self) -> bool:
         """Calcula ley de cosenos. Retorna True si OK."""
         t = self._get_tf_odom_base()
@@ -355,11 +389,15 @@ class LawOfCosinesNavNode(Node):
         if not self.enabled:
             return
 
-        if TEST_MODE:
+        if MODE == "test":
             self._do_test_sequence()
             return
 
-        # === LÓGICA LEY DE COSENOS (comentada cuando TEST_MODE) ===
+        if MODE == "print":
+            self._do_print_mode()
+            return
+
+        # === LÓGICA LEY DE COSENOS (modo normal) ===
         if self.current_state == State.Finished:
             self._publish_zero()
             if not self.finish_sent:
@@ -386,6 +424,25 @@ class LawOfCosinesNavNode(Node):
         if self.current_state == State.CheckAlign:
             self._do_check_align()
             return
+
+    def _do_print_mode(self):
+        """Robot parado. Imprime β γ a cada 1s para verificar cálculos."""
+        self._publish_zero()
+        now = self.get_clock().now()
+        if self.print_last_time is not None:
+            elapsed = (now - self.print_last_time).nanoseconds * 1e-9
+            if elapsed < 1.0:
+                return
+        self.print_last_time = now
+
+        result = self._compute_beta_gamma_a()
+        if result is None:
+            self.get_logger().info("β γ a: (sin datos: balón, goal o goal_pose)")
+            return
+        a, turn_1, turn_2 = result
+        self.get_logger().info(
+            f"β={math.degrees(turn_1):.1f}°  γ={math.degrees(turn_2):.1f}°  a={a:.3f}m"
+        )
 
     def _do_test_sequence(self):
         """Secuencia de prueba: gira 45, avanza 0.5, gira -45, avanza 0.5, gira 45, retrocede 0.5, gira -45, retrocede 0.5"""
