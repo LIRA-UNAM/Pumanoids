@@ -12,6 +12,7 @@ from rclpy.node import Node
 from game_planner import gamestate
 from construct import Enum
 from std_msgs.msg import Bool
+from booster_interface.srv import RpcService
 
 # Ports to comunicate with the Game Controller under UDP packages
 SOURCE_PORT = 3838 # Game Controller broadcast messages through port 3838
@@ -28,6 +29,8 @@ INTERRUPTION_READY=          4
 
 # The states of the node 
 class State(Enum):
+
+        # -- MAIN STATES --
     WAITING_CONNECTION = 0 # Not receiving any signal from the Game Controller
     START = 1 # Game controller STATE_READY. The initial state of Game Controller
     POSITION_START = 2 # The robots move from the side to their kickoff positions
@@ -35,8 +38,24 @@ class State(Enum):
     KICKOFF = 4 # Game controller STATE_PLAYING. Attack (follow_ball) or defense (wait to ball to move and then follow_ball).
     PLAYING = 5 # To follow the ball detected by the robot's camrea. If goalkeeper, run the defense node.
     FINISH = 6 # THE END
-    IDLE = 7 # IDLE
-    ERROR = 8 # Not good
+
+        # -- SUB STATES --
+
+    STATE2_NORMAL = 7
+    STATE2_PENALTYSHOOT = 8
+    STATE2_OVERTIME = 9
+    STATE2_TIMEOUT = 10
+    STATE2_DIRECT_FREEKICK = 11
+    STATE2_INDIRECT_FREEKICK = 12
+    STATE2_PENALTYKICK = 13
+    STATE2_CORNER_KICK = 14
+    STATE2_GOAL_KICK = 15
+    STATE2_THROW_IN = 16
+
+        # -- DEBUG STATES --
+
+    IDLE = 17 # IDLE
+    ERROR = 18 # Not good
     # More comming soon
 
 class PlannerNode(Node):
@@ -58,6 +77,12 @@ class PlannerNode(Node):
         
         # -- PARAMETERS --
         self.host ="0.0.0.0" # Always watching any IP
+
+        # -- SERVICES CLIENTS --
+        self.getup_client = self.create_client(RpcService, '/booster_rpc_service')
+        while not self.getup_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Esperando servicio...')
+
 
         #player_number
         self.declare_parameter('player_number', 1)
@@ -101,7 +126,30 @@ class PlannerNode(Node):
 
     # Primary function of the state machine.
     # This function is called by the timer declared above.
+    
+    # -- SERVICE REQUEST --
+
+    def send_getup_request(self):
+        req = RpcService.Request()
+        req.msg.api_id = 2008
+        req.msg.body = ""
+
+        self.response = self.getup_client.call_async(req)
+    
     def rustic_smach(self):
+        self.send_getup_request() # Check if is fall and getup if so
+        if self.response.done():
+            try:
+                if self.response.result().msg.status == 0:
+                    self.get_logger().debug("Robot levantado")
+                else:
+                    self.get_logger().debug("Robot no se puede levantar ")
+                    self.current_state = self.error_state
+            except Exception as e:
+                self.get_logger().error(f'Error: {e}')
+                self.current_state = self.error_state
+
+
 
         try:
             # Loop to get the latest packet and clear the buffer
