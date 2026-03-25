@@ -22,10 +22,12 @@ class DeepFaceFollowerNode(Node):
         # El target_face_height_px representa cómo se ve un rostro promedio a ~0.5 metros
         # en tu resolución de cámara. (Requiere calibración: párate a 0.5m y revisa el print).
         self.declare_parameter("target_face_height_px", 180.0) 
+        self.declare_parameter("target_distance_m", 0.5) 
         self.declare_parameter("image_topic", "/camera/color/image_raw")
         self.declare_parameter("show_debug_window", True)
         
         self.target_face_h = self.get_parameter("target_face_height_px").value
+        self.target_dist = self.get_parameter("target_distance_m").value
         self.show_debug_window = self.get_parameter("show_debug_window").value
         
         self.bridge = CvBridge()
@@ -89,8 +91,8 @@ class DeepFaceFollowerNode(Node):
                     error_z = self.target_face_h - h 
                     
                     # 5. Calcular Distancia y publicar
-                    # Asumiendo que target_face_h es el tamaño a 0.5 metros (inversamente proporcional)
-                    distance = (0.5 * self.target_face_h) / float(h)
+                    # Usando proporción inversa en base a la calibración de distancia
+                    distance = (self.target_dist * self.target_face_h) / float(h)
                     
                     msg_age = Int32()
                     msg_age.data = int(age)
