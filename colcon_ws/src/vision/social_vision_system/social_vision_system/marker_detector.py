@@ -19,6 +19,7 @@ class MarkerDetectorNode(Node):
         
         self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
         self.aruco_params = cv2.aruco.DetectorParameters()
+        self.aruco_detector = cv2.aruco.ArucoDetector(self.aruco_dict, self.aruco_params)
 
         self.camera_matrix = None
         self.dist_coeffs = None
@@ -50,7 +51,7 @@ class MarkerDetectorNode(Node):
         cv_image = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
         gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
         
-        corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.aruco_dict, parameters=self.aruco_params)
+        corners, ids, rejected = self.aruco_detector.detectMarkers(gray)
 
         if ids is not None:
             # Buscar si el ID objetivo (7) está entre los marcadores detectados
