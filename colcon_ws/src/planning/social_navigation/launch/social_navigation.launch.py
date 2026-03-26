@@ -9,7 +9,7 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
     return_method_arg = DeclareLaunchArgument(
         'return_method',
-        default_value='odometry',
+        default_value='marker',
         description='Método de retorno para la máquina de estados: odometry, marker, memory'
     )
 
