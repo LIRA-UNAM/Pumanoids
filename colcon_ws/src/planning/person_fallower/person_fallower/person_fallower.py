@@ -11,8 +11,8 @@ class PersonFollowerBase(Node):
         super().__init__('person_fallower_base')
         
         # Parámetros PID y límites de velocidad
-        self.declare_parameter("kp_linear", 0.002, description="Ganancia proporcional para control de distancia (basado en píxeles)")
-        self.declare_parameter("kp_angular", 1.2, description="Ganancia proporcional para que el cuerpo siga a la cabeza (basado en radianes)")
+        self.declare_parameter("kp_linear", 0.002)
+        self.declare_parameter("kp_angular", 1.2)
         self.declare_parameter("max_linear_vel", 0.2)
         self.declare_parameter("max_angular_vel", 0.5)
         
@@ -52,7 +52,8 @@ class PersonFollowerBase(Node):
 
     def joints_callback(self, msg: JointState):
         # El error para el giro del cuerpo es el propio ángulo de la cabeza.
-        self.head_pan_angle = msg.position[0]
+        if len(msg.position) > 0:
+            self.head_pan_angle = msg.position[0]
 
     def err_z_callback(self, msg: Float32):
         self.error_z = msg.data

@@ -28,7 +28,7 @@ class MarkerDetectorNode(Node):
         self.declare_parameter("target_marker_id", 7)
         self.target_marker_id = self.get_parameter("target_marker_id").value
 
-        self.declare_parameter("show_debug_window", True)
+        self.declare_parameter("show_debug_window", False)
         self.show_debug_window = self.get_parameter("show_debug_window").value
 
         self.sub_img = self.create_subscription(Image, '/camera/color/image_raw', self.image_callback, 10)
