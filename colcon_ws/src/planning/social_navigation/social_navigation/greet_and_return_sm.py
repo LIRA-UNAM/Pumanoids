@@ -47,7 +47,7 @@ class GreetAndReturnSM(Node):
         self.current_distance = 999.0
         
         # Parámetro para seleccionar el método de retorno
-        self.declare_parameter("return_method", "odometry") # "odometry", "marker", "memory"
+        self.declare_parameter("return_method", "marker") # "odometry", "marker", "memory"
         self.return_method = self.get_parameter("return_method").value
         
         # Parámetros de navegación para el retorno
@@ -137,12 +137,15 @@ class GreetAndReturnSM(Node):
 
         if self.state == State.IDLE:
             # Si detectamos un rostro fresco (hace menos de 0.5 seg)
-            if time_since_last_face < 0.5 and self.current_pose is not None:
-                self.home_pose = self.current_pose
-                self.state = State.APPROACHING
-                self.command_memory.clear() # Limpiar memoria de comandos vieja
-                self.enable_person_follower(True)
-                self.get_logger().info("Persona detectada. Guardando Home y acercándose...")
+            if time_since_last_face < 0.5:
+                if self.return_method == 'odometry' and self.current_pose is None:
+                    self.get_logger().warn("Rostro detectado, pero esperando tópico /odom para guardar Home...", throttle_duration_sec=2.0)
+                else:
+                    self.home_pose = self.current_pose
+                    self.state = State.APPROACHING
+                    self.command_memory.clear() # Limpiar memoria de comandos vieja
+                    self.enable_person_follower(True)
+                    self.get_logger().info("Persona detectada. Guardando Home y acercándose...")
 
         elif self.state == State.APPROACHING:
             # Si perdemos a la persona antes de llegar, regresamos a casa
