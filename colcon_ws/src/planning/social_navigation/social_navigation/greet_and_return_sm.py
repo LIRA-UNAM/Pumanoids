@@ -60,6 +60,9 @@ class GreetAndReturnSM(Node):
         self.marker_x = None
         self.marker_dist = 999.0
         self.last_marker_time = None
+        
+        self.command_memory = []
+        self.current_cmd_vel = Twist()
 
         # Publicadores
         self.pub_cmd_vel = self.create_publisher(Twist, '/cmd_vel', 10)
@@ -69,6 +72,7 @@ class GreetAndReturnSM(Node):
         # Suscriptores
         self.sub_odom = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
         self.sub_distance = self.create_subscription(Float32, '/person_follower/distance', self.distance_callback, 10)
+        self.sub_cmd_vel_record = self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, 10)
         try:
             self.sub_marker = self.create_subscription(VisionObject, '/vision/marker', self.marker_callback, 10)
         except NameError:
@@ -85,6 +89,9 @@ class GreetAndReturnSM(Node):
 
     def odom_callback(self, msg: Odometry):
         self.current_pose = msg.pose.pose
+
+    def cmd_vel_callback(self, msg: Twist):
+        self.current_cmd_vel = msg
 
     def distance_callback(self, msg: Float32):
         self.current_distance = msg.data
