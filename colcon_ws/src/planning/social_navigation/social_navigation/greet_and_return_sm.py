@@ -37,6 +37,7 @@ class State(Enum):
     RETURNING = 5
     MARKER_TURN_180 = 6
     MARKER_SCAN_HEAD = 7
+    MARKER_WAIT_FRONT = 8
 
 class GreetAndReturnSM(Node):
     def __init__(self):
@@ -66,6 +67,7 @@ class GreetAndReturnSM(Node):
         # Temporizadores y variables de escaneo
         self.greeting_start_time = None
         self.turn_start_time = None
+        self.wait_front_start_time = None
         self.scan_pan = 0.0
         self.scan_tilt = 0.0
         self.search_turn_direction = 1.0
@@ -147,8 +149,8 @@ class GreetAndReturnSM(Node):
             time_since_last_face = (now - self.last_face_time).nanoseconds * 1e-9
 
         if self.state == State.IDLE:
-            # Si detectamos un rostro fresco (hace menos de 0.5 seg)
-            if time_since_last_face < 0.5:
+            # Si detectamos un rostro fresco (hace menos de 7.0 seg)
+            if time_since_last_face < 7.0:
                 if self.return_method == 'odometry':
                     if self.current_pose is None:
                         self.get_logger().warn("Rostro detectado, pero esperando tópico /odometer_state para guardar Home...", throttle_duration_sec=2.0)
@@ -167,7 +169,7 @@ class GreetAndReturnSM(Node):
 
         elif self.state == State.APPROACHING:
             # Si perdemos a la persona antes de llegar, regresamos a casa
-            if time_since_last_face > 2.0:
+            if time_since_last_face > 7.0:
                 self.state = State.RETURNING
                 self.enable_person_follower(False)
                 self.get_logger().info("Se perdió a la persona durante el acercamiento. Regresando...")
@@ -194,8 +196,8 @@ class GreetAndReturnSM(Node):
                 self.get_logger().info("Saludo terminado. Interactuando. Esperando a que la persona se vaya...")
 
         elif self.state == State.INTERACTING:
-            # Si la persona se da la vuelta o se aleja (no se detecta su rostro por 3 segundos)
-            if time_since_last_face > 3.0:
+            # Si la persona se da la vuelta o se aleja (no se detecta su rostro por 15 segundos)
+            if time_since_last_face > 15.0:
                 if self.return_method == 'marker':
                     self.state = State.MARKER_TURN_180
                     self.turn_start_time = now
@@ -234,10 +236,27 @@ class GreetAndReturnSM(Node):
                 self.pub_cmd_vel.publish(twist)
             else:
                 self.pub_cmd_vel.publish(Twist())
+                self.state = State.MARKER_WAIT_FRONT
+                self.wait_front_start_time = now
+                msg_head = Float32MultiArray()
+                msg_head.data = [0.0, 0.0]
+                self.pub_head.publish(msg_head)
+                self.get_logger().info("Giro de 180 completado. Mirando al frente por 10 segundos...")
+
+        elif self.state == State.MARKER_WAIT_FRONT:
+            time_since_marker = (now - self.last_marker_time).nanoseconds * 1e-9 if self.last_marker_time else 999.0
+            if time_since_marker < 0.5 and self.marker_x is not None:
+                self.state = State.RETURNING
+                self.search_turn_direction = 1.0
+                self.get_logger().info("Marcador encontrado de frente. Retornando...")
+                return
+            
+            elapsed = (now - self.wait_front_start_time).nanoseconds * 1e-9 if self.wait_front_start_time else 0.0
+            if elapsed >= 10.0:
                 self.state = State.MARKER_SCAN_HEAD
                 self.scan_pan = -1.0 # Empieza mirando a la derecha
                 self.scan_tilt = 0.0
-                self.get_logger().info("Giro de 180 completado. Escaneando lentamente con la cabeza...")
+                self.get_logger().info("No se encontró marcador de frente. Escaneando lentamente con la cabeza...")
 
         elif self.state == State.MARKER_SCAN_HEAD:
             time_since_marker = (now - self.last_marker_time).nanoseconds * 1e-9 if self.last_marker_time else 999.0
