@@ -70,7 +70,7 @@ class GreetAndReturnSM(Node):
         self.pub_head = self.create_publisher(Float32MultiArray, '/hardware/head/goal_pose', 10)
         
         # Suscriptores
-        self.sub_odom = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
+        self.sub_odom = self.create_subscription(Odometry, '/odometer_state', self.odom_callback, 10)
         self.sub_distance = self.create_subscription(Float32, '/person_follower/distance', self.distance_callback, 10)
         self.sub_cmd_vel_record = self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, 10)
         try:
@@ -138,14 +138,21 @@ class GreetAndReturnSM(Node):
         if self.state == State.IDLE:
             # Si detectamos un rostro fresco (hace menos de 0.5 seg)
             if time_since_last_face < 0.5:
-                if self.return_method == 'odometry' and self.current_pose is None:
-                    self.get_logger().warn("Rostro detectado, pero esperando tópico /odom para guardar Home...", throttle_duration_sec=2.0)
+                if self.return_method == 'odometry':
+                    if self.current_pose is None:
+                        self.get_logger().warn("Rostro detectado, pero esperando tópico /odometer_state para guardar Home...", throttle_duration_sec=2.0)
+                    else:
+                        self.home_pose = self.current_pose
+                        self.state = State.APPROACHING
+                        self.command_memory.clear() # Limpiar memoria de comandos vieja
+                        self.enable_person_follower(True)
+                        self.get_logger().info("Persona detectada. Guardando Home (odometría) y acercándose...")
                 else:
-                    self.home_pose = self.current_pose
+                    # Si es marker o memory, no necesitamos odometría en lo absoluto
                     self.state = State.APPROACHING
-                    self.command_memory.clear() # Limpiar memoria de comandos vieja
+                    self.command_memory.clear()
                     self.enable_person_follower(True)
-                    self.get_logger().info("Persona detectada. Guardando Home y acercándose...")
+                    self.get_logger().info(f"Persona detectada. Acercándose (Retorno configurado por {self.return_method})...")
 
         elif self.state == State.APPROACHING:
             # Si perdemos a la persona antes de llegar, regresamos a casa
