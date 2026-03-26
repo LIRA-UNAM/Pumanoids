@@ -35,6 +35,8 @@ class State(Enum):
     INTERACTING = 3
     RETURN_TURN = 4
     RETURNING = 5
+    MARKER_TURN_180 = 6
+    MARKER_SCAN_HEAD = 7
 
 class GreetAndReturnSM(Node):
     def __init__(self):
@@ -60,6 +62,13 @@ class GreetAndReturnSM(Node):
         self.marker_x = None
         self.marker_dist = 999.0
         self.last_marker_time = None
+        
+        # Temporizadores y variables de escaneo
+        self.greeting_start_time = None
+        self.turn_start_time = None
+        self.scan_pan = 0.0
+        self.scan_tilt = 0.0
+        self.search_turn_direction = 1.0
         
         self.command_memory = []
         self.current_cmd_vel = Twist()
@@ -107,18 +116,20 @@ class GreetAndReturnSM(Node):
         msg.data = enable
         self.pub_enable_follower.publish(msg)
 
-    def call_greeting_service(self):
+    def call_greeting_service(self, hand_action=0):
         if not self.srv_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn("Servicio /booster_rpc_service no disponible, saltando saludo.")
             return
             
         req = RpcService.Request()
         req.msg.api_id = 2005
-        req.msg.body = '{"hand_index":1,"hand_action":1}'
+        req.msg.body = f'{{"hand_index":1,"hand_action":{hand_action}}}'
         
         future = self.srv_client.call_async(req)
         future.add_done_callback(self.greeting_response_callback)
-        self.get_logger().info("Llamada al servicio de saludo enviada.")
+        
+        action_str = "iniciar" if hand_action == 0 else "detener"
+        self.get_logger().info(f"Llamada al servicio para {action_str} el saludo enviada.")
 
     def greeting_response_callback(self, future):
         try:
@@ -169,24 +180,26 @@ class GreetAndReturnSM(Node):
             if self.current_distance < 0.65:
                 self.state = State.GREETING
                 self.enable_person_follower(False) # Detenemos el seguidor
-                self.get_logger().info("Llegamos a la persona. Saludando...")
+                self.call_greeting_service(0)
+                self.greeting_start_time = now
+                self.get_logger().info("Llegamos a la persona. Saludando (5 segundos)...")
 
         elif self.state == State.GREETING:
             # Detener el robot completamente
             self.pub_cmd_vel.publish(Twist())
-            self.call_greeting_service()
-            self.state = State.INTERACTING
-            self.get_logger().info("Interactuando. Esperando a que la persona se vaya...")
+            elapsed = (now - self.greeting_start_time).nanoseconds * 1e-9 if self.greeting_start_time else 0.0
+            if elapsed >= 5.0:
+                self.call_greeting_service(1)
+                self.state = State.INTERACTING
+                self.get_logger().info("Saludo terminado. Interactuando. Esperando a que la persona se vaya...")
 
         elif self.state == State.INTERACTING:
             # Si la persona se da la vuelta o se aleja (no se detecta su rostro por 3 segundos)
             if time_since_last_face > 3.0:
                 if self.return_method == 'marker':
-                    self.state = State.RETURNING
-                    self.get_logger().info("La persona se ha ido. Girando para buscar el marcador visual...")
-                    msg_head = Float32MultiArray()
-                    msg_head.data = [0.0, 0.0]
-                    self.pub_head.publish(msg_head)
+                    self.state = State.MARKER_TURN_180
+                    self.turn_start_time = now
+                    self.get_logger().info("La persona se ha ido. Dando la vuelta 180 grados...")
                 elif self.return_method == 'memory':
                     self.state = State.RETURNING
                     self.get_logger().info("La persona se ha ido. Retornando de reversa usando memoria...")
@@ -205,6 +218,51 @@ class GreetAndReturnSM(Node):
                         if self.return_yaw_target > math.pi:
                             self.return_yaw_target -= 2 * math.pi
                     self.get_logger().info("La persona se ha ido. Girando hacia Home por odometría.")
+
+        elif self.state == State.MARKER_TURN_180:
+            time_since_marker = (now - self.last_marker_time).nanoseconds * 1e-9 if self.last_marker_time else 999.0
+            if time_since_marker < 0.5 and self.marker_x is not None:
+                self.state = State.RETURNING
+                self.search_turn_direction = 1.0
+                self.get_logger().info("Marcador encontrado durante el giro. Retornando...")
+                return
+
+            elapsed = (now - self.turn_start_time).nanoseconds * 1e-9 if self.turn_start_time else 0.0
+            twist = Twist()
+            if elapsed < 6.28: # 3.14 rad a 0.5 rad/s = ~6.28 seg
+                twist.angular.z = 0.5
+                self.pub_cmd_vel.publish(twist)
+            else:
+                self.pub_cmd_vel.publish(Twist())
+                self.state = State.MARKER_SCAN_HEAD
+                self.scan_pan = -1.0 # Empieza mirando a la derecha
+                self.scan_tilt = 0.0
+                self.get_logger().info("Giro de 180 completado. Escaneando lentamente con la cabeza...")
+
+        elif self.state == State.MARKER_SCAN_HEAD:
+            time_since_marker = (now - self.last_marker_time).nanoseconds * 1e-9 if self.last_marker_time else 999.0
+            if time_since_marker < 0.5 and self.marker_x is not None:
+                self.state = State.RETURNING
+                self.search_turn_direction = -1.0 if self.scan_pan < 0 else 1.0
+                self.get_logger().info("Marcador encontrado. Centrando cabeza y acercándose...")
+                msg_head = Float32MultiArray()
+                msg_head.data = [0.0, 0.0]
+                self.pub_head.publish(msg_head)
+                return
+
+            self.scan_pan += 0.025
+            if self.scan_pan > 1.0:
+                self.state = State.RETURNING
+                self.search_turn_direction = 1.0
+                self.get_logger().info("Escaneo de cabeza finalizado sin éxito. Rotando base lentamente para buscar...")
+                msg_head = Float32MultiArray()
+                msg_head.data = [0.0, 0.0]
+                self.pub_head.publish(msg_head)
+                return
+
+            msg_head = Float32MultiArray()
+            msg_head.data = [self.scan_pan, self.scan_tilt]
+            self.pub_head.publish(msg_head)
 
         elif self.state == State.RETURN_TURN:
             if self.current_pose is None:
@@ -278,8 +336,8 @@ class GreetAndReturnSM(Node):
                         self.get_logger().info("Llegó al marcador. Retorno completado.")
                         return
                 else:
-                    # Buscar girando
-                    twist.angular.z = 0.4
+                    # Buscar girando mas lento dependiendo de dónde estaba mirando la cabeza
+                    twist.angular.z = 0.15 * self.search_turn_direction
                 
                 self.pub_cmd_vel.publish(twist)
 
