@@ -106,6 +106,15 @@ class GreetAndReturnSM(Node):
 
     def distance_callback(self, msg: Float32):
         self.current_distance = msg.data
+
+        # Si estamos en el estado de interacción, ignoramos cualquier rostro
+        # que esté a más de 66cm. Esto evita que el robot se "distraiga"
+        # con personas que pasan por detrás.
+        if self.state == State.INTERACTING and self.current_distance > 0.66:
+            # Al no actualizar 'last_face_time', el temporizador para considerar
+            # que la persona se ha ido seguirá corriendo.
+            return
+            
         self.last_face_time = self.get_clock().now()
 
     def marker_callback(self, msg):
@@ -231,7 +240,8 @@ class GreetAndReturnSM(Node):
 
             elapsed = (now - self.turn_start_time).nanoseconds * 1e-9 if self.turn_start_time else 0.0
             twist = Twist()
-            if elapsed < 6.28: # 3.14 rad a 0.5 rad/s = ~6.28 seg
+            # Opción 2: Control por tiempo con margen adicional para vencer la fricción
+            if elapsed < 6.8: # Aumentado de 6.28 a 6.8 seg para asegurar que llegue a 180°
                 twist.angular.z = 0.5
                 self.pub_cmd_vel.publish(twist)
             else:
@@ -241,7 +251,7 @@ class GreetAndReturnSM(Node):
                 msg_head = Float32MultiArray()
                 msg_head.data = [0.0, 0.0]
                 self.pub_head.publish(msg_head)
-                self.get_logger().info("Giro de 180 completado. Mirando al frente por 30 segundos...")
+                self.get_logger().info("Giro de 180 completado (por tiempo). Mirando al frente por 30 segundos...")
 
         elif self.state == State.MARKER_WAIT_FRONT:
             time_since_marker = (now - self.last_marker_time).nanoseconds * 1e-9 if self.last_marker_time else 999.0
