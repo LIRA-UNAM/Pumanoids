@@ -98,10 +98,15 @@ class PlannerNode(Node):
         self.kickoff_robot = self.get_parameter('kickoff').value
         self.get_logger().info(f'Irá a por el kickoff? {self.kickoff_robot} ')
 
+        #Is going to do the kick?
+        self.declare_parameter('kick', False)
+        self.kick_robot = self.get_parameter('kick').value
+        self.get_logger().info(f'Irá a por el kick para los subestados que lo necesiten? {self.kick_robot} ')
+
         # -- SERVICES CLIENTS --
         self.getup_client = self.create_client(RpcService, '/booster_rpc_service')
-        # while not self.getup_client.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info('Esperando servicio...')
+        while not self.getup_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Esperando servicio...')
 
 
         
@@ -115,6 +120,7 @@ class PlannerNode(Node):
         self.last_packet_time = self.get_clock().now()
         self.timer = self.create_timer(0.1, self.rustic_smach) # Timer for the rustic_smach function.
         self.current_state = State.WAITING_CONNECTION
+        self.sub_state = State.STATE_NORMAL
         self.last_available_state = State.WAITING_CONNECTION
         
         # -- SOCKETS --
@@ -197,26 +203,55 @@ class PlannerNode(Node):
                 self.get_logger().warn("Connection Lost!")
             self.current_state = State.WAITING_CONNECTION
             self.game_controller = None
+
+        #Update state from game controller messages
         if self.game_controller:
             self.current_state = State[self.game_controller.game_state]
             self.last_available_state = self.current_state
 
-        if self.current_state == State.WAITING_CONNECTION:
-            self.wait_state()
-        elif self.current_state == State.STATE_INITIAL:
-            self.start_state()
-        elif self.current_state == State.STATE_READY:
-            self.position_start_state()
-        elif self.current_state == State.STATE_SET:
-            self.set_state()
-        elif self.current_state == State.STATE_PLAYING:
-            self.playing_state()
-        elif self.current_state == State.STATE_FINISHED:
-            self.finish_state()
-        elif self.current_state == State.IDLE:
-            self.idle_state()
-        elif self.current_state == State.ERROR:
-            self.error_state()
+            self.sub_state = State[self.game_controller.secondary_state]
+            self.last_available_sub_state = self.sub_state
+
+        if self.game_controller and (self.game_controller.secondary_state == "STATE_NORMAL" or self.game_controller.secondary_state =="STATE_OVERTIME"): # Estados principales y primarios del juego
+            if self.current_state == State.WAITING_CONNECTION:
+                self.wait_state()
+            elif self.current_state == State.STATE_INITIAL:
+                self.start_state()
+            elif self.current_state == State.STATE_READY:
+                self.position_start_state()
+            elif self.current_state == State.STATE_SET:
+                self.set_state()
+            elif self.current_state == State.STATE_PLAYING:
+                self.playing_state()
+            elif self.current_state == State.STATE_FINISHED:
+                self.finish_state()
+            elif self.current_state == State.IDLE:
+                self.idle_state()
+            elif self.current_state == State.ERROR:
+                self.error_state()
+
+        else: #Estados Secundarios de tiros por faltas y así, nunca he visto uno
+            if self.sub_state == State.STATE_PENALTYSHOOT:
+                self.penalty_shoot()
+            elif self.sub_state == State.STATE_TIMEOUT:
+                self.idle_state()
+            elif self.sub_state == State.STATE_DIRECT_FREEKICK:
+                self.kick()
+            elif self.sub_state == State.STATE_INDIRECT_FREEKICK:
+                self.kick()
+            elif self.sub_state == State.STATE_PENALTYKICK:
+                self.kick()
+            elif self.sub_state == State.STATE_CORNERKICK:
+                self.kick()
+            elif self.sub_state == State.STATE_GOALKICK:
+                self.kick()
+            elif self.sub_state == State.STATE_THROWIN:
+                self.throwin() # NO IDEA of what is this
+            elif self.sub_state == State.DROPBALL:
+                self.dropball() # NO IDEA of what is thisx
+            elif self.sub_state == State.UNKNOWN:
+                self.error_state()
+
 
     def wait_state(self):
         self.get_logger().info("WAITING_CONNECTION waiting for Game Controller conection")
@@ -243,7 +278,7 @@ class PlannerNode(Node):
     
     def playing_state(self):
 
-        if self.game_controller.secondary_seconds_remaining!=0 or self.goalkeeper:
+        if self.game_controller.secondary_seconds_remaining==0 or self.goalkeeper:
             self.get_logger().info("PLAYING_STATE follow ball or goalkeeper guard")
             if self.goalkeeper:
                 print("goal keeping") #TODO goal keeper guard enable publisher
@@ -273,6 +308,39 @@ class PlannerNode(Node):
         self.get_logger().info("THE END going with team")      
         #Maybe TODO go to the own half and out of the field  
 
+    def penalty_shoot(self):
+        self.get_logger().info("PENALTYSHOOT sub state")
+        if self.game_controller.kick_of_team == self.team_number:
+            self.get_logger().info("Robot going to shoot")
+            if self.current_state == State.STATE_SET:
+                self.get_logger().info("Going to designed position")
+                #TODO Ir a posición de penal
+            elif self.current_state == State.STATE_PLAYING:
+                self.get_logger().info("Shooting penal")
+                #TODO Tirar penal
+        else:
+            self.get_logger().info("Goalkeeper must defend")
+            if self.current_state == State.STATE_SET:
+                self.get_logger().info("Going to designed position")
+                #TODO Ir a posición de portería
+            elif self.current_state == State.STATE_PLAYING:
+                self.get_logger().info("Defending")
+                #TODO Defender el penal como pueda
+
+    def kick(self):
+        self.get_logger().info("Some of the lots of kicks")
+        byte_array = self.game_controller.secondary_state_info
+        if byte_array[0] == self.team_number and self.kick_robot:
+            #TODO go to the ball that the referee will put after the kick you have execute
+            if byte_array[1] == 1:
+                self.get_logger().info("Posicioning to the ball")
+            if byte_array[1] == 2:
+                self.get_logger().info("kicking the ball")
+        else:
+            #TODO function to not hinder the robot kick or go for the bounce 
+            self.get_logger().info("going to another place")
+
+             
     
     def idle_state(self):
         self.get_logger().info("IDLE_STATE new states comming soon")
@@ -296,3 +364,12 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
+
+
+    def wait_state(self):
+        self.get_logger().info("WAITING_CONNECTION waiting for Game Controller conection")
+
+        # if self.game_controller is not None:
+        #     # If reconnecting, return to previous status.
+        #     
