@@ -10,7 +10,7 @@ import rclpy
 import socket
 from rclpy.node import Node
 from game_planner import gamestate
-from construct import Enum
+from enum import Enum
 from std_msgs.msg import Bool
 from booster_interface.srv import RpcService
 
@@ -32,30 +32,31 @@ class State(Enum):
 
         # -- MAIN STATES --
     WAITING_CONNECTION = 0 # Not receiving any signal from the Game Controller
-    START = 1 # Game controller STATE_READY. The initial state of Game Controller
-    POSITION_START = 2 # The robots move from the side to their kickoff positions
-    SET = 3 # Game controller STATE_SET. Robots must not move in this state.
-    KICKOFF = 4 # Game controller STATE_PLAYING. Attack (follow_ball) or defense (wait to ball to move and then follow_ball).
-    PLAYING = 5 # To follow the ball detected by the robot's camrea. If goalkeeper, run the defense node.
-    FINISH = 6 # THE END
+    STATE_INITIAL = 1 # Game controller STATE_READY. The initial state of Game Controller
+    STATE_READY = 2 # The robots move from the side to their kickoff positions
+    STATE_SET = 3 # Game controller STATE_SET. Robots must not move in this state.
+    STATE_PLAYING = 4 # To follow the ball detected by the robot's camrea. If goalkeeper, run the defense node.
+    STATE_FINISHED = 5 # THE END
 
         # -- SUB STATES --
 
-    STATE2_NORMAL = 7
-    STATE2_PENALTYSHOOT = 8
-    STATE2_OVERTIME = 9
-    STATE2_TIMEOUT = 10
-    STATE2_DIRECT_FREEKICK = 11
-    STATE2_INDIRECT_FREEKICK = 12
-    STATE2_PENALTYKICK = 13
-    STATE2_CORNER_KICK = 14
-    STATE2_GOAL_KICK = 15
-    STATE2_THROW_IN = 16
+    STATE_NORMAL=6
+    STATE_PENALTYSHOOT=7
+    STATE_OVERTIME=8
+    STATE_TIMEOUT=9
+    STATE_DIRECT_FREEKICK=10
+    STATE_INDIRECT_FREEKICK=11
+    STATE_PENALTYKICK=12
+    STATE_CORNERKICK=13
+    STATE_GOALKICK=14
+    STATE_THROWIN=15
+    DROPBALL=16
+    UNKNOWN=17
 
         # -- DEBUG STATES --
 
-    IDLE = 17 # IDLE
-    ERROR = 18 # Not good
+    IDLE = 18 # IDLE
+    ERROR = 19 # Not good
     # More comming soon
 
 class PlannerNode(Node):
@@ -76,13 +77,6 @@ class PlannerNode(Node):
         #TODO MOVINGBALL subscriber
         
         # -- PARAMETERS --
-        self.host ="0.0.0.0" # Always watching any IP
-
-        # -- SERVICES CLIENTS --
-        self.getup_client = self.create_client(RpcService, '/booster_rpc_service')
-        while not self.getup_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Esperando servicio...')
-
 
         #player_number
         self.declare_parameter('player_number', 1)
@@ -99,9 +93,20 @@ class PlannerNode(Node):
         self.goalkeeper = self.get_parameter('goalkeeper').value
         self.get_logger().info(f'Portero? {self.goalkeeper} ')
 
+        #Is going to do the kickoff?
+        self.declare_parameter('kickoff', False)
+        self.kickoff_robot = self.get_parameter('kickoff').value
+        self.get_logger().info(f'Irá a por el kickoff? {self.kickoff_robot} ')
+
+        # -- SERVICES CLIENTS --
+        self.getup_client = self.create_client(RpcService, '/booster_rpc_service')
+        # while not self.getup_client.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info('Esperando servicio...')
+
 
         
         # VARIABLES
+        self.host ="0.0.0.0" # Always watching any IP
         self.position_start = False
         self.move_ball = False
         self.game_controller = None
@@ -192,20 +197,21 @@ class PlannerNode(Node):
                 self.get_logger().warn("Connection Lost!")
             self.current_state = State.WAITING_CONNECTION
             self.game_controller = None
+        if self.game_controller:
+            self.current_state = State[self.game_controller.game_state]
+            self.last_available_state = self.current_state
 
         if self.current_state == State.WAITING_CONNECTION:
             self.wait_state()
-        elif self.current_state == State.START:
+        elif self.current_state == State.STATE_INITIAL:
             self.start_state()
-        elif self.current_state == State.POSITION_START:
+        elif self.current_state == State.STATE_READY:
             self.position_start_state()
-        elif self.current_state == State.SET:
+        elif self.current_state == State.STATE_SET:
             self.set_state()
-        elif self.current_state == State.KICKOFF:
-            self.kickoff_state()
-        elif self.current_state == State.PLAYING:
+        elif self.current_state == State.STATE_PLAYING:
             self.playing_state()
-        elif self.current_state == State.FINISH:
+        elif self.current_state == State.STATE_FINISHED:
             self.finish_state()
         elif self.current_state == State.IDLE:
             self.idle_state()
@@ -215,82 +221,55 @@ class PlannerNode(Node):
     def wait_state(self):
         self.get_logger().info("WAITING_CONNECTION waiting for Game Controller conection")
 
-        if self.game_controller is not None:
-            # If reconnecting, return to previous status.
-            if self.last_available_state != State.WAITING_CONNECTION:
-                self.get_logger().debug("Reconnecting")
-                self.current_state = self.last_available_state
-            # If not, means is the first connection
-            else:
-                self.current_state = State.START
-                self.last_available_state = self.current_state
+        # if self.game_controller is not None:
+        #     # If reconnecting, return to previous status.
+        #     if self.last_available_state != State.WAITING_CONNECTION:
+        #         self.get_logger().debug("Reconnecting")
+        #         self.current_state = self.last_available_state
+        #     # If not, means is the first connection
+        #     else:
+        #         self.current_state = State.STATE_INITIAL
+        #         self.last_available_state = self.current_state
 
     def start_state(self):
         self.get_logger().info("START_STATE waiting for ready from Game Controller")
-        if self.game_controller and self.game_controller.game_state == "STATE_READY":
-            self.position_start_enable_publisher.publish(Bool(data = True))
-            self.current_state = State.POSITION_START
-            self.last_available_state = self.current_state
-        else:
-            self.current_state = State.START
 
     def position_start_state(self):
+        self.position_start_enable_publisher.publish(Bool(data = True))
         self.get_logger().info("POSITION_START_STATE walking to my position")
-        if self.position_start or (self.game_controller and self.game_controller.game_state == "STATE_SET"):
-            self.current_state = State.SET
-        else:
-            self.current_state = State.POSITION_START
     
     def set_state(self):
         self.get_logger().info("SET_STATE waiting for the referee to start the game")
-        if self.game_controller and self.game_controller.game_state == "STATE_PLAYING":
-            self.current_state = State.KICKOFF
-            self.last_available_state = self.current_state
-        else:
-            self.current_state = State.SET
-    def kickoff_state(self):
-        self.get_logger().info("KICKOFF_STATE Let's play")
-        if self.goalkeeper:
-            self.current_state = State.PLAYING
-            self.last_available_state = self.current_state
-            
-        self.team_array_pos =0
-        for team in self.game_controller.teams:
-            if team.team_number == self.team_number:
-                self.target_team = team
-                break
-        #TODO search a new way to decide who goes for the ball
-        if self.player_number == 2:
-            print(f"Palyer{self.player_number} going for the kick off")
-            self.current_state = State.PLAYING
-            self.last_available_state = self.current_state
-        else:
-            print("waiit for ball moving or pass the time")
-            if self.move_ball or self.game_controller.secondary_seconds_remaining==0:
-                self.current_state = State.PLAYING
-                self.last_available_state = self.current_state
-            else:
-                self.current_state = State.KICKOFF
     
     def playing_state(self):
-        self.get_logger().info("PLAYING_STATE follow ball or goalkeeper guard")
-        if self.goalkeeper:
-            print("goal keeping") #TODO goal keeper guard enable publisher
-        print("Following the ball") #TODO ball follower enable and a way to not crash ones with others
 
-        self.head_ball_follower_enable_publisher.publish(Bool(data = True))
-        self.ball_follower_enable_publisher.publish(Bool(data = True))
+        if self.game_controller.secondary_seconds_remaining!=0 or self.goalkeeper:
+            self.get_logger().info("PLAYING_STATE follow ball or goalkeeper guard")
+            if self.goalkeeper:
+                print("goal keeping") #TODO goal keeper guard enable publisher
+            else:
+                print("Following the ball") #TODO ball follower enable and a way to not crash ones with others
 
-        if self.game_controller.game_state == "STATE_FINISHED":
-            self.get_logger().info("FINISH_STATE good half game")
-            self.current_state = State.FINISH
-            self.ball_follower_enable_publisher.publish(Bool(data = False))
-            self.head_ball_follower_enable_publisher.publish(Bool(data = False))
-            self.last_available_state = self.current_state
-        
+                self.head_ball_follower_enable_publisher.publish(Bool(data = True))
+                self.ball_follower_enable_publisher.publish(Bool(data = True))
+                #TODO do the arrive to the ball node 
+                #TODO do the ball to gate node 
+                #TODO do the evade other humanoids or pass ball node
+
+        else:
+            #TODO another way to decied wich robot do the kickoff
+            if self.game_controller.kick_of_team == self.team_number and self.kickoff_robot:
+                #TODO another way to do the kickoff
+                self.head_ball_follower_enable_publisher.publish(Bool(data = True))
+                self.ball_follower_enable_publisher.publish(Bool(data = True))
+            else:
+                print("waiit for ball moving or pass the time")
 
 
     def finish_state(self):
+        self.get_logger().info("FINISH_STATE good half game")
+        self.ball_follower_enable_publisher.publish(Bool(data = False))
+        self.head_ball_follower_enable_publisher.publish(Bool(data = False))
         self.get_logger().info("THE END going with team")      
         #Maybe TODO go to the own half and out of the field  
 
