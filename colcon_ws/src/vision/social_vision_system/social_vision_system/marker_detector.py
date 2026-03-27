@@ -28,7 +28,7 @@ class MarkerDetectorNode(Node):
         self.declare_parameter("target_marker_id", 7)
         self.target_marker_id = self.get_parameter("target_marker_id").value
 
-        self.declare_parameter("show_debug_window", False)
+        self.declare_parameter("show_debug_window", True)
         self.show_debug_window = self.get_parameter("show_debug_window").value
 
         self.sub_img = self.create_subscription(Image, '/camera/color/image_raw', self.image_callback, 10)
@@ -58,12 +58,22 @@ class MarkerDetectorNode(Node):
             idx = np.where(ids == self.target_marker_id)[0]
             if len(idx) > 0:
                 i = idx[0]
-                rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(corners, self.marker_size_m, self.camera_matrix, self.dist_coeffs)
                 
                 marker_corners = corners[i][0]
                 center_x = np.mean(marker_corners[:, 0])
-                distance = np.linalg.norm(tvecs[i][0])
 
+                # Puntos 3D del marcador (esquinas) para calcular la distancia con solvePnP
+                half_size = self.marker_size_m / 2.0
+                obj_points = np.array([
+                    [-half_size,  half_size, 0],
+                    [ half_size,  half_size, 0],
+                    [ half_size, -half_size, 0],
+                    [-half_size, -half_size, 0]
+                ], dtype=np.float32)
+                
+                _, rvec, tvec = cv2.solvePnP(obj_points, marker_corners, self.camera_matrix, self.dist_coeffs)
+                distance = float(np.linalg.norm(tvec))
+                
                 vision_msg = VisionObject()
                 vision_msg.name = f"aruco_id_{self.target_marker_id}"
                 vision_msg.x = float(center_x)
