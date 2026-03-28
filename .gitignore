@@ -55,3 +55,4 @@ colcon_ws/log/
 
 setup/luckfox/demos/build/
 setup/luckfox/demos/install/
+colcon_ws/face_detector_env/

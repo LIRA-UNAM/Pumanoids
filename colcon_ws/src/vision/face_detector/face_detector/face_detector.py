@@ -8,7 +8,7 @@ if user_site in sys.path:
     sys.path.remove(user_site)
 
 # Inyección del virtual environtment
-venv_site_packages = os.path.expanduser('~/ros2_ws/robot_vision_env/lib/python3.10/site-packages')
+venv_site_packages = '/home/booster/Pumanoids/colcon_ws/face_detector_env/lib/python3.10/site-packages'
 if venv_site_packages not in sys.path:
     sys.path.insert(0, venv_site_packages)
 
@@ -102,10 +102,12 @@ class FaceDetector(Node):
                 
                 # Bounding box de detección
                 cv2.rectangle(frame, (xmin, ymin), (xmin + width, ymin + height), (0, 255, 0), 2)
-                cv2.putText(frame, "Objetivo", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                cv2.putText(frame, "Person", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
                 x_center = xmin + (width / 2.0)
                 y_center = ymin + (height / 2.0)
+
+                confidence = rostro_mas_cercano.score[0]
 
                 # target_msg = Point()
                 # target_msg.x = float(x_center)
@@ -114,7 +116,7 @@ class FaceDetector(Node):
 
                 #self.target_pub.publish(target_msg)
                 vision_obj_msg = self.get_vision_object_msg(
-                    1, 
+                    "1", 
                     float(confidence), 
                     x_center, 
                     y_center, 
