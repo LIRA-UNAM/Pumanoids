@@ -3,7 +3,8 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image, JointState
-from std_msgs.msg import Float32, Int32, Float32MultiArray
+from std_msgs.msg import Float32MultiArray
+from pumas_vision_msgs.msg import VisionObject
 from cv_bridge import CvBridge
 import cv2
 import math
@@ -13,6 +14,7 @@ try:
 except ImportError:
     raise ImportError("Por favor instala deepface: pip install deepface")
 
+HFOV = (86 * math.pi) / 180.0
 
 class DeepFaceFollowerNode(Node):
     def __init__(self):
@@ -21,16 +23,14 @@ class DeepFaceFollowerNode(Node):
         # Parámetros ajustables
         # El target_face_height_px representa cómo se ve un rostro promedio a ~0.5 metros
         # en tu resolución de cámara. (Requiere calibración: párate a 0.5m y revisa el print).
-        self.declare_parameter("target_face_height_px", 180.0) 
+        self.declare_parameter("target_face_height_px", 90.0) 
         self.declare_parameter("target_distance_m", 0.5) 
         self.declare_parameter("image_topic", "/camera/color/image_raw")
         self.declare_parameter("show_debug_window", True)
-        self.declare_parameter("crop_vertical_percentage", 0.0) # Ej: 0.3 recorta 15% arriba y 15% abajo
         
         self.target_face_h = self.get_parameter("target_face_height_px").value
         self.target_dist = self.get_parameter("target_distance_m").value
         self.show_debug_window = self.get_parameter("show_debug_window").value
-        self.crop_vertical = self.get_parameter("crop_vertical_percentage").value
         
         self.bridge = CvBridge()
         self.is_processing = False
@@ -39,6 +39,12 @@ class DeepFaceFollowerNode(Node):
         self.current_tilt = 0.0
         self.goal_pan = 0.0
         self.goal_tilt = 0.0
+        
+        # Variables para el escaneo de búsqueda
+        self.last_face_time = self.get_clock().now()
+        self.last_scan_time = self.get_clock().now()
+        self.look_for_poses = [[0.0, 0.0], [-0.8, 0.0], [0.8, 0.0], [-0.8, 0.3], [0.8, 0.3], [0.0, 0.3]]
+        self.pose_index = 0
         
         # Subs y Pubs
         self.sub_img = self.create_subscription(
@@ -53,10 +59,7 @@ class DeepFaceFollowerNode(Node):
             self.callback_joints, 
             10
         )
-        self.pub_age = self.create_publisher(Int32, '/person_follower/age', 10)
-        self.pub_distance = self.create_publisher(Float32, '/person_follower/distance', 10)
-        self.pub_error_x = self.create_publisher(Float32, '/person_follower/error_x', 10)
-        self.pub_error_z = self.create_publisher(Float32, '/person_follower/error_z', 10)
+        self.pub_face = self.create_publisher(VisionObject, '/vision/face', 10)
         self.pub_head = self.create_publisher(Float32MultiArray, '/hardware/head/goal_pose', 10)
         
         self.get_logger().info("DeepFace Follower Iniciado. Buscando rostros...")
@@ -77,66 +80,54 @@ class DeepFaceFollowerNode(Node):
             # 1. Convertir ROS Image a OpenCV
             cv_img = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
             
-            # Recortar verticalmente la imagen para reducir el área de procesamiento
-            if self.crop_vertical > 0.0 and self.crop_vertical < 1.0:
-                orig_h, orig_w, _ = cv_img.shape
-                crop_pixels = int((orig_h * self.crop_vertical) / 2)
-                cv_img = cv_img[crop_pixels : orig_h - crop_pixels, :]
-                
+            # Reducir resolución fuertemente a 320x240 para acelerar el procesamiento
+            cv_img = cv2.resize(cv_img, (320, 240))
             img_h, img_w, _ = cv_img.shape
 
-            cv_img = cv2.resize(cv_img, (cv_img.shape[1] // 2, cv_img.shape[0] // 2)) # Reducir resolución para acelerar DeepFace
             try:
-                # 2. Extraer rostros y analizar la edad usando DeepFace
-                objs = DeepFace.analyze(
+                # 2. Extraer rostros directamente (bypassea modelos pesados como edad/emociones)
+                faces = DeepFace.extract_faces(
                     img_path=cv_img, 
-                    actions=['age'],
                     detector_backend='opencv', 
                     enforce_detection=True,
-                    align=False,
-                    silent=True
+                    align=False
                 )
                 
-                if objs:
-                    # Asegurar compatibilidad en caso de que detecte múltiples personas
-                    if not isinstance(objs, list):
-                        objs = [objs]
-
-                    # Quedarse con el rostro más grande detectado (posiblemente la persona más cercana)
-                    largest_face = max(objs, key=lambda f: f['region']['w'] * f['region']['h'])
-                    area = largest_face['region']
+                if faces:
+                    # Quedarse con el rostro más grande detectado
+                    largest_face = max(faces, key=lambda f: f['facial_area']['w'] * f['facial_area']['h'])
+                    area = largest_face['facial_area']
                     x, y, w, h = area['x'], area['y'], area['w'], area['h']
-                    age = largest_face['age']
+                    
+                    self.last_face_time = self.get_clock().now()
                     
                     # 3. Control Angular (Alineación YAW)
                     # El objetivo es que el rostro quede en el centro de la imagen (img_w / 2)
                     center_x = x + (w / 2.0)
                     center_y = y + (h / 2.0)
-                    error_x = (img_w / 2.0) - center_x 
                     
-                    # 4. Control Lineal (Distancia ~ 0.5m)
-                    # Si la altura actual (h) es menor al target, significa que la persona está lejos
-                    error_z = self.target_face_h - h 
-                    
-                    # 5. Calcular Distancia y publicar
+                    # 4. Calcular Distancia Real y Proyección Cartesiana 
                     # Usando proporción inversa en base a la calibración de distancia
                     distance = (self.target_dist * self.target_face_h) / float(h)
                     
-                    msg_age = Int32()
-                    msg_age.data = int(age)
-                    self.pub_age.publish(msg_age)
+                    theta = -(center_x - img_w / 2.0) * HFOV / img_w + self.current_pan
+                    face_x = distance * math.cos(theta)
+                    face_y = distance * math.sin(theta)
                     
-                    msg_dist = Float32()
-                    msg_dist.data = distance
-                    self.pub_distance.publish(msg_dist)
-
-                    msg_err_x = Float32()
-                    msg_err_x.data = float(error_x)
-                    self.pub_error_x.publish(msg_err_x)
-                    
-                    msg_err_z = Float32()
-                    msg_err_z.data = float(error_z)
-                    self.pub_error_z.publish(msg_err_z)
+                    # 5. Publicar como VisionObject 
+                    vision_msg = VisionObject()
+                    vision_msg.header.stamp = self.get_clock().now().to_msg()
+                    vision_msg.header.frame_id = "camera_color_optical_frame"
+                    vision_msg.id = "face"
+                    vision_msg.confidence = 1.0
+                    vision_msg.x = int(center_x)
+                    vision_msg.y = int(center_y)
+                    vision_msg.width = int(w)
+                    vision_msg.height = int(h)
+                    vision_msg.pose.position.x = float(face_x) # Distancia frontal
+                    vision_msg.pose.position.y = float(face_y) # Desplazamiento lateral
+                    vision_msg.pose.position.z = 0.0
+                    self.pub_face.publish(vision_msg)
                     
                     # 6. Control Dinámico de Cabeza (Pan y Tilt)
                     # Normalizamos el error (entre -1 y 1)
@@ -155,18 +146,35 @@ class DeepFaceFollowerNode(Node):
                     msg_head.data = [float(self.goal_pan), float(self.goal_tilt)]
                     self.pub_head.publish(msg_head)
                     
-                # Dibujar recuadro e información si el modo debug está activo
-                if self.show_debug_window:
-                    cv2.rectangle(cv_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                    cv2.putText(cv_img, f"Edad: {int(age)} Dist: {distance:.2f}m", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                    # Dibujar recuadro e información si el modo debug está activo
+                    if self.show_debug_window:
+                        cv2.rectangle(cv_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                        cv2.putText(cv_img, f"Dist: {distance:.2f}m", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                     
             except ValueError:
-                # Si no hay nadie, la cabeza regresa al centro lentamente
-                self.goal_pan *= 0.95
-                self.goal_tilt *= 0.95
-                msg_head = Float32MultiArray()
-                msg_head.data = [float(self.goal_pan), float(self.goal_tilt)]
-                self.pub_head.publish(msg_head)
+                # DeepFace lanza ValueError si no encuentra rostros (enforce_detection=True)
+                now = self.get_clock().now()
+                time_since_last = (now - self.last_face_time).nanoseconds * 1e-9
+                
+                if time_since_last > 2.0:
+                    # Activar modo escaneo si lleva 2 segundos sin ver a nadie
+                    if (now - self.last_scan_time).nanoseconds * 1e-9 > 1.5:
+                        pose = self.look_for_poses[self.pose_index]
+                        self.pose_index = (self.pose_index + 1) % len(self.look_for_poses)
+                        self.goal_pan = pose[0]
+                        self.goal_tilt = pose[1]
+                        
+                        msg_head = Float32MultiArray()
+                        msg_head.data = [float(self.goal_pan), float(self.goal_tilt)]
+                        self.pub_head.publish(msg_head)
+                        self.last_scan_time = now
+                else:
+                    # Perdimos el rostro hace muy poco, regresar al centro lentamente por si vuelve
+                    self.goal_pan *= 0.95
+                    self.goal_tilt *= 0.95
+                    msg_head = Float32MultiArray()
+                    msg_head.data = [float(self.goal_pan), float(self.goal_tilt)]
+                    self.pub_head.publish(msg_head)
             except Exception as e:
                 self.get_logger().error(f"Error detectando rostro: {e}")
 
