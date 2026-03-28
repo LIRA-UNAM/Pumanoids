@@ -1,1 +1,0 @@
-# Init del modulo
