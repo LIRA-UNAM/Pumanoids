@@ -8,7 +8,7 @@ from piper.voice import PiperVoice
 from piper.config import SynthesisConfig
 
 TEST_TEXT = ". .  Amo el canto del cenzontle pájaro de 400 voces, amo el color del jade, y el enervante perfume de las flores, pero amo más a mi hermano, el hombre"
-AUDIO_BASH = "aplay -D plughw:2,0 \"tts_output.wav\""
+AUDIO_BASH = "aplay \"tts_output.wav\""
 
 class TTSSubscriber(Node):
 
