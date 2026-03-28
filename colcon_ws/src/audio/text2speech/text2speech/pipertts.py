@@ -14,8 +14,8 @@ class TTSSubscriber(Node):
 
     def __init__(self):
         super().__init__('text_to_speech_subscriber')
-        self.model = "./models/es_MX-claude-high.onnx"
-        self.config = "./models/es_MX-claude-high.onnx.json"
+        self.model = "/home/booster/Pumanoids/colcon_ws/src/audio/text2speech/text2speech/models/es_MX-claude-high.onnx"
+        self.config = "/home/booster/Pumanoids/colcon_ws/src/audio/text2speech/text2speech/models/es_MX-claude-high.onnx.json"
         self.voice = PiperVoice.load(model_path=self.model,config_path=self.config)
         self.syn_config = SynthesisConfig(
             volume=0.5,  # half as loud
@@ -34,8 +34,8 @@ class TTSSubscriber(Node):
 
     def generate_speech(self,txt):
         # Generate speech with specific instructions
-        with wave.open("test.wav", "wb") as wav_file:
-            self.voice.synthesize_wav(text, wav_file)
+        with wave.open("tts_output.wav", "wb") as wav_file:
+            self.voice.synthesize_wav(txt, wav_file)
 
     def listener_callback(self, msg):
         self.get_logger().info('Processing txt: "%s"' % msg.data)
