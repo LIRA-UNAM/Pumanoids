@@ -45,7 +45,7 @@ class DeepFaceFollowerNode(Node):
             Image, 
             self.get_parameter("image_topic").value, 
             self.image_callback, 
-            10
+            1
         )
         self.sub_joints = self.create_subscription(
             JointState, 
@@ -84,7 +84,8 @@ class DeepFaceFollowerNode(Node):
                 cv_img = cv_img[crop_pixels : orig_h - crop_pixels, :]
                 
             img_h, img_w, _ = cv_img.shape
-            
+
+            cv_img = cv2.resize(cv_img, (cv_img.shape[1] // 2, cv_img.shape[0] // 2)) # Reducir resolución para acelerar DeepFace
             try:
                 # 2. Extraer rostros y analizar la edad usando DeepFace
                 objs = DeepFace.analyze(
