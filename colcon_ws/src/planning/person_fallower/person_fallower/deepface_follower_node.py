@@ -134,9 +134,14 @@ class DeepFaceFollowerNode(Node):
                     error_pan = -(center_x - (img_w / 2.0)) / (img_w / 2.0)
                     error_tilt = (center_y - (img_h / 2.0)) / (img_h / 2.0)
                     
-                    # Incrementamos suavemente la posición deseada de la cabeza
-                    self.goal_pan += 0.15 * error_pan
-                    self.goal_tilt += 0.15 * error_tilt
+                    # Zona muerta: Si el rostro ya está razonablemente centrado (15% del centro), 
+                    # no movemos el cuello para evitar temblores o vibraciones.
+                    if abs(error_pan) < 0.15: error_pan = 0.0
+                    if abs(error_tilt) < 0.15: error_tilt = 0.0
+                    
+                    # Incrementamos suavemente 
+                    self.goal_pan += 0.06 * error_pan
+                    self.goal_tilt += 0.06 * error_tilt
                     
                     # Limitamos los ángulos (el tilt negativo permite mirar hacia arriba)
                     self.goal_pan = max(-1.0, min(1.0, self.goal_pan))
