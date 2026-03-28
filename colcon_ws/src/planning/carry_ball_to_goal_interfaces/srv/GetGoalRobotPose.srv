@@ -1,0 +1,4 @@
+# Sin argumentos: lee últimas mediciones de /vision/ball y /vision/goal_center.
+---
+bool success
+geometry_msgs/Pose pose
