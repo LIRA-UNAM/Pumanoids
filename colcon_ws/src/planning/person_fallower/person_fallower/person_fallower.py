@@ -26,7 +26,7 @@ class PersonFollowerBase(Node):
         # Variables de estado interno
         self.head_pan_angle = 0.0
         self.distance_x = 0.5
-        self.face_x_img = 320 # Centro predeterminado para 640x480
+        self.face_x_img = 80 # Centro predeterminado para 160x120
         self.enabled = False  # Por defecto apagado, la máquina de estados lo encenderá
         
         # Suscriptores
@@ -55,7 +55,10 @@ class PersonFollowerBase(Node):
 
     def joints_callback(self, msg: JointState):
         # El error para el giro del cuerpo es el propio ángulo de la cabeza.
-        if len(msg.position) > 0:
+        if "HeadYaw" in msg.name:
+            idx = msg.name.index("HeadYaw")
+            self.head_pan_angle = msg.position[idx]
+        elif len(msg.position) > 0:
             self.head_pan_angle = msg.position[0]
 
     def face_callback(self, msg: VisionObject):
@@ -69,8 +72,8 @@ class PersonFollowerBase(Node):
         twist = Twist()
         
         # --- Lógica idéntica a ball_follower.py ---
-        # Calculamos el error en imagen (imagen de 640px, centro en 320)
-        error_img = (-self.face_x_img + 320) / 640.0
+        # Calculamos el error en imagen (imagen de 160px, centro en 80)
+        error_img = (-self.face_x_img + 80) / 160.0
         if error_img < 0:
             error_img = -math.sqrt(-error_img)
         else:
@@ -94,7 +97,7 @@ class PersonFollowerBase(Node):
         self.pub_cmd_vel.publish(twist)
         
         self.distance_x = (self.distance_x * 0.8) + (0.5 * 0.2) # Decaimiento suave
-        self.face_x_img = (self.face_x_img * 0.8) + (320.0 * 0.2) # Decaimiento suave al centro
+        self.face_x_img = (self.face_x_img * 0.8) + (80.0 * 0.2) # Decaimiento suave al centro
 
 def main(args=None):
     rclpy.init(args=args)

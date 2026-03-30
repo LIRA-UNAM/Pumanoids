@@ -12,7 +12,7 @@ def generate_launch_description():
             output='screen',
             parameters=[{
                 'show_debug_window': True,
-                'target_face_height_px': 180.0, # Ajustado para la resolución 640x480
+                'target_face_height_px': 45.0, # Ajustado para la resolución 160x120
                 'image_topic': '/camera/color/image_raw'
             }]
         )

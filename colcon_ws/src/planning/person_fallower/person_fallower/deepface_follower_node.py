@@ -23,7 +23,7 @@ class DeepFaceFollowerNode(Node):
         # Parámetros ajustables
         # El target_face_height_px representa cómo se ve un rostro promedio a ~0.5 metros
         # en tu resolución de cámara. (Requiere calibración: párate a 0.5m y revisa el print).
-        self.declare_parameter("target_face_height_px", 180.0) 
+        self.declare_parameter("target_face_height_px", 45.0) 
         self.declare_parameter("target_distance_m", 0.5) 
         self.declare_parameter("image_topic", "/camera/color/image_raw")
         self.declare_parameter("show_debug_window", True)
@@ -65,8 +65,16 @@ class DeepFaceFollowerNode(Node):
         self.get_logger().info("DeepFace Follower (OpenCV) Iniciado. Buscando rostros...")
 
     def callback_joints(self, msg: JointState):
-        if len(msg.position) >= 2:
+        if "HeadYaw" in msg.name:
+            idx = msg.name.index("HeadYaw")
+            self.current_pan = msg.position[idx]
+        elif len(msg.position) >= 1:
             self.current_pan = msg.position[0]
+            
+        if "HeadPitch" in msg.name:
+            idx = msg.name.index("HeadPitch")
+            self.current_tilt = msg.position[idx]
+        elif len(msg.position) >= 2:
             self.current_tilt = msg.position[1]
 
     def image_callback(self, msg: Image):
@@ -79,6 +87,9 @@ class DeepFaceFollowerNode(Node):
         try:
             # 1. Convertir ROS Image a OpenCV
             cv_img = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
+            
+            # Bajar resolución para ganar velocidad
+            cv_img = cv2.resize(cv_img, (160, 120))
             img_h, img_w, _ = cv_img.shape
 
             # 2. Extraer rostros directamente con DeepFace usando OpenCV
@@ -130,8 +141,9 @@ class DeepFaceFollowerNode(Node):
                 if abs(error_pan) < 0.15: error_pan = 0.0
                 if abs(error_tilt) < 0.15: error_tilt = 0.0
                 
-                self.goal_pan += 0.06 * error_pan
-                self.goal_tilt += 0.06 * error_tilt
+                # Control Proporcional basado en la posición física actual
+                self.goal_pan = self.current_pan + (0.15 * error_pan)
+                self.goal_tilt = self.current_tilt + (0.15 * error_tilt)
                 
                 self.goal_pan = max(-1.0, min(1.0, self.goal_pan))
                 self.goal_tilt = max(-0.6, min(0.8, self.goal_tilt))
@@ -161,8 +173,8 @@ class DeepFaceFollowerNode(Node):
                     self.pub_head.publish(msg_head)
                     self.last_scan_time = now
             else:
-                self.goal_pan *= 0.95
-                self.goal_tilt *= 0.95
+                self.goal_pan = self.current_pan * 0.95
+                self.goal_tilt = self.current_tilt * 0.95
                 msg_head = Float32MultiArray()
                 msg_head.data = [float(self.goal_pan), float(self.goal_tilt)]
                 self.pub_head.publish(msg_head)
@@ -171,11 +183,10 @@ class DeepFaceFollowerNode(Node):
             self.get_logger().error(f"Error detectando rostro: {e}")
 
         finally:
-            # Mostrar la imagen de la cámara en pantalla
+            # Mostrar la imagen de la cámara en pantalla (si está habilitado)
             if self.show_debug_window and 'cv_img' in locals():
                 cv2.imshow("DeepFace Debug Window", cv_img)
                 cv2.waitKey(1)
-                
             # Pase lo que pase, liberar la bandera para permitir el siguiente frame
             self.is_processing = False
 
