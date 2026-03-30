@@ -39,12 +39,11 @@ def generate_launch_description():
             parameters=[{'show_debug_window': True}],
             output='screen',
         ),
-        # Nodo goal_robot_pose (interpola ball y goal_center, publica pose objetivo)
+        # Servicio get_goal_robot_pose (pose detrás del balón + yaw ball→goal_center)
         Node(
             package='carry_ball_to_goal',
-            executable='goal_robot_pose',
-            name='goal_robot_pose',
-            parameters=[{'update_period_s': 1.0}],
+            executable='goal_robot_pose_service',
+            name='goal_robot_pose_service',
             output='screen',
         ),
         # Nodo go_to_goal_pose (navega al punto, busca portería si se pierde)

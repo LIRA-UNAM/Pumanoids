@@ -9,15 +9,29 @@ import numpy
 import os
 from ultralytics import YOLO
 
-HFOV = (87 * 3.14159265358979323846) / 180.0
-VFOV = (58 * 3.14159265358979323846) / 180.0
-ball_radious = 0.07
+# Parameters for every robot.
+# TO-DO: Make YAML files for each robot and load parameters from there.
+
+T1_hfov = 87
+T1_vfov = 58
+#T1_head_height = 1.11
+T1_head_height = 1.25 # <-- Check please.
+T1_focal_length = 600
+
+K1_hfov = 93 # Docs say 94
+K1_vfov = 101 # Docs say 105
+K1_head_height = 0.87
+K1_focal_length = 600
+
+
+HFOV = (T1_hfov * 3.14159265358979323846) / 180.0
+VFOV = (T1_vfov * 3.14159265358979323846) / 180.0
+ball_radious = 0.11
 head_x = 0.0
 head_y = 0.0
-head_z = 1.25
-POST_HEIGHT = 0.56
-FOCAL_LENGTH = 600
-
+head_z = T1_head_height
+POST_HEIGHT = 0.56 
+FOCAL_LENGTH = T1_focal_length
 
 class BallDetectorNode(Node):
     def get_vision_object_msg(self, id, confidence, img_x, img_y, width, height, cartesian_x, cartesian_y):
@@ -41,39 +55,43 @@ class BallDetectorNode(Node):
         self.current_head_tilt = msg.position[1]
     
     def callback_img(self, msg):
-        img_bgr = self.br.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-        results = self.model(img_bgr, verbose=False)
+        try:
+            img_bgr = self.br.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+            if img_bgr is None or not hasattr(img_bgr, 'shape'):
+                self.get_logger().warn("Received empty or invalid image frame")
+                return
+            results = self.model(img_bgr, verbose=False)
 
-        idxs = results[0].boxes.cls.cpu().tolist()
-        confs = results[0].boxes.conf.cpu().tolist()
-        bboxes = results[0].boxes.xywh.cpu().tolist()
-        
-        detected_goalposts = []
-        
-        for i in range(len(idxs)):
-            name=results[0].names[idxs[i]]
-            if "ball" in name:
-                confidence = confs[i]
-                x_center, y_center, width, height = bboxes[i]
-                ball_x, ball_y = self.get_ball_position(x_center, y_center, msg.width, msg.height)
-                vision_obj_msg = self.get_vision_object_msg(name, float(confidence), x_center, y_center, width, height, ball_x, ball_y)
-                self.pub_ball.publish(vision_obj_msg)
-            elif "goalpost" in name:
-                confidence = confs[i]
-                x_center, y_center, width, height = bboxes[i]
-                post_x, post_y = self.get_goalpost_position(x_center, height, msg.width)
-                
-                detected_goalposts.append({
-                    'x': post_x,
-                    'y': post_y,
-                    'confidence': confidence,
-                    'img_x': x_center,
-                    'img_y': y_center,
-                    'width': width,
-                    'height': height
-                })
-                
-        if len(detected_goalposts) >= 2:
+            idxs = results[0].boxes.cls.cpu().tolist()
+            confs = results[0].boxes.conf.cpu().tolist()
+            bboxes = results[0].boxes.xywh.cpu().tolist()
+            
+            detected_goalposts = []
+            
+            for i in range(len(idxs)):
+                name=results[0].names[idxs[i]]
+                if "ball" in name:
+                    confidence = confs[i]
+                    x_center, y_center, width, height = bboxes[i]
+                    ball_x, ball_y = self.get_ball_position(x_center, y_center, msg.width, msg.height)
+                    vision_obj_msg = self.get_vision_object_msg(name, float(confidence), x_center, y_center, width, height, ball_x, ball_y)
+                    self.pub_ball.publish(vision_obj_msg)
+                elif "goalpost" in name:
+                    confidence = confs[i]
+                    x_center, y_center, width, height = bboxes[i]
+                    post_x, post_y = self.get_goalpost_position(x_center, height, msg.width)
+                    
+                    detected_goalposts.append({
+                        'x': post_x,
+                        'y': post_y,
+                        'confidence': confidence,
+                        'img_x': x_center,
+                        'img_y': y_center,
+                        'width': width,
+                        'height': height
+                    })
+                    
+            if len(detected_goalposts) >= 2:
                 detected_goalposts.sort(key=lambda p: p['confidence'], reverse=True)
                 p1 = detected_goalposts[0]
                 p2 = detected_goalposts[1]
@@ -89,15 +107,18 @@ class BallDetectorNode(Node):
                 
                 vision_obj_msg = self.get_vision_object_msg("goal_center", float(avg_confidence), avg_img_x, avg_img_y, avg_width, avg_height, goal_center_x, goal_center_y)
                 self.pub_ball.publish(vision_obj_msg)
-        elif len(detected_goalposts) == 1:
+            elif len(detected_goalposts) == 1:
                 p = detected_goalposts[0]
                 vision_obj_msg = self.get_vision_object_msg("goalpost", float(p['confidence']), p['img_x'], p['img_y'], p['width'], p['height'], p['x'], p['y'])
                 self.pub_goal.publish(vision_obj_msg)
-        
+            
 
-        annotated_frame = results[0].plot()
-        cv2.imshow("YOLO Detection", annotated_frame)
-        cv2.waitKey(1)
+            annotated_frame = results[0].plot()
+            cv2.imshow("YOLO Detection", annotated_frame)
+            cv2.waitKey(1)
+
+        except Exception as e:
+            self.get_logger().error(f"Detection error: {e}")
     
     def get_ball_position(self, img_x, img_y, img_width, img_height):
         ball_x = 0.0
@@ -143,6 +164,7 @@ class BallDetectorNode(Node):
         self.pub_ball = self.create_publisher(VisionObject, '/vision/ball', 1)
         self.pub_goal = self.create_publisher(VisionObject, '/vision/goal_center', 1)
         self.model = YOLO(model_path)
+        self.model.to('cuda')
 
 def main(args=None):
     rclpy.init(args=args)
