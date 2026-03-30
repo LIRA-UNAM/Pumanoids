@@ -10,9 +10,9 @@ import cv2
 import math
 
 try:
-    from deepface import DeepFace
+    import mediapipe as mp
 except ImportError:
-    raise ImportError("Por favor instala deepface: pip install deepface")
+    raise ImportError("Por favor instala mediapipe: pip install mediapipe")
 
 HFOV = (86 * math.pi) / 180.0
 
@@ -46,6 +46,13 @@ class DeepFaceFollowerNode(Node):
         self.look_for_poses = [[0.0, 0.0], [-0.8, 0.0], [0.8, 0.0], [-0.8, 0.3], [0.8, 0.3], [0.0, 0.3]]
         self.pose_index = 0
         
+        # Inicializar MediaPipe Face Detection nativo
+        self.mp_face_detection = mp.solutions.face_detection
+        self.face_detector = self.mp_face_detection.FaceDetection(
+            model_selection=0, # 0 = ideal para distancias de interacción social (< 2 metros)
+            min_detection_confidence=0.5
+        )
+        
         # Subs y Pubs
         self.sub_img = self.create_subscription(
             Image, 
@@ -62,7 +69,7 @@ class DeepFaceFollowerNode(Node):
         self.pub_face = self.create_publisher(VisionObject, '/vision/face', 10)
         self.pub_head = self.create_publisher(Float32MultiArray, '/hardware/head/goal_pose', 10)
         
-        self.get_logger().info("DeepFace Follower Iniciado. Buscando rostros...")
+        self.get_logger().info("Seguidor de Rostros (Mediapipe) Iniciado. Buscando personas...")
 
     def callback_joints(self, msg: JointState):
         if len(msg.position) >= 2:
@@ -86,21 +93,37 @@ class DeepFaceFollowerNode(Node):
             new_h = int(orig_h * scale)
             cv_img = cv2.resize(cv_img, (640, new_h))
             img_h, img_w, _ = cv_img.shape
+            
+            # IMPORTANTE: MediaPipe requiere que la imagen esté en RGB (ROS y OpenCV usan BGR)
+            img_rgb = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
 
             try:
-                # 2. Extraer rostros directamente 
-                faces = DeepFace.extract_faces(
-                    img_path=cv_img, 
-                    detector_backend='mediapipe', 
-                    align=False
-                )
+                # 2. Extraer rostros nativamente
+                results = self.face_detector.process(img_rgb)
                 
-                if faces:
-                    # Quedarse con el rostro más grande detectado
-                    largest_face = max(faces, key=lambda f: f['facial_area']['w'] * f['facial_area']['h'])
-                    area = largest_face['facial_area']
-                    x, y, w, h = area['x'], area['y'], area['w'], area['h']
+                if results.detections:
+                    # Encontrar el rostro más grande detectado
+                    largest_face = None
+                    max_area = 0
+                    for detection in results.detections:
+                        bboxC = detection.location_data.relative_bounding_box
+                        x = int(bboxC.xmin * img_w)
+                        y = int(bboxC.ymin * img_h)
+                        w = int(bboxC.width * img_w)
+                        h = int(bboxC.height * img_h)
+                        
+                        # Evitar valores fuera de los límites de la imagen
+                        x = max(0, x)
+                        y = max(0, y)
+                        w = min(img_w - x, w)
+                        h = min(img_h - y, h)
+                        
+                        if w * h > max_area:
+                            max_area = w * h
+                            largest_face = (x, y, w, h)
                     
+                    if largest_face:
+                        x, y, w, h = largest_face
                     self.last_face_time = self.get_clock().now()
                     
                     # 3. Control Angular (Alineación YAW)
@@ -158,8 +181,8 @@ class DeepFaceFollowerNode(Node):
                         cv2.rectangle(cv_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
                         cv2.putText(cv_img, f"Dist: {distance:.2f}m", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                     
-            except ValueError:
-                # DeepFace lanza ValueError si no encuentra rostros (enforce_detection=True)
+                else:
+                    # No se encontró ningún rostro en la imagen actual
                 now = self.get_clock().now()
                 time_since_last = (now - self.last_face_time).nanoseconds * 1e-9
                 
