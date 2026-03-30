@@ -88,7 +88,7 @@ class DeepFaceFollowerNode(Node):
                 # 2. Extraer rostros directamente (bypassea modelos pesados como edad/emociones)
                 faces = DeepFace.extract_faces(
                     img_path=cv_img, 
-                    detector_backend='opencv', 
+                    detector_backend='yolov8', 
                     enforce_detection=True,
                     align=False
                 )
