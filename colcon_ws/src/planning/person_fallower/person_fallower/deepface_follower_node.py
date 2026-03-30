@@ -80,16 +80,18 @@ class DeepFaceFollowerNode(Node):
             # 1. Convertir ROS Image a OpenCV
             cv_img = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
             
-            # Reducir resolución a 640x480 (balance ideal entre velocidad y visibilidad)
-            cv_img = cv2.resize(cv_img, (640, 480))
+            # Reducir resolución MANTENIENDO la relación de aspecto 
+            orig_h, orig_w, _ = cv_img.shape
+            scale = 640.0 / float(orig_w)
+            new_h = int(orig_h * scale)
+            cv_img = cv2.resize(cv_img, (640, new_h))
             img_h, img_w, _ = cv_img.shape
 
             try:
-                # 2. Extraer rostros directamente (bypassea modelos pesados como edad/emociones)
+                # 2. Extraer rostros directamente 
                 faces = DeepFace.extract_faces(
                     img_path=cv_img, 
-                    detector_backend='yolov8n', 
-                    enforce_detection=True,
+                    detector_backend='mediapipe', 
                     align=False
                 )
                 
