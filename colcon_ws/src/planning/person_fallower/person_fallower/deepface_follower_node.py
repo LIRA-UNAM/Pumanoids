@@ -138,12 +138,13 @@ class DeepFaceFollowerNode(Node):
                 error_pan = -(center_x - (img_w / 2.0)) / (img_w / 2.0)
                 error_tilt = (center_y - (img_h / 2.0)) / (img_h / 2.0)
                 
-                if abs(error_pan) < 0.15: error_pan = 0.0
-                if abs(error_tilt) < 0.20: error_tilt = 0.0 # Mayor zona muerta vertical para evitar temblores
+                # Zona muerta muy pequeña (5%) para ignorar el ruido milimétrico
+                if abs(error_pan) < 0.05: error_pan = 0.0
+                if abs(error_tilt) < 0.05: error_tilt = 0.0
                 
-                # Ganancias reducidas para suavizar el movimiento (Tilt es menor para evitar cabeceo)
-                self.goal_pan = self.current_pan + (0.08 * error_pan)
-                self.goal_tilt = self.current_tilt + (0.05 * error_tilt)
+                # Acumular sobre el GOAL, no sobre current (evita pelear con el retraso del motor)
+                self.goal_pan += 0.02 * error_pan
+                self.goal_tilt += 0.015 * error_tilt
                 
                 self.goal_pan = max(-1.0, min(1.0, self.goal_pan))
                 self.goal_tilt = max(-0.6, min(0.8, self.goal_tilt))
@@ -173,8 +174,8 @@ class DeepFaceFollowerNode(Node):
                     self.pub_head.publish(msg_head)
                     self.last_scan_time = now
             else:
-                self.goal_pan = self.current_pan * 0.95
-                self.goal_tilt = self.current_tilt * 0.95
+                self.goal_pan *= 0.95
+                self.goal_tilt *= 0.95
                 msg_head = Float32MultiArray()
                 msg_head.data = [float(self.goal_pan), float(self.goal_tilt)]
                 self.pub_head.publish(msg_head)
