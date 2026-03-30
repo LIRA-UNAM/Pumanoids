@@ -23,7 +23,7 @@ class DeepFaceFollowerNode(Node):
         # Parámetros ajustables
         # El target_face_height_px representa cómo se ve un rostro promedio a ~0.5 metros
         # en tu resolución de cámara. (Requiere calibración: párate a 0.5m y revisa el print).
-        self.declare_parameter("target_face_height_px", 45.0) 
+        self.declare_parameter("target_face_height_px", 180.0) 
         self.declare_parameter("target_distance_m", 0.5) 
         self.declare_parameter("image_topic", "/camera/color/image_raw")
         self.declare_parameter("show_debug_window", True)
@@ -88,8 +88,8 @@ class DeepFaceFollowerNode(Node):
             # 1. Convertir ROS Image a OpenCV
             cv_img = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
             
-            # Bajar resolución para ganar velocidad
-            cv_img = cv2.resize(cv_img, (160, 120))
+            # Reducir resolución a 640x480 (balance ideal entre velocidad y visibilidad)
+            cv_img = cv2.resize(cv_img, (640, 480))
             img_h, img_w, _ = cv_img.shape
 
             # 2. Extraer rostros directamente con DeepFace usando OpenCV

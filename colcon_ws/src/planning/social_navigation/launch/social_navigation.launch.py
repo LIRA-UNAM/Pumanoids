@@ -20,13 +20,6 @@ def generate_launch_description():
         )
     )
 
-    # Incluir el archivo launch del paquete social_vision_system
-    vision_system_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory('social_vision_system'), 'launch', 'vision.launch.py')
-        )
-    )
-
     greet_and_return_sm_node = Node(
         package='social_navigation',
         executable='greet_and_return_sm',
