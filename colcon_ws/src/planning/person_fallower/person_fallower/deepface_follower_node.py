@@ -170,12 +170,12 @@ class DeepFaceFollowerNode(Node):
         except Exception as e:
             self.get_logger().error(f"Error detectando rostro: {e}")
 
-        # Mostrar la imagen de la cámara en pantalla
-        if self.show_debug_window and 'cv_img' in locals():
-            cv2.imshow("DeepFace Debug Window", cv_img)
-            cv2.waitKey(1)
-
         finally:
+            # Mostrar la imagen de la cámara en pantalla
+            if self.show_debug_window and 'cv_img' in locals():
+                cv2.imshow("DeepFace Debug Window", cv_img)
+                cv2.waitKey(1)
+                
             # Pase lo que pase, liberar la bandera para permitir el siguiente frame
             self.is_processing = False
 
