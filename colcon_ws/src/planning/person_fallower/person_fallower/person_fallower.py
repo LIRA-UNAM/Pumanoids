@@ -26,7 +26,7 @@ class PersonFollowerBase(Node):
         # Variables de estado interno
         self.head_pan_angle = 0.0
         self.distance_x = 0.5
-        self.face_x_img = 160 # Centro predeterminado (320/2)
+        self.face_x_img = 320 # Centro predeterminado para 640x480
         self.enabled = False  # Por defecto apagado, la máquina de estados lo encenderá
         
         # Suscriptores
@@ -69,8 +69,8 @@ class PersonFollowerBase(Node):
         twist = Twist()
         
         # --- Lógica idéntica a ball_follower.py ---
-        # Calculamos el error en imagen (imagen de 320px, centro en 160)
-        error_img = (-self.face_x_img + 160) / 320.0
+        # Calculamos el error en imagen (imagen de 640px, centro en 320)
+        error_img = (-self.face_x_img + 320) / 640.0
         if error_img < 0:
             error_img = -math.sqrt(-error_img)
         else:
@@ -94,7 +94,7 @@ class PersonFollowerBase(Node):
         self.pub_cmd_vel.publish(twist)
         
         self.distance_x = (self.distance_x * 0.8) + (0.5 * 0.2) # Decaimiento suave
-        self.face_x_img = (self.face_x_img * 0.8) + (160.0 * 0.2) # Decaimiento suave al centro
+        self.face_x_img = (self.face_x_img * 0.8) + (320.0 * 0.2) # Decaimiento suave al centro
 
 def main(args=None):
     rclpy.init(args=args)
