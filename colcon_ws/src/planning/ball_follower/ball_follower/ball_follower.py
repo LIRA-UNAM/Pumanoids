@@ -6,8 +6,8 @@ from sensor_msgs.msg import JointState
 from std_msgs.msg import Bool
 from pumas_vision_msgs.msg import VisionObject
 
-center_x = 640
-center_y = 480
+center_x_t1 = 320
+center_x_k1 = 272
 
 class BallFollowerNode(Node):
     def callback_joint_states(self, msg):
@@ -20,9 +20,8 @@ class BallFollowerNode(Node):
 
         ball_center_x = msg.x
         ball_center_y = msg.y
-        #print(f"Ball detected at x: {ball_center_x}, y: {ball_center_y}")
         
-        error_x = (-ball_center_x + center_x)/640
+        error_x = (-ball_center_x + center_x_k1)/center_x_k1
         if error_x < 0:
             error_x = -math.sqrt(-error_x)
         else:
@@ -31,6 +30,8 @@ class BallFollowerNode(Node):
         cmd_vel_msg = Twist()
         cmd_vel_msg.linear.x = 0.2
         cmd_vel_msg.angular.z = 0.8 * (error_x + self.current_head_pan)
+        #self.get_logger().info(f"{error_x}  ,  {self.current_head_pan}")
+        #self.get_logger().info(f"Pan position: {cmd_vel_msg.angular.z}")
         self.pub_cmd_vel.publish(cmd_vel_msg)
         
         
