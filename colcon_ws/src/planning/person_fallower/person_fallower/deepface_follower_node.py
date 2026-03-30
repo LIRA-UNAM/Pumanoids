@@ -139,11 +139,11 @@ class DeepFaceFollowerNode(Node):
                 error_tilt = (center_y - (img_h / 2.0)) / (img_h / 2.0)
                 
                 if abs(error_pan) < 0.15: error_pan = 0.0
-                if abs(error_tilt) < 0.15: error_tilt = 0.0
+                if abs(error_tilt) < 0.20: error_tilt = 0.0 # Mayor zona muerta vertical para evitar temblores
                 
-                # Control Proporcional basado en la posición física actual
-                self.goal_pan = self.current_pan + (0.15 * error_pan)
-                self.goal_tilt = self.current_tilt + (0.15 * error_tilt)
+                # Ganancias reducidas para suavizar el movimiento (Tilt es menor para evitar cabeceo)
+                self.goal_pan = self.current_pan + (0.08 * error_pan)
+                self.goal_tilt = self.current_tilt + (0.05 * error_tilt)
                 
                 self.goal_pan = max(-1.0, min(1.0, self.goal_pan))
                 self.goal_tilt = max(-0.6, min(0.8, self.goal_tilt))
