@@ -9,9 +9,19 @@ import numpy
 import os
 from ultralytics import YOLO
 
-HFOV = (86 * 3.14159265358979323846) / 180.0
-POST_HEIGHT = 0.56
-FOCAL_LENGTH = 580
+T1_hfov = 86
+T1_vfov = 57
+T1_head_height = 1.11
+
+K1_hfov = 93
+K1_vfov = 101
+K1_head_height = 0.87
+
+HFOV = (K1_hfov * 3.14159265358979323846) / 180.0
+# Distancia (m) desde altura del bbox en px: distance = 121.88/(h-7.5) - 0.25
+GOAL_DIST_A = 121.88
+GOAL_DIST_H0 = 7.5
+GOAL_DIST_B = 0.25
 head_x = 0.0
 head_y = 0.0
 
@@ -71,6 +81,7 @@ class GoalDetectorNode(Node):
                     'height': height
                 })
 
+
         if len(detected_goalposts) >= 2:
             detected_goalposts.sort(key=lambda p: p['confidence'], reverse=True)
             p1 = detected_goalposts[0]
@@ -119,10 +130,13 @@ class GoalDetectorNode(Node):
             cv2.waitKey(1)
 
     def get_goalpost_position(self, img_x, img_h, img_width):
-        if img_h < 1:
+        denom = img_h - GOAL_DIST_H0
+        if denom <= 0.0:
             return 0.0, 0.0
 
-        distance = (FOCAL_LENGTH * POST_HEIGHT) / img_h
+        distance = (GOAL_DIST_A / denom) - GOAL_DIST_B
+        if distance <= 0.0:
+            return 0.0, 0.0
         theta = -(img_x - img_width / 2) * HFOV / img_width + self.current_head_pan
         post_x = head_x + distance * numpy.cos(theta)
         post_y = head_y + distance * numpy.sin(theta)

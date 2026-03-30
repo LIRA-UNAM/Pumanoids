@@ -6,10 +6,17 @@ from rclpy.node import Node
 from pumas_vision_msgs.msg import VisionObject
 from sensor_msgs.msg import Image, JointState
 
+T1_hfov = 86
+T1_vfov = 57
+T1_head_height = 1.11
 
-HFOV = (86 * 3.14159265358979323846) / 180.0
-VFOV = (57 * 3.14159265358979323846) / 180.0
-HEAD_Z = 1.05
+K1_hfov = 93
+K1_vfov = 101
+K1_head_height = 0.87
+
+HFOV = (K1_hfov * 3.14159265358979323846) / 180.0
+VFOV = (K1_vfov * 3.14159265358979323846) / 180.0
+HEAD_Z = K1_head_height
 
 
 class GoalRobotPoseNode(Node):
