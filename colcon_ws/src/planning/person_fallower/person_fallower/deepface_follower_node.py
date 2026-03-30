@@ -81,7 +81,6 @@ class DeepFaceFollowerNode(Node):
             cv_img = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
             img_h, img_w, _ = cv_img.shape
 
-            try:
             # 2. Extraer rostros directamente con DeepFace usando OpenCV
             faces = DeepFace.extract_faces(
                 img_path=cv_img, 
@@ -167,13 +166,14 @@ class DeepFaceFollowerNode(Node):
                 msg_head = Float32MultiArray()
                 msg_head.data = [float(self.goal_pan), float(self.goal_tilt)]
                 self.pub_head.publish(msg_head)
-            except Exception as e:
-                self.get_logger().error(f"Error detectando rostro: {e}")
+                
+        except Exception as e:
+            self.get_logger().error(f"Error detectando rostro: {e}")
 
-            # Mostrar la imagen de la cámara en pantalla
-            if self.show_debug_window:
-                cv2.imshow("DeepFace Debug Window", cv_img)
-                cv2.waitKey(1)
+        # Mostrar la imagen de la cámara en pantalla
+        if self.show_debug_window and 'cv_img' in locals():
+            cv2.imshow("DeepFace Debug Window", cv_img)
+            cv2.waitKey(1)
 
         finally:
             # Pase lo que pase, liberar la bandera para permitir el siguiente frame
