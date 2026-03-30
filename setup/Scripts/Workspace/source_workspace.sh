@@ -1,0 +1,1 @@
+source /home/$USER/Pumanoids/colcon_ws/install/setup.bash
