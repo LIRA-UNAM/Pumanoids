@@ -104,7 +104,7 @@ class GreetAndReturnSM(Node):
                 return
                 
             # Nos detenemos al llegar a 1 metro de la persona para saludar
-            if self.current_distance <= 1.0 and time_since_last_face < 2.0:
+            if self.current_distance <= 0.5 and time_since_last_face < 2.0:
                 self.state = State.GREETING
                 self.enable_person_follower(False) # Detenemos el seguidor
                 self.pub_cmd_vel.publish(Twist()) # Freno total de seguridad
