@@ -9,7 +9,10 @@ def generate_launch_description():
             package='face_detector',
             executable='face_detector',
             name='face_detector',
-            output='screen'
+            output='screen',
+            remappings=[
+                ('image_raw', '/camera/color/image_raw')
+            ]
         ),
         # Cuello: Seguidor de cabeza
         Node(
