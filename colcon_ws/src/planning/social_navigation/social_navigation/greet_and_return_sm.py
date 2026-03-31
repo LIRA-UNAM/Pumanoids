@@ -103,8 +103,8 @@ class GreetAndReturnSM(Node):
                 self.get_logger().info("Se perdió a la persona durante el acercamiento. Buscando otra...")
                 return
                 
-            # Asumimos que si estamos cerca de 0.5m (tolerancia 0.65m), hemos llegado
-            if self.current_distance < 0.65 and time_since_last_face < 2.0:
+            # Nos detenemos al llegar a 1 metro de la persona para saludar
+            if self.current_distance <= 1.0 and time_since_last_face < 2.0:
                 self.state = State.GREETING
                 self.enable_person_follower(False) # Detenemos el seguidor
                 self.pub_cmd_vel.publish(Twist()) # Freno total de seguridad

@@ -17,17 +17,20 @@ def generate_launch_description():
             )
         ),
         
-        # Nodo principal de detección usando DeepFace (Ojos)
+        # Ojos: Detector de rostros
+        Node(
+            package='face_detector',
+            executable='face_detector',
+            name='face_detector',
+            output='screen'
+        ),
+        
+        # Cuello: Seguidor de cabeza
         Node(
             package='person_fallower',
             executable='deepface_follower_node',
             name='deepface_follower_node',
-            output='screen',
-            parameters=[{
-                'show_debug_window': True,
-                'target_face_height_px': 180.0, # Ajustado para la resolución 640x480
-                'image_topic': '/camera/color/image_raw'
-            }]
+            output='screen'
         ),
         
         # Nodo para el control de la base publicando Twist (Piernas)
