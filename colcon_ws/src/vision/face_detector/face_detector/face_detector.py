@@ -39,7 +39,7 @@ class FaceDetector(Node):
         # Publishers
         self.publisher_ = self.create_publisher(Image, '/face_detection/image', 10)
 
-        self.target_pub = self.create_publisher(VisionObject, '/vision/ball', 1)
+        self.target_pub = self.create_publisher(VisionObject, '/vision/face', 1)
         
         self.bridge = CvBridge()
         
@@ -114,15 +114,17 @@ class FaceDetector(Node):
                 # target_msg.y = float(y_center)
                 # target_msg.z = 0.0
 
-                #self.target_pub.publish(target_msg)
+                # Calcular distancia estimada (180px representa ~0.5m)
+                distancia = (0.5 * 180.0) / height if height > 0 else 0.0
+
                 vision_obj_msg = self.get_vision_object_msg(
-                    "1", 
+                    "face", 
                     float(confidence), 
                     x_center, 
                     y_center, 
                     width, 
                     height, 
-                    0.0, 
+                    float(distancia), 
                     0.0
                 )
 

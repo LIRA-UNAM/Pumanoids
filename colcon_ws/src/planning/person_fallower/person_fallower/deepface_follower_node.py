@@ -1,200 +1,157 @@
 #!/usr/bin/env python3
 
 import rclpy
-from rclpy.node import Node
-from sensor_msgs.msg import Image, JointState
-from std_msgs.msg import Float32MultiArray
-from pumas_vision_msgs.msg import VisionObject
-from cv_bridge import CvBridge
-import cv2
 import math
+import time
+from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+from rclpy.wait_for_message import wait_for_message
+from std_msgs.msg import Float32MultiArray, Bool
+from sensor_msgs.msg import JointState
+from pumas_vision_msgs.msg import VisionObject
+from sensor_msgs.msg import Image
 
-try:
-    from deepface import DeepFace
-except ImportError:
-    raise ImportError("Por favor instala deepface: pip install deepface")
-
-HFOV = (86 * math.pi) / 180.0
+SM_INIT = 0
+SM_WAIT_FOR_FIRST_IMAGE = 10
+SM_LOOK_FOR_FACE = 20
+SM_LOOK_AT_FACE = 30
 
 class DeepFaceFollowerNode(Node):
-    def __init__(self):
-        super().__init__('deepface_follower_node')
-        
-        # Parámetros ajustables
-        # El target_face_height_px representa cómo se ve un rostro promedio a ~0.5 metros
-        # en tu resolución de cámara. (Requiere calibración: párate a 0.5m y revisa el print).
-        self.declare_parameter("target_face_height_px", 180.0) 
-        self.declare_parameter("target_distance_m", 0.5) 
-        self.declare_parameter("image_topic", "/camera/color/image_raw")
-        self.declare_parameter("show_debug_window", True)
-        
-        self.target_face_h = self.get_parameter("target_face_height_px").value
-        self.target_dist = self.get_parameter("target_distance_m").value
-        self.show_debug_window = self.get_parameter("show_debug_window").value
-        
-        self.bridge = CvBridge()
-        self.is_processing = False
-        
-        self.current_pan = 0.0
-        self.current_tilt = 0.0
-        self.goal_pan = 0.0
-        self.goal_tilt = 0.0
-        
-        # Variables para el escaneo de búsqueda
-        self.last_face_time = self.get_clock().now()
-        self.last_scan_time = self.get_clock().now()
-        self.look_for_poses = [[0.0, 0.0], [-0.8, 0.0], [0.8, 0.0], [-0.8, 0.3], [0.8, 0.3], [0.0, 0.3]]
-        self.pose_index = 0
-        
-        # Subs y Pubs
-        self.sub_img = self.create_subscription(
-            Image, 
-            self.get_parameter("image_topic").value, 
-            self.image_callback, 
-            1
-        )
-        self.sub_joints = self.create_subscription(
-            JointState, 
-            '/joint_states', 
-            self.callback_joints, 
-            10
-        )
-        self.pub_face = self.create_publisher(VisionObject, '/vision/face', 10)
-        self.pub_head = self.create_publisher(Float32MultiArray, '/hardware/head/goal_pose', 10)
-        
-        self.get_logger().info("DeepFace Follower (OpenCV) Iniciado. Buscando rostros...")
+    def callback_enable(self, msg):
+        self.enable = msg.data
+        if self.enable:
+            self.get_logger().info("Enable received...")
+        else:
+            self.get_logger().info("Disable received...")
 
-    def callback_joints(self, msg: JointState):
+    def callback_joint_states(self, msg):
         if "HeadYaw" in msg.name:
             idx = msg.name.index("HeadYaw")
             self.current_pan = msg.position[idx]
         elif len(msg.position) >= 1:
             self.current_pan = msg.position[0]
-            
+
         if "HeadPitch" in msg.name:
             idx = msg.name.index("HeadPitch")
             self.current_tilt = msg.position[idx]
         elif len(msg.position) >= 2:
             self.current_tilt = msg.position[1]
+            
+    def callback_face(self, msg):
+        self.img_face_x = msg.x
+        self.img_face_y = msg.y
+        error_x = -(msg.x - self.img_goal_x) / (self.img_width  / 2)
+        error_y =  (msg.y - self.img_goal_y) / (self.img_height / 2)        
+        self.goal_pan += 0.15 * error_x
+        self.goal_tilt += 0.15 * error_y
+        self.goal_pan  = max(-1.0, min(1.0, self.goal_pan))
+        self.goal_tilt = max(-0.3, min(0.8, self.goal_tilt))
+        self.new_face_data = True
 
-    def image_callback(self, msg: Image):
-        # Si ya estamos procesando una imagen, ignoramos este frame (evita lag)
-        if self.is_processing:
-            return
-            
-        self.is_processing = True
+    def get_single_image(self, timeout_seconds=1):
+        self.get_logger().info("Waiting for single image")
+        qos_profile = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT, history=HistoryPolicy.KEEP_LAST, depth=1)
+        success, msg = wait_for_message(
+            msg_type=Image,
+            node=self,
+            topic="/camera/color/image_raw",
+            qos_profile=qos_profile,
+            time_to_wait=timeout_seconds
+        )
+        return msg if success else None
+        
+    def __init__(self):
+        super().__init__("deepface_follower_node")
+        self.get_logger().info("INITIALIZING HEAD FACE FOLLOWER NODE - ")
+        self.enable = False
+        self.goal_pan = 0.0
+        self.goal_tilt = 0.0
+        self.new_face_data = False
+        self.img_width  = 640
+        self.img_height = 480
+        self.img_goal_x = 320
+        self.img_goal_y = 240
+        self.img_face_x = 320
+        self.img_face_y = 240
+        self.current_pan  = 0
+        self.current_tilt = 0
+        self.look_for_poses = [[0.0,0.7], [-0.8, 0.7], [-0.8, 0.2], [0.0, 0.2], [0.8, 0.2], [0.8,0.7]]
 
-        try:
-            # 1. Convertir ROS Image a OpenCV
-            cv_img = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
-            
-            # Reducir resolución a 640x480 (balance ideal entre velocidad y visibilidad)
-            cv_img = cv2.resize(cv_img, (640, 480))
-            img_h, img_w, _ = cv_img.shape
+        self.last_image_time = rclpy.time.Time(nanoseconds=0, clock_type=self.get_clock().clock_type)
+        self.sub_enable  = self.create_subscription(Bool, "/person_follower/enable", self.callback_enable, 1)
+        self.sub_face    = self.create_subscription(VisionObject, '/vision/face', self.callback_face, 1)
+        self.sub_joints  = self.create_subscription(JointState, "/joint_states", self.callback_joint_states, 1)
+        self.pub_pantilt = self.create_publisher(Float32MultiArray, '/hardware/head/goal_pose', 1)
 
-            # 2. Extraer rostros directamente con DeepFace usando OpenCV
-            faces = DeepFace.extract_faces(
-                img_path=cv_img, 
-                detector_backend='opencv', 
-                enforce_detection=True,
-                align=False
-            )
-            
-            if faces:
-                # Quedarse con el rostro más grande detectado
-                largest_face = max(faces, key=lambda f: f['facial_area']['w'] * f['facial_area']['h'])
-                area = largest_face['facial_area']
-                x, y, w, h = area['x'], area['y'], area['w'], area['h']
-                
-                self.last_face_time = self.get_clock().now()
-                
-                # 3. Control Angular (Alineación YAW)
-                center_x = x + (w / 2.0)
-                center_y = y + (h / 2.0)
-                
-                # 4. Calcular Distancia Real y Proyección Cartesiana 
-                distance = (self.target_dist * self.target_face_h) / float(h)
-                
-                theta = -(center_x - img_w / 2.0) * HFOV / img_w + self.current_pan
-                face_x = distance * math.cos(theta)
-                face_y = distance * math.sin(theta)
-                
-                # 5. Publicar como VisionObject 
-                vision_msg = VisionObject()
-                vision_msg.header.stamp = self.get_clock().now().to_msg()
-                vision_msg.header.frame_id = "camera_color_optical_frame"
-                vision_msg.id = "face"
-                vision_msg.confidence = 1.0
-                vision_msg.x = int(center_x)
-                vision_msg.y = int(center_y)
-                vision_msg.width = int(w)
-                vision_msg.height = int(h)
-                vision_msg.pose.position.x = float(face_x) # Distancia frontal
-                vision_msg.pose.position.y = float(face_y) # Desplazamiento lateral
-                vision_msg.pose.position.z = 0.0
-                self.pub_face.publish(vision_msg)
-                
-                # 6. Control Dinámico de Cabeza (Pan y Tilt)
-                error_pan = -(center_x - (img_w / 2.0)) / (img_w / 2.0)
-                error_tilt = (center_y - (img_h / 2.0)) / (img_h / 2.0)
-                
-                # Zona muerta muy pequeña (5%) para ignorar el ruido milimétrico
-                if abs(error_pan) < 0.05: error_pan = 0.0
-                if abs(error_tilt) < 0.05: error_tilt = 0.0
-                
-                # Acumular sobre el GOAL, no sobre current (evita pelear con el retraso del motor)
-                self.goal_pan += 0.02 * error_pan
-                self.goal_tilt += 0.015 * error_tilt
-                
-                self.goal_pan = max(-1.0, min(1.0, self.goal_pan))
-                self.goal_tilt = max(-0.6, min(0.8, self.goal_tilt))
-                
-                msg_head = Float32MultiArray()
-                msg_head.data = [float(self.goal_pan), float(self.goal_tilt)]
-                self.pub_head.publish(msg_head)
-                
-                if self.show_debug_window:
-                    cv2.rectangle(cv_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                    cv2.putText(cv_img, f"Dist: {distance:.2f}m", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                
-        except ValueError:
-            # DeepFace lanza ValueError si no encuentra rostros
-            now = self.get_clock().now()
-            time_since_last = (now - self.last_face_time).nanoseconds * 1e-9
-            
-            if time_since_last > 2.0:
-                if (now - self.last_scan_time).nanoseconds * 1e-9 > 1.5:
-                    pose = self.look_for_poses[self.pose_index]
-                    self.pose_index = (self.pose_index + 1) % len(self.look_for_poses)
-                    self.goal_pan = pose[0]
-                    self.goal_tilt = pose[1]
+
+    def spin(self):
+        self.get_logger().info("Waiting for enable signal")
+        state = SM_INIT
+        no_new_data_counter = 0
+        while rclpy.ok():
+            if self.enable:
+                if state == SM_INIT:
+                    self.get_logger().info("Initializing state machine for head face follower...")
+                    state = SM_WAIT_FOR_FIRST_IMAGE
                     
-                    msg_head = Float32MultiArray()
-                    msg_head.data = [float(self.goal_pan), float(self.goal_tilt)]
-                    self.pub_head.publish(msg_head)
-                    self.last_scan_time = now
+                elif state == SM_WAIT_FOR_FIRST_IMAGE:
+                    img = self.get_single_image()
+                    if img is not None:
+                        self.get_logger().info(f"Image received with size {img.width}x{img.height}")
+                        self.img_width  = img.width
+                        self.img_height = img.height
+                        self.img_goal_x = img.width/2
+                        self.img_goal_y = img.height/2
+                        state = SM_LOOK_FOR_FACE
+                    else:
+                        None
+                        
+                elif state == SM_LOOK_FOR_FACE:
+                    if not self.new_face_data:
+                        if self.get_clock().now() - self.last_image_time > rclpy.duration.Duration(seconds=2):
+                            head_pose = self.look_for_poses.pop(0)
+                            self.look_for_poses.append(head_pose)
+                            self.get_logger().info(f"Looking for face at ({head_pose[0]},{head_pose[1]})")
+                            pantilt_msg = Float32MultiArray()
+                            pantilt_msg.data = head_pose
+                            self.pub_pantilt.publish(pantilt_msg)
+                            time.sleep(0.5)
+                            rclpy.spin_once(self, timeout_sec=0.5)
+                    else:
+                        self.get_logger().info(f"Found face at position ({self.img_face_x},{self.img_face_y}) with head at ({self.current_pan},{self.current_tilt})")
+                        self.goal_pan  = -0.65*(self.img_face_x - self.img_goal_x) / (self.img_width  / 2) + self.current_pan
+                        self.goal_tilt =  0.50*(self.img_face_y - self.img_goal_y) / (self.img_height / 2) + self.current_tilt
+                        self.goal_pan  = max(-1.0, min(1.0, self.goal_pan))
+                        self.goal_tilt = max(-0.3, min(0.8, self.goal_tilt))
+                        pantilt_msg = Float32MultiArray()
+                        pantilt_msg.data = [self.goal_pan, self.goal_tilt]
+                        self.pub_pantilt.publish(pantilt_msg)
+                        state = SM_LOOK_AT_FACE
+                        
+                elif state == SM_LOOK_AT_FACE:
+                    if self.new_face_data:
+                        self.last_image_time = self.get_clock().now()
+                        self.new_face_data = False
+                        no_new_data_counter = 0
+                        pantilt_msg = Float32MultiArray()
+                        pantilt_msg.data = [self.goal_pan, self.goal_tilt]
+                        self.pub_pantilt.publish(pantilt_msg)
+                    else:
+                        no_new_data_counter += 1
+                        if no_new_data_counter > 30:
+                            self.get_logger().info("Lost face!!!")
+                            no_new_data_counter = 0
+                            state = SM_LOOK_FOR_FACE
             else:
-                self.goal_pan *= 0.95
-                self.goal_tilt *= 0.95
-                msg_head = Float32MultiArray()
-                msg_head.data = [float(self.goal_pan), float(self.goal_tilt)]
-                self.pub_head.publish(msg_head)
-                
-        except Exception as e:
-            self.get_logger().error(f"Error detectando rostro: {e}")
+                state = SM_INIT
 
-        finally:
-            # Mostrar la imagen de la cámara en pantalla (si está habilitado)
-            if self.show_debug_window and 'cv_img' in locals():
-                cv2.imshow("DeepFace Debug Window", cv_img)
-                cv2.waitKey(1)
-            # Pase lo que pase, liberar la bandera para permitir el siguiente frame
-            self.is_processing = False
+            rclpy.spin_once(self, timeout_sec=0)
+            time.sleep(0.02)
 
 def main(args=None):
     rclpy.init(args=args)
     node = DeepFaceFollowerNode()
-    rclpy.spin(node)
+    node.spin()
     node.destroy_node()
     rclpy.shutdown()
 
