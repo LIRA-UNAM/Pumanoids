@@ -30,7 +30,7 @@ class PersonFollowerBase(Node):
             error_x = math.sqrt(error_x)
         
         cmd_vel_msg = Twist()
-        cmd_vel_msg.linear.x = 0.2
+        cmd_vel_msg.linear.x = 0.05 #0.2
         cmd_vel_msg.angular.z = 0.8 * (error_x + self.current_head_pan)
         
         self.pub_cmd_vel.publish(cmd_vel_msg)
