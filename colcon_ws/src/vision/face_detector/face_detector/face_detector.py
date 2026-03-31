@@ -46,7 +46,7 @@ class FaceDetector(Node):
         # Inicialización de MediaPipe Face Detection
         self.mp_face_detection = mp.solutions.face_detection
         self.face_detection = self.mp_face_detection.FaceDetection(
-            model_selection=0, # 0 para rostros cercanos (a menos de 2 metros)
+            model_selection=1, # 0 para rostros cercanos (a menos de 2 metros)
             min_detection_confidence=0.5)
 
         self.prev_time = 0.0
