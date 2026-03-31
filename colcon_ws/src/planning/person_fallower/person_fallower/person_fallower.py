@@ -32,21 +32,8 @@ class PersonFollowerBase(Node):
             error_x = math.sqrt(error_x)
         
         cmd_vel_msg = Twist()
-        
-        # Calculamos el error total de orientación combinando visión y cuello
-        total_yaw_error = error_x + self.current_head_pan
-        
-        # Limitamos la velocidad máxima de giro para que sea segura
-        cmd_vel_msg.angular.z = max(-0.8, min(0.8, 0.8 * total_yaw_error))
-        
-        # Priorizamos alinearnos: Si el cuello está muy desalineado (> ~23 grados), 
-        # el robot frena el avance y pivotea en su lugar hasta apuntar a la persona.
-        if abs(total_yaw_error) > 0.4:
-            cmd_vel_msg.linear.x = 0.0
-        else:
-            cmd_vel_msg.linear.x = 0.2
-            
-        self.pub_cmd_vel.publish(cmd_vel_msg)
+        cmd_vel_msg.linear.x = 0.2
+        cmd_vel_msg.angular.z = 0.8 * (error_x + self.current_head_pan)
         
         
     def __init__(self):
