@@ -117,6 +117,8 @@ class FaceDetector(Node):
                 # Calcular distancia estimada (180px representa ~0.5m)
                 distancia = (0.5 * 180.0) / height if height > 0 else 0.0
 
+                cv2.putText(frame, f"Dist: {distancia:.2f}m", (xmin, ymin - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+
                 vision_obj_msg = self.get_vision_object_msg(
                     "face", 
                     float(confidence), 
