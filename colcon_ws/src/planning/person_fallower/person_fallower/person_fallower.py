@@ -20,18 +20,11 @@ class PersonFollowerBase(Node):
         if not self.is_enabled:
             return
 
-        face_center_x = msg.x
-        face_center_y = msg.y
-        
-        error_x = (-face_center_x + center_x_t1)/center_x_t1
-        if error_x < 0:
-            error_x = -math.sqrt(-error_x)
-        else:
-            error_x = math.sqrt(error_x)
-        
         cmd_vel_msg = Twist()
-        cmd_vel_msg.linear.x = 0.05 #0.2
-        cmd_vel_msg.angular.z = 0.8 * (error_x + self.current_head_pan)
+        cmd_vel_msg.linear.x = 0.2 #0.2
+        
+        # Control en Cascada: El cuerpo simplemente intenta llevar el cuello a 0.0
+        cmd_vel_msg.angular.z = 1.0 * self.current_head_pan
         
         self.pub_cmd_vel.publish(cmd_vel_msg)
 
