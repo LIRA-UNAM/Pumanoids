@@ -25,17 +25,8 @@ class DeepFaceFollowerNode(Node):
             self.get_logger().info("Disable received...")
 
     def callback_joint_states(self, msg):
-        if "HeadYaw" in msg.name:
-            idx = msg.name.index("HeadYaw")
-            self.current_pan = msg.position[idx]
-        elif len(msg.position) >= 1:
-            self.current_pan = msg.position[0]
-
-        if "HeadPitch" in msg.name:
-            idx = msg.name.index("HeadPitch")
-            self.current_tilt = msg.position[idx]
-        elif len(msg.position) >= 2:
-            self.current_tilt = msg.position[1]
+        self.current_pan = msg.position[0]
+        self.current_tilt = msg.position[1]
             
     def callback_face(self, msg):
         self.img_face_x = msg.x
