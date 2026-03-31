@@ -9,14 +9,12 @@ from std_msgs.msg import Bool
 from pumas_vision_msgs.msg import VisionObject
 
 center_x_t1 = 320
+center_x_k1 = 272
 
 class PersonFollowerBase(Node):
     def callback_joint_states(self, msg):
-        if "HeadYaw" in msg.name:
-            idx = msg.name.index("HeadYaw")
-            self.current_head_pan = msg.position[idx]
-        elif len(msg.position) > 0:
-            self.current_head_pan = msg.position[0]
+        self.current_head_pan = msg.position[0]
+        self.current_head_tilt = msg.position[1]
             
     def callback_face(self, msg):
         if not self.is_enabled:
@@ -35,7 +33,8 @@ class PersonFollowerBase(Node):
         cmd_vel_msg.linear.x = 0.2
         cmd_vel_msg.angular.z = 0.8 * (error_x + self.current_head_pan)
         
-        
+        self.pub_cmd_vel.publish(cmd_vel_msg)
+
     def __init__(self):
         print("INITIALIZING PERSON FOLLOWER NODE - ")
         super().__init__("person_fallower")
