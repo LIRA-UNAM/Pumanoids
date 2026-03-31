@@ -63,7 +63,7 @@ class DeepFaceFollowerNode(Node):
     def __init__(self):
         super().__init__("deepface_follower_node")
         self.get_logger().info("INITIALIZING HEAD FACE FOLLOWER NODE - ")
-        self.enable = False
+        self.enable = True
         self.goal_pan = 0.0
         self.goal_tilt = 0.0
         self.new_face_data = False
