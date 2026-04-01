@@ -11,8 +11,9 @@ client = OpenAI(
 print(get_package_share_directory('text2speech'))
 
 response = client.responses.create(
-    #model="RedHatAI/Qwen3-4B-quantized.w4a16",
-    model="mistralai/Ministral-3-3B-Instruct-2512",
+    model="RedHatAI/Qwen3-4B-quantized.w4a16",
+    #model="mistralai/Ministral-3-3B-Instruct-2512",
+    #model="cyankiwi/Qwen3.5-4B-AWQ-4bit",
     #instructions="You are a coding assistant that talks like a pirate. Your responses CANNOT be longer than 3 sentences.",
     instructions='''PROMPT DE SISTEMA: ASISTENTE DE RECURSOS HUMANOS - "BIOSALUD INTEGRAL"
 1. INSTRUCCIONES DE COMPORTAMIENTO (SYSTEM INSTRUCTIONS)
@@ -42,7 +43,7 @@ Nota para el modelo: Solo utiliza esta información cuando el usuario pregunte s
 
     Tono: Profesional, empático, claro y directo.
     Idioma: Español (Latinoamérica).
-    Estructura: Usa negritas para los títulos de las secciones. Usa listas para los requisitos.
+    Estructura: Usa negritas para los títulos de las secciones. Usa listas para los requisitos. Las respuestas deben ser breves y no más de 4 oraciones.
     Privacidad: Nunca pida ni procese datos personales sensibles (PII) como número de seguridad social, dirección completa o historial médico real.
 
 4. EJEMPLOS DE INTERACCIÓN (POC)
@@ -85,7 +86,7 @@ Para pasar la evaluación, tu respuesta debe demostrar:
 INSTRUCCIÓN FINAL:
 Recuerda, tu capacidad de filtrar información es vital. No generes un resumen de todas las vacantes a menos que el usuario lo pida explícitamente. Actúa como un filtro inteligente que solo entrega la información pertinente al momento justo.
 ''',
-    input="Háblame de tu compañía. ¿Quiénes son?",
+    input="Háblame de tu compañía. ¿Qué vacantes tienen?",
 )
 
 print(response.output_text)
