@@ -32,6 +32,7 @@ class GreetAndReturnSM(Node):
         # Publicadores
         self.pub_cmd_vel = self.create_publisher(Twist, '/cmd_vel', 10)
         self.pub_enable_follower = self.create_publisher(Bool, '/person_follower/enable', 10)
+        self.pub_enable_interaction = self.create_publisher(Bool, '/interaction/enable', 10)
         
         # Suscriptores
         self.sub_face = self.create_subscription(VisionObject, '/vision/face', self.face_callback, 10)
@@ -57,6 +58,11 @@ class GreetAndReturnSM(Node):
         msg = Bool()
         msg.data = enable
         self.pub_enable_follower.publish(msg)
+
+    def enable_interaction(self, enable: bool):
+        msg = Bool()
+        msg.data = enable
+        self.pub_enable_interaction.publish(msg)
 
     def call_greeting_service(self, hand_action=0):
         if not self.srv_client.wait_for_service(timeout_sec=1.0):
@@ -99,7 +105,7 @@ class GreetAndReturnSM(Node):
             # Si perdemos a la persona antes de llegar, volvemos a IDLE
             if time_since_last_face > 10.0:
                 self.state = State.IDLE
-                self.enable_person_follower(False)
+                self.enable_person_follower(True)
                 self.get_logger().info("Se perdió a la persona durante el acercamiento. Buscando otra...")
                 return
                 
@@ -119,12 +125,15 @@ class GreetAndReturnSM(Node):
             if elapsed >= 5.0:
                 self.call_greeting_service(1)
                 self.state = State.INTERACTING
+                self.enable_interaction(True)
                 self.get_logger().info("Saludo terminado. Interactuando. Esperando a que la persona se vaya...")
 
         elif self.state == State.INTERACTING:
             # Si no hay rostros interactuando por 15 segundos
             if time_since_last_face > 15.0:
                 self.state = State.IDLE
+                self.enable_interaction(False)
+                self.enable_person_follower(True)
                 self.get_logger().info("La persona se ha ido. Buscando a alguien más...")
 
 def main(args=None):
