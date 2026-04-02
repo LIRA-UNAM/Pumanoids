@@ -3,7 +3,7 @@ from openai import OpenAI
 import rclpy
 from rclpy.node import Node
 from rclpy.duration import Duration
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 from ament_index_python.packages import get_package_share_directory
 
 SM_INIT = 0
@@ -33,12 +33,19 @@ class OllamaPlanningNode(Node):
         self.msg_history.append({"role": "assistant", "content": response.choices[0].message.content})
 
     def callback_prompt(self, msg):
+        if not self.interaction_enabled:
+            return
         if self.new_prompt:
             self.get_logger().info("Ignoring received prompt...")
             return
         self.prompt = msg.data
         self.new_prompt = True
     
+    def callback_enable(self, msg):
+        self.interaction_enabled = msg.data
+        estado = "HABILITADA" if self.interaction_enabled else "DESHABILITADA"
+        self.get_logger().info(f"Interacción de voz {estado}.")
+
     def __init__(self):
         super().__init__("ollama_planning_node")
         self.get_logger().info("INITIALIZING OLLAMA PLANNING NODE")
@@ -48,7 +55,9 @@ class OllamaPlanningNode(Node):
         self.model_name = "RedHatAI/Qwen3-4B-quantized.w4a16"
         self.prompt = ""
         self.new_prompt = False
+        self.interaction_enabled = False
         self.sub_query = self.create_subscription(String, '/sp_rec/recognized', self.callback_prompt, 1)
+        self.sub_enable = self.create_subscription(Bool, '/interaction/enable', self.callback_enable, 1)
         self.pub_tts = self.create_publisher(String, '/tts_query', 1)
 
     def spin(self):
