@@ -24,7 +24,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'faster_whisper_asr = speech2text.faster_whisper_asr:main'
+            'faster_whisper_asr = speech2text.faster_whisper_asr:main',
+	    'faster_whisper_node = speech2text.faster_whisper_node:main',
         ],
     },
 )
