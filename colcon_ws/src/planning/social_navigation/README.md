@@ -60,11 +60,12 @@ El sistema se compone de varios archivos Launch para orquestar los diferentes m�
 ### 1. Launch Maestro: `social_interaction.launch.py` (Paquete: `social_navigation`)
 **Propósito:** Es el punto de entrada principal para el comportamiento del robot. Orquesta la interacción de alto nivel.
 * **Nodos que ejecuta directamente:** `greet_and_return_sm` (Máquina de estados principal).
-* **Launchs anidados que incluye:** Manda a llamar a `agente_SD.launch.py` para levantar la IA como un sub-módulo.
+* **Launchs anidados que incluye:** 
+  * `person_fallower.launch.py` (Percepción y movimiento).
+  * `agente_SD.launch.py` (Inteligencia Artificial).
 ```bash
 ros2 launch social_navigation social_interaction.launch.py
 ```
-*(Nota: Este launch asume que la percepción visual y los motores ya están encendidos en un proceso paralelo).*
 
 ### 2. Launch Secundario (Inteligencia Artificial): `agente_SD.launch.py` (Paquete: `llm_planning`)
 **Propósito:** Es invocado internamente por el Launch Maestro, pero también puede ejecutarse solo para pruebas. Levanta todo el stack conversacional de forma simultánea.

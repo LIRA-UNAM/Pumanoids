@@ -15,6 +15,13 @@ def generate_launch_description():
         output='screen'
     )
 
+    # Incluir el launch de percepción y seguimiento físico (Ojos, Cuello y Piernas)
+    person_follower_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('person_fallower'), 'launch', 'person_fallower.launch.py')
+        )
+    )
+
     # Incluir el launch del agente de IA (agente_SD)
     agente_sd_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -23,6 +30,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        person_follower_launch,
         sm_node,
         agente_sd_launch
     ])
