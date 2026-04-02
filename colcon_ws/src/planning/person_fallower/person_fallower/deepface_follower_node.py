@@ -17,13 +17,6 @@ SM_LOOK_FOR_FACE = 20
 SM_LOOK_AT_FACE = 30
 
 class DeepFaceFollowerNode(Node):
-    def callback_enable(self, msg):
-        self.enable = msg.data
-        if self.enable:
-            self.get_logger().info("Enable received...")
-        else:
-            self.get_logger().info("Disable received...")
-
     def callback_joint_states(self, msg):
         self.current_pan = msg.position[0]
         self.current_tilt = msg.position[1]
@@ -69,14 +62,13 @@ class DeepFaceFollowerNode(Node):
         self.look_for_poses = [[0.0,0.7], [-0.8, 0.7], [-0.8, 0.2], [0.0, 0.2], [0.8, 0.2], [0.8,0.7]]
 
         self.last_image_time = rclpy.time.Time(nanoseconds=0, clock_type=self.get_clock().clock_type)
-        self.sub_enable  = self.create_subscription(Bool, "/person_follower/enable", self.callback_enable, 1)
         self.sub_face    = self.create_subscription(VisionObject, '/vision/face', self.callback_face, 1)
         self.sub_joints  = self.create_subscription(JointState, "/joint_states", self.callback_joint_states, 1)
         self.pub_pantilt = self.create_publisher(Float32MultiArray, '/hardware/head/goal_pose', 1)
 
 
     def spin(self):
-        self.get_logger().info("Waiting for enable signal")
+        self.get_logger().info("Starting head follower loop...")
         state = SM_INIT
         no_new_data_counter = 0
         while rclpy.ok():
