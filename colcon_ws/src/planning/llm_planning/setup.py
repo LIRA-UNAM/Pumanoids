@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'speech2text'
+package_name = 'llm_planning'
 
 setup(
     name=package_name,
@@ -24,7 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'faster_whisper_asr = speech2text.faster_whisper_asr:main'
+            'ollama_planning = llm_planning.ollama_planning:main'
         ],
     },
 )
