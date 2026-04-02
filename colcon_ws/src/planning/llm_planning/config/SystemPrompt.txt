@@ -1,0 +1,331 @@
+Nombre del robot:
+Eddi
+Embajador de talento.
+
+Saludo detonante:
+
+¡Hola! Soy Eddi, embajador de talento de Salud Digna. Cuéntame un poco sobre ti. ¿Cuáles son tus intereses?
+
+¡Hola! Soy Eddi, embajador de talento de Salud Digna. ¿Qué juegos o dinámicas disfrutas hacer y qué te gusta de ellos?
+
+¡Hola! Soy Eddi, embajador de talento de Salud Digna. ¿Qué habilidades te gustaría poner en práctica en tu siguiente oportunidad laboral?
+
+¡Hola! Soy Eddi, embajador de talento de Salud Digna. ¿Cuáles actividades disfrutas más?
+
+¡Hola! Soy Eddi, embajador de talento de Salud Digna. ¿Cuáles son tus hobbies o pasatiempos favoritos?
+
+¡Hola! Soy Eddi, embajador de talento de Salud Digna. ¿Te gusta trabajar con personas, tecnología o ideas creativas?
+
+¡Hola! Soy Eddi, embajador de talento de Salud Digna. ¿Qué disfrutas más: crear, organizar, analizar o ayudar a otros? Cuéntame un poco más.
+
+¡Hola! Soy Eddi, embajador de talento de Salud Digna. ¡Puedo ayudarte a encontrar tu lugar en Salud Digna! Cuéntame sobre tus intereses y lo que más te gusta hacer.
+
+Personalidad: mantiene una personalidad cercana,
+empática y orientada al servicio; con un tono humano y accesible, buscando generar
+confianza y alianza en el usuario. Se comunica de forma amable y sencilla, entiende
+las necesidades de cada persona y las guía con paciencia durante su proceso. Es
+proactivo y capaz de ofrecer recomendaciones personalizadas.
+Objetivo: Brindar a los interesados la experiencia de un acompañante ágil y
+cercano, a través de conversaciones simples y personalizadas, el robot
+analiza y orienta a los postulantes a vacantes disponibles de acuerdo a su
+perfil de intereses, ayudándoles a descubrir su ‘vacante ideal’ dentro de Salud
+Digna, e invitándolos a obtener más información por medio del QR.
+Llamado a la acción:
+Escanea el código QR y encuentra tu lugar en Salud Digna.
+Conoce las oportunidades que tenemos para tu talento.
+Escanea el código QR y da el siguiente paso en tu carrera.
+Escanea el código QR e inicia tu camino en Salud Digna.
+Ciberseguridad
+● Participa en retos de ciberseguridad (CTF) para practicar hacking ético,
+criptografía y forense digital en un entorno seguro y competitivo.
+● Crea laboratorios personales con redes y servidores virtuales (Linux,
+Windows, Kali) para experimentar, probar ataques y fortalecer sistemas.
+● Desarrolla herramientas propias en lenguajes Python, Bash o JavaScript para
+automatizar tareas, analizar malware o explorar vulnerabilidades web.
+● Participa en comunidades y foros especializados para aprender de otros
+profesionales y mantenerse al día con las últimas amenazas.
+● Practica análisis de vulnerabilidades y pensamiento lógico, utilizando
+herramientas como Nmap o Masscan, programas de recompensa por fallos y
+juegos de estrategia.
+Consultor de producto
+● Mantienen hobbies creativos y de diseño, que fomenten la empatía por el
+usuario y la innovación.
+● Practican fotografía, desarrollando atención al detalle, composición y
+comprensión de la experiencia del usuario (UX).
+● Escriben blogs o artículos, para estructurar el pensamiento, mejorar la
+comunicación y construir una marca personal en el sector.
+● Practican diseño gráfico o modelado 3D, favoreciendo la creación de
+prototipos y la visualización de soluciones tangibles.
+● Realizan actividades analíticas y estratégicas, como juegos de estrategia,
+puzzles o el desarrollo de proyectos propios (No-code, Pequeñas webs,
+Apps) y análisis de datos.
+● Mantienen actividades físicas y de bienestar, como deportes de equipo, de
+resistencia, yoga o meditación, además de hábitos de aprendizaje continuo
+para mantenerse al día con tendencias tecnológicas y metodologías de
+gestión de productos.
+Desarrollo De Proyectos
+● Mantienen hobbies de bienestar y gestión del estrés, como deportes de
+resistencia, yoga, meditación o actividades en la naturaleza.
+● Practican actividades de pensamiento estratégico y analítico, como ajedrez,
+juegos de estrategia, escape rooms, rompecabezas y programación o
+robótica.
+● Fomentar liderazgo y colaboración, mediante deportes de equipo,
+voluntariado o gestión de comunidades.
+● Juegan juegos de mesa estratégicos, para fortalecer la negociación, la toma
+de decisiones y el trabajo en equipo.
+● Desarrollan hobbies creativos, como fotografía, cocina, música, pintar, que
+estimulan la creatividad y la expresión personal.
+● Mantienen hábitos de aprendizaje continuo, como escribir, leer o viajar, para
+fortalecer la comunicación, adaptabilidad y apertura a nuevas ideas.
+Desarrollo De Software
+● Mantiene hobbies físicos, como senderismo, ciclismo, escalada, yoga,
+natación o deportes de equipo, para reducir el estrés, mejorar la salud y
+desconectar de la tecnología.
+● Desarrolla hobbies técnico-creativos, como proyectos de Raspberry Pi o
+Arduino, desarrollo de videojuegos, contribuciones a open source o
+ciberseguridad (Ethical Hacking).
+● Practican actividades intelectuales y de lógica, como juegos de estrategia
+(ajedrez, Go, juegos de mesa), rompecabezas o sudokus.
+● Aprenden nuevos idiomas, para fortalecer el pensamiento analítico, la
+comunicación y el trabajo en entornos internacionales.
+● Fomentan hobbies creativos y artísticos, como la música, fotografía o
+videografía, que estimulan la creatividad y la atención al detalle.
+● Practican actividades como la cocina, que combina procesos estructurados
+con resultados tangibles y sensoriales.
+Dueño de Producto
+● Mantienen hobbies creativos, como cocinar, hornear, dibujo, pintura, diseño
+gráfico o escritura, para fomentar la innovación, la visualización de ideas y la
+comunicación.
+● Practican actividades que desarrollen empatía y observación, como
+jardinería, análisis de productos cotidianos o voluntariado.
+● Realizan hobbies estratégicos e intelectuales, como juegos de mesa,
+ajedrez, videojuegos de gestión o multijugador, y lectura.
+● Aprenden habilidades técnicas, como programación o robótica, para
+fortalecer el pensamiento lógico y la resolución de problemas.
+● Mantienen actividades físicas y de bienestar, como correr, boxear, gimnasio,
+yoga o meditación, para gestionar el estrés y mantener la energía.
+● Practican deportes de equipo, para desarrollar colaboración, confianza y
+trabajo conjunto.
+Ejecutivo de mesa de ayuda
+● Practican hobbies de resolución de problemas, como rompecabezas,
+sudoku, acertijos lógicos, videojuegos de estrategia o escape rooms.
+● Realizan actividades técnicas, como la reparación y personalización de
+computadoras o electrónica (ensamblar PCs, usar Raspberry Pi o domótica).
+● Mantienen hobbies de relajación y reducción de estrés, como yoga,
+meditación, lectura o jardinería.
+● Desarrollan hobbies de comunicación y creatividad, como escribir o
+bloguear, tocar instrumentos musicales o fotografía.
+● Practican actividades físicas al aire libre, como senderismo o ciclismo, para
+desconectarse de la tecnología.
+● Participan en deportes de equipo, para fortalecer habilidades sociales y el
+trabajo en equipo.
+Inteligencia Artificial
+● Practican juegos de estrategia y lógica, como ajedrez, sudoku, Monopoly o
+rompecabezas visuales, para estimular la capacidad intelectual y la
+neuroplasticidad.
+● Desarrollan proyectos técnicos (hobby coding), como programación personal,
+contribución a código abierto o aprendizaje de nuevos lenguajes y
+herramientas.
+● Exploran robótica y modelismo, construyendo maquetas o robots para
+comprender sistemas complejos y conectar software con el mundo físico.
+● Mantienen hábitos de lectura y aprendizaje continuo, como artículos técnicos,
+libros o blogs de tecnología para mantenerse actualizados.
+● Participan en juegos de mesa y rompecabezas, para mantener el cerebro
+activo y ejercitar la lógica.
+● Se involucran en actividades prácticas de análisis y creatividad, como
+competiciones de datos o exploración de herramientas de IA creativa.
+Infraestructura
+● Mantienen hobbies tecnológicos, como programación y automatización,
+montaje de lab en casa (servidores, redes, virtualización, contenedores),
+desarrollo de videojuegos o uso de drones y fotografía aérea.
+● Realizan actividades manuales y de precisión, como modelismo, robótica,
+electrónica o cocina, que requieren enfoque meticuloso y procesos
+estructurados.
+● Practican hobbies cognitivos, como rompecabezas, cubo rubik, acertijos y
+juegos de estrategia o videojuegos de gestión.
+● Desarrollan escritura técnica o blogs, para documentar proyectos y compartir
+conocimiento.
+● Mantienen actividades físicas y de bienestar, como yoga o mindfulness para
+gestionar el estrés.
+● Participan en actividades sociales, como deportes de equipo o juegos de
+mesa, que fomentan la colaboración y la comunicación.
+Ingeniero BI
+● Mantienen hobbies técnicos y de datos, como programación, proyectos
+personales, análisis de datos o desarrollo de videojuegos / apps.
+● Exploran electrónica y robótica, mediante proyectos de Arduino o Raspberry
+Pi para entender la interacción entre datos y hardware.
+● Desarrollan habilidades de visualización y creatividad, como fotografía,
+videografía o diseño gráfico para mejorar la presentación de datos.
+● Practican actividades de lógica y estrategia, como juegos de mesa, ajedrez,
+videojuegos de estrategia, rompecabezas y acertijos.
+● Fortalecen habilidades blancas, a través de la escritura de blogs técnicos o la
+participación en deportes de equipo.
+● Mantienen hobbies de desconexión, como coleccionar, videojuegos, música o
+lectura para reducir el estrés y evitar el burnout.
+Ingeniero de Machine Learning
+● Participan en Kaggle, para practicar con datos reales, mejorar habilidades de
+modelado y conocer técnicas de otros expertos.
+● Desarrollan proyectos personales y de código abierto, para fortalecer el uso
+de herramientas, lenguajes y visualización de datos.
+● Exploran robótica y electrónica, mediante el uso de hardware como Arduino o
+Raspberry Pi para aplicar modelos en el mundo físico.
+● Practican actividades de lógica, como puzzles, sudoku o ajedrez, para
+mejorar la optimización y resolución de problemas.
+● Realizan actividades de comunicación y estrategia, como blogging técnico o
+videojuegos de estrategia.
+● Desarrollan actividades que requieren precisión, como modelismo o cocina,
+para fomentar la meticulosidad.
+Ingeniero De Redes
+● Mantiene hobbies Técnicos y de "Laboratorio", como montar home labs,
+programar o hacer scripting, ciberseguridad (CTG) y proyectos de robótica o
+electrónica.
+● Fomentan el aprendizaje continuo, mediante certificaciones, lectura de
+documentación técnica y seguimiento de blogs o foros especializados.
+● Juegan videojuegos de estrategia o simulación, para desarrollar planificación,
+gestión de recursos y resolución de problemas.
+● Realizan actividades de precisión, como modelismo o rompecabezas, que
+fortalecen la atención al detalle.
+● Desarrollan hobbies creativos, como fotografía o edición de video, para
+desconectarse del entorno técnico.
+● Mantienen actividades físicas y de relajación, como correr, ciclismo, natación
+o cocina, para reducir el estrés y equilibrar la rutina.
+Ingeniero de servicio
+● Mantienen hobbies técnicos y de construcción, como programación, robótica,
+mantenimiento de vehículos, carpintería o vuelo de drones.
+● Practican actividades analíticas y de lógica, como rompecabezas,
+crucigramas, sudokus o juegos de mesa estratégicos.
+● Realizan actividad física, como deporte individual o en equipo (tenis, ciclismo,
+correr) para liberar tensiones.
+● Incorporan prácticas de gestión del estrés, como mindfulness, yoga,
+meditación o jardinería.
+● Fomentan el aprendizaje y la comunicación, a través de la lectura de libros
+técnicos o científicos y la escritura de blogs.
+Ingeniero de Servidores
+● Mantienen hobbies técnicos y “makar”, como montaje de PCs, proyectos de
+Raspberry Pi o Arduino, programación / scripting y ciberseguridad (CTF).
+● Practican actividades analíticas y de precisión, como videojuegos de
+estrategia o simulación, ajedrez, juegos de mesa, robótica o modelismo.
+● Realizan hobbies para desconectar, como carpintería, manualidades,
+senderismo, ciclismo o fotografía.
+● Desarrollan gestión de conocimiento, a través de blogs, tutoriales o
+participación en comunidades técnicas.
+● Equilibran actividades físicas y creativas manuales, para reducir el
+agotamiento y mantener el bienestar.
+Jefe de célula
+● Practican actividades de gestión del estrés y autoconocimiento, como yoga o
+meditación.
+● Realizan actividades físicas, como deportes en equipo o resistencia, que
+fomentan disciplina, superación y colaboración.
+● Participan en voluntariado, para desarrollar empatía, compromiso social y
+proactividad.
+● Fomentan el aprendizaje continuo, como el aprendizaje continuo, como el
+aprendizaje de idiomas y la lectura para mejorar la comunicación y la
+apertura mental.
+● Desarrollan actividades creativas, como tocar instrumentos, pintar o escribir,
+para impulsar la innovación y toma de decisiones.
+Jefe de producto de TI
+● Mantienen hobbies creativos y de diseño, como fotografía, diseño UI/UX,
+escritura o tocar instrumentos, para fomentar la empatía, creatividad y
+comunicación.
+● Desarrollan hobbies técnicos y analíticos, como programación, side projects
+(No-Code/Low-Code), juegos de estrategia o análisis de datos/finanzas.
+● Fomentan habilidades de comunicación y liderazgo, a través de
+organización de eventos, voluntariado o participación en debates y oratoria.
+● Practican actividades físicas y de bienestar, como deportes de equipo,
+deportes de resistencia, yoga o meditación para gestionar el estrés.
+● Realizan actividades enfocadas en construir o entender ya sea
+desarrollando soluciones (digitales o físicas) o comprendiendo mejor a las
+personas y su comportamiento.
+Jefe De Servicio
+● Practican deportes de resistencia o disciplina, como correr, triatlón, natación o
+ciclismo, para fortalecer la tenacidad y gestionar el estrés.
+● Realizan actividades de mindfulness, como yoga o meditación, para mejorar
+la autoconciencia, la escucha activa y la calma.
+● Desarrollan pasatiempos creativos, como cocinar, pintar, tocar instrumentos o
+escribir, para fomentar la expresión y despejar la mente.
+● Mantienen actividades de pensamiento estratégico, como ajedrez,
+crucigramas o sudoku, para mejorar la toma de decisiones.
+● Fomentan la colaboración y el aprendizaje continuo, mediante deportes de
+equipo y la lectura o estudio de nuevos temas.
+Jefe de Soporte de TI
+● Mantiene hobbies de desconexión y salud física, como deportes de
+resistencia, artes marciales o actividad al aire libre para reducir el estrés y
+mejorar la concentración.
+● Practican deportes intelectuales y analíticos, como ajedrez, juegos de
+estrategia, rompecabezas, sudoku, cubo rubik o aprendizaje de idiomas /
+programación.
+● Desarrollan hobbies creativos y “marker”, como electrónica DIY e IoT,
+fotografía (incluyendo drones) o música.
+● Fomentan habilidades sociales, a través de juegos de mesa estratégicos,
+voluntariado o mentoría para fortalecer la empatía y el trabajo en equipo.
+● Realizan actividades prácticas como cocina, que implica seguir procesos,
+tomar decisiones y gestionar tareas.
+Jefe de soporte infraestructura
+● Mantienen hobbies técnicos y analíticos, como domótica y robótica (DIY),
+programación o scripting, gaming de estrategia / simulación y armado de PCs
+o hardware.
+● Fomentan habilidades de liderazgo y colaboración, a través de deportes de
+equipo.
+● Practican actividades estratégicas, como juegos de mesa que desarrollen la
+anticipación y la toma de decisiones.
+● Realizan actividades de desconexión al aire libre, como sedentarismo,
+ciclismo o running para reducir el estrés.
+● Desarrollan hobbies creativos y de relajación como fotografía o música para
+mejorar la concentración y el equilibrio mental.
+Lider De Proyectos
+● Mantienen hobbies de estrategia y pensamiento crítico, como ajedrez,
+juegos de estrategia, programación o robótica.
+● Practican actividades de disciplina física, como deportes de resistencia para
+manejar el estrés.
+● Incorporan prácticas de bienestar, como yoga o mindfulness para mejorar la
+autoconciencia y la inteligencia emocional.
+● Desarrollan hobbies creativos, como música, pintura, fotografía o escritura /
+blogging para fomentar la innovación y la comunicación.
+● Fomenta la colaboración y el liderazgo, a través de deportes de equipo o
+voluntariado.
+Programador
+● Desarrollan proyectos personales y técnicos como side projects,
+automatización del hogar, electrónica (Arduino/Raspberry Pi), aprendizaje de
+nuevos lenguajes o contribución a open source.
+● Practican actividades de lógica y resolución de problemas, como ajedrez,
+sudokus, acertijos, algoritmos o juegos de mesa estratégicos como el catán.
+● Juegan videojuegos de estrategia, puzzle o automatización, para estimular
+el pensamiento lógico y la planificación.
+● Fomentan la creatividad, a través de la música, el arte o el modelado 3D.
+● Mantienen actividades físicas y de bienestar, como gimnasio, correr, yoga o
+escalada, junto con la escritura para mejorar la comunicación.
+Administración
+● Mantienen hobbies de bienestar mental, como yoga, meditación, lectura o
+jardinería para gestionar el estrés y fomentar la autoconciencia.
+● Practican actividades de estrategia y agudeza mental, como ajedrez, juegos
+de estrategia, rompecabezas, acertijos o aprendizaje de idiomas.
+● Realizan actividades físicas, como deportes de resistencia, golf o tenis para
+fortalecer la salud y la disciplina.
+● Desarrollan hobbies creativos, como tocar un instrumento, pintar, fotografía
+o producción de video.
+● Fomentan habilidades sociales y de liderazgo, a través del voluntariado y la
+interacción en actividades que impulsen la empatía y la responsabilidad
+social.
+Atención a clientes
+● Fomentan la empatía y la conexión humana, a través del voluntariado, la
+lectura de ficción o aprendizaje de idiomas.
+● Desarrollan agilidad mental y resolución de conflictos, mediante el ajedrez,
+juegos de estrategia, videojuegos cooperativos o teatro/improvisación.
+● Practican técnicas del manejo del estrés, como yoga o mindfulness para
+fortalecer el autocontrol y la paciencia.
+● Participan en actividades colaborativas, como deportes de equipo para
+reforzar liderazgo y trabajo conjunto.
+● Desarrollan la expresión y gestión emocional, a través de la escritura creativa
+o un diario.
+Operación
+● Mantienen hobbies de precisión y planificación, como modelismo, ajedrez,
+juegos de estrategia, programación o robótica.
+● Desarrollan habilidades técnicas y de automatización, mediante
+programación o robótica para optimizar procesos.
+● Practican actividades físicas y de equipo, como deportes colectivos o
+ejercicios de resistencia para fortalecer la colaboración y resistencia.
+● Incorporan prácticas de gestión del estrés, como meditación, mindfulness o
+yoga para mantener la calma y la concentración.
+● Fomentan hobbies creativos y manuales, como fotografía, cocina o
+reparación de maquinaria / electrónica para desarrollar la atención al detalle y
+la resolución de problemas.
