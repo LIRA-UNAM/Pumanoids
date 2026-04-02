@@ -13,6 +13,7 @@ from game_planner import gamestate
 from enum import Enum
 from std_msgs.msg import Bool
 from booster_interface.srv import RpcService
+from carry_ball_to_goal_interfaces.srv import GetGoalRobotPose 
 
 # Ports to comunicate with the Game Controller under UDP packages
 SOURCE_PORT = 3838 # Game Controller broadcast messages through port 3838
@@ -104,9 +105,22 @@ class PlannerNode(Node):
         self.get_logger().info(f'Irá a por el kick para los subestados que lo necesiten? {self.kick_robot} ')
 
         # -- SERVICES CLIENTS --
+
+        #Getup service TODO for booster T1
         self.getup_client = self.create_client(RpcService, '/booster_rpc_service')
         while not self.getup_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Esperando servicio...')
+        
+        self.getup_req = RpcService.Request() # Mensaje de request para getup, llama al Api ID siempre igual
+        self.getup_req.msg.api_id = 2008
+        self.getup_req.msg.body = ""
+
+        #Ball to gate service 
+        self.go_to_gate_client = self.create_client(GetGoalRobotPose, '/get_goal_robot_pose')
+        while not self.go_to_gate_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Esperando servicio...')
+        
+        self.go_to_gate_req = GetGoalRobotPose.Request() #Request siempre vacío
 
 
         
@@ -141,17 +155,22 @@ class PlannerNode(Node):
     # -- SERVICE REQUEST --
 
     def send_getup_request(self):
-        req = RpcService.Request()
-        req.msg.api_id = 2008
-        req.msg.body = ""
-
-        self.response = self.getup_client.call_async(req)
+        self.getup_res = self.getup_client.call_async(self.getup_req)
+    
+    def send_go_to_gate_request(self):
+        self.go_to_gate_res = self.client.call_async(self.go_to_gate_req)
+        if self.go_to_gate_res.succes:
+            self.incident_x =self.go_to_gate_res.pose.position.x
+            self.incident_y =self.go_to_gate_res.pose.position.y
+            self.incident_z =self.go_to_gate_res.pose.position.z    
+            self.incident_z =self.go_to_gate_res.pose.orientation.z
+            self.incident_w =self.go_to_gate_res.pose.orientation.w
     
     def rustic_smach(self):
         self.send_getup_request() # Check if is fall and getup if so
-        if self.response.done():
+        if self.getup_res.done():
             try:
-                if self.response.result().msg.status == 0:
+                if self.getup_res.result().msg.status == 0:
                     self.get_logger().debug("Robot levantado")
                 else:
                     self.get_logger().debug("Robot no se puede levantar ")
@@ -288,7 +307,7 @@ class PlannerNode(Node):
                 self.head_ball_follower_enable_publisher.publish(Bool(data = True))
                 self.ball_follower_enable_publisher.publish(Bool(data = True))
                 #TODO do the arrive to the ball node 
-                #TODO do the ball to gate node 
+                self.send_go_to_gate_request() # Ball to gate request 
                 #TODO do the evade other humanoids or pass ball node
 
         else:
@@ -334,6 +353,7 @@ class PlannerNode(Node):
             #TODO go to the ball that the referee will put after the kick you have execute
             if byte_array[1] == 1:
                 self.get_logger().info("Posicioning to the ball")
+                self.send_go_to_gate_request() #Same ball to gate request to kick to the goal or try at least TODO find a better function
             if byte_array[1] == 2:
                 self.get_logger().info("kicking the ball")
         else:
