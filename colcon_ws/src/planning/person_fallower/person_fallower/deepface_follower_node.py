@@ -59,7 +59,7 @@ class DeepFaceFollowerNode(Node):
         self.img_face_y = 240
         self.current_pan  = 0
         self.current_tilt = 0
-        self.look_for_poses = [[0.0,0.7], [-0.8, 0.7], [-0.8, 0.2], [0.0, 0.2], [0.8, 0.2], [0.8,0.7]]
+        self.look_for_poses = [[0.0, 0.0], [-0.8, 0.0], [-0.8, -0.2], [0.0, -0.2], [0.8, -0.2], [0.8, 0.0]]
 
         self.last_image_time = rclpy.time.Time(nanoseconds=0, clock_type=self.get_clock().clock_type)
         self.sub_face    = self.create_subscription(VisionObject, '/vision/face', self.callback_face, 1)
