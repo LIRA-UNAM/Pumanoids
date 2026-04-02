@@ -8,22 +8,19 @@ from piper.voice import PiperVoice
 from piper.config import SynthesisConfig
 
 TEST_TEXT = ". .  Amo el canto del cenzontle pájaro de 400 voces, amo el color del jade, y el enervante perfume de las flores, pero amo más a mi hermano, el hombre"
-AUDIO_BASH = "aplay \"tts_output.wav\""
+AUDIO_BASH = "aplay \"/dev/shm/tts_output.wav\""
 
 class TTSSubscriber(Node):
 
     def __init__(self):
         super().__init__('text_to_speech_subscriber')
-        self.model = "/home/booster/Pumanoids/colcon_ws/src/audio/text2speech/text2speech/models/es_MX-claude-high.onnx"
-        self.config = "/home/booster/Pumanoids/colcon_ws/src/audio/text2speech/text2speech/models/es_MX-claude-high.onnx.json"
+        
+        # Obtener ruta dinámica a la carpeta 'models' relativa a este script
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.model = os.path.join(current_dir, "models", "es_MX-claude-high.onnx")
+        self.config = os.path.join(current_dir, "models", "es_MX-claude-high.onnx.json")
+        
         self.voice = PiperVoice.load(model_path=self.model,config_path=self.config)
-        self.syn_config = SynthesisConfig(
-            volume=0.5,  # half as loud
-            length_scale=1.0,  # twice as slow
-            noise_scale=0.667,  # more audio variation
-            noise_w_scale=0.8,  # more speaking variation
-            normalize_audio=False, # use raw audio from voice
-        )
         
         self.subscription = self.create_subscription(
             String,
@@ -34,8 +31,14 @@ class TTSSubscriber(Node):
 
     def generate_speech(self,txt):
         # Generate speech with specific instructions
-        with wave.open("tts_output.wav", "wb") as wav_file:
-            self.voice.synthesize_wav(txt, wav_file)
+        with wave.open("/dev/shm/tts_output.wav", "wb") as wav_file:
+            self.voice.synthesize_wav(
+                txt, 
+                wav_file,
+                length_scale=1.0,
+                noise_scale=0.667,
+                noise_w_scale=0.8
+            )
 
     def listener_callback(self, msg):
         self.get_logger().info('Processing txt: "%s"' % msg.data)
