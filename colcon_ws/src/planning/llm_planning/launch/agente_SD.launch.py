@@ -1,7 +1,24 @@
+import os
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from launch.actions import ExecuteProcess
 
 def generate_launch_description():
+    
+    # Directorio local para guardar el modelo y no descargarlo de nuevo
+    hf_cache_dir = os.path.expanduser('~/.cache/huggingface')
+    
+    # Ejecutar el servidor vLLM en Docker
+    vllm_server = ExecuteProcess(
+        cmd=[
+            'docker', 'run', '--rm', '--runtime=nvidia', '--network', 'host',
+            '-v', f'{hf_cache_dir}:/root/.cache/huggingface',
+            'ghcr.io/nvidia-ai-iot/vllm:latest-jetson-orin',
+            'vllm', 'serve', 'RedHatAI/Qwen3-4B-quantized.w4a16',
+            '--gpu-memory-utilization', '0.4', '--max-model-len', '32678'
+        ],
+        output='screen'
+    )
     
     # Nodo del Oído (ASR - Reconocimiento de voz)
     asr_node = Node(
@@ -28,6 +45,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        vllm_server,
         asr_node,
         llm_node,
         tts_node
