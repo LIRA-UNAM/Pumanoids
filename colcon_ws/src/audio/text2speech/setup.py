@@ -11,6 +11,9 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
     ],
+    package_data={
+        'text2speech': ['models/*'],
+    },
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='robocup',
@@ -24,7 +27,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            't2s = text2speech.pipertts:main'
+            'pipertts = text2speech.pipertts:main'
         ],
     },
 )
