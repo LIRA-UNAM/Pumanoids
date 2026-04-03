@@ -22,6 +22,8 @@ import mediapipe as mp
 import time
 from geometry_msgs.msg import Point
 from pumas_vision_msgs.msg import VisionObject
+import threading
+from deepface import DeepFace
 
 class FaceDetector(Node):
     def __init__(self):
@@ -51,6 +53,10 @@ class FaceDetector(Node):
 
         self.prev_time = 0.0
 
+        self.last_age_check = 0.0
+        self.estimated_age = None
+        self.is_analyzing = False
+
     def get_vision_object_msg(self, id, confidence, img_x, img_y, width, height, cartesian_x, cartesian_y):
         msg = VisionObject()
         msg.header.stamp = self.get_clock().now().to_msg()
@@ -66,6 +72,24 @@ class FaceDetector(Node):
         msg.pose.position.z = 0.0
         
         return msg
+
+    
+    def analyze_age(self, face_image):
+        self.is_analyzing = True 
+        try:
+            #enforce_detection = False para que deepFace no tome mucho tiempo en detectar el rostro
+            #ya que confiamos en mediapipe 
+            results = DeepFace.analyze(face_image, actions=['age'], enforce_detection=False, silent=True)
+
+            #Si detectectan varios rostros tomamos el primero 
+            if isinstance(results, list):
+                self.estimated_age = results[0]['age']
+            else:
+                self.estimated_age = results['age']
+        except Exception as e:
+            self.get_logger().error(f'Error en DeepFace: {e}')
+        finally:
+            self.is_analyzing = False
 
     def listener_callback(self, msg):
         current_time = time.time()
@@ -102,12 +126,25 @@ class FaceDetector(Node):
                 
                 # Bounding box de detección
                 cv2.rectangle(frame, (xmin, ymin), (xmin + width, ymin + height), (0, 255, 0), 2)
-                cv2.putText(frame, "Person", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                
 
                 x_center = xmin + (width / 2.0)
                 y_center = ymin + (height / 2.0)
 
                 confidence = rostro_mas_cercano.score[0]
+
+                # Ejecución en paralelo cada 2 segundos
+                if(current_time - self.last_age_check >= 2.0) and not self.is_analyzing:
+                    #Recorte de la imagen sin que se salga de los límites de la imagen
+                    y1, y2 = max(0, ymin), min(h, ymin + height)
+                    x1, x2 = max(0, xmin), min(w, xmin + width)
+                    
+                    face_crop = frame[y1:y2, x1:x2].copy()
+
+                    if face_crop.size > 0:
+                        self.last_age_check = current_time
+                        #Hilo para ejecutar el deepFace
+                        threading.Thread(target=self.analyze_age, args=(face_crop,), daemon=True).start()
 
                 # target_msg = Point()
                 # target_msg.x = float(x_center)
@@ -116,8 +153,9 @@ class FaceDetector(Node):
 
                 # Calcular distancia estimada (180px representa ~0.5m)
                 distancia = (0.5 * 180.0) / height if height > 0 else 0.0
-
+                texto_edad = f'Edad: {self.estimated_age}' if self.estimated_age else ''
                 cv2.putText(frame, f"Dist: {distancia:.2f}m", (xmin, ymin - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                cv2.putText(frame, texto_edad, (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
                 vision_obj_msg = self.get_vision_object_msg(
                     "face", 
