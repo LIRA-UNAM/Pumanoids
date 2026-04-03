@@ -23,7 +23,7 @@ def generate_launch_description():
     # Nodo del Oído (ASR - Reconocimiento de voz)
     asr_node = Node(
         package='speech2text',
-        executable='faster_whisper_asr',  # Asegúrate de que este sea el nombre del entry_point en el setup.py de speech2text
+        executable='faster_whisper_node',  # Asegúrate de que este sea el nombre del entry_point en el setup.py de speech2text
         name='faster_whisper_node',
         output='screen'
     )
