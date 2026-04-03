@@ -138,7 +138,7 @@ No necesitas encender los motores ni la cámara para probar si el robot platica.
 ### 3. Probar solo el Oído (Whisper)
 1. Ejecuta el nodo:
    ```bash
-   ros2 run speech2text faster_whisper_asr
+   ros2 run speech2text faster_whisper_node
    ```
 2. Observa la terminal. Si dice "Waiting for audio...", habla fuerte.
 3. En otra terminal, revisa qué texto detectó:
