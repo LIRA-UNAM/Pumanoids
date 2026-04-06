@@ -22,6 +22,12 @@ import mediapipe as mp
 import time
 from geometry_msgs.msg import Point
 from pumas_vision_msgs.msg import VisionObject
+from std_msgs.msg import Bool
+import threading
+import os
+os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+from deepface import DeepFace
 
 class FaceDetector(Node):
     def __init__(self):
@@ -43,6 +49,13 @@ class FaceDetector(Node):
         
         self.bridge = CvBridge()
         
+        # Habilitador de edad y variables de control
+        self.enable_age = False
+        self.last_age_check = 0.0
+        self.estimated_age = None
+        self.is_analyzing = False
+        self.enable_sub = self.create_subscription(Bool, '/vision/enable_age', self.enable_age_callback, 10)
+
         # Inicialización de MediaPipe Face Detection
         self.mp_face_detection = mp.solutions.face_detection
         self.face_detection = self.mp_face_detection.FaceDetection(
@@ -50,6 +63,24 @@ class FaceDetector(Node):
             min_detection_confidence=0.5)
 
         self.prev_time = 0.0
+
+    def enable_age_callback(self, msg):
+        self.enable_age = msg.data
+        if not self.enable_age:
+            self.estimated_age = None # Limpiar la edad de la pantalla si se apaga
+
+    def analyze_age(self, face_image):
+        self.is_analyzing = True 
+        try:
+            results = DeepFace.analyze(face_image, actions=['age'], enforce_detection=False, silent=True)
+            if isinstance(results, list):
+                self.estimated_age = results[0]['age']
+            else:
+                self.estimated_age = results['age']
+        except Exception as e:
+            self.get_logger().error(f'Error en DeepFace: {e}')
+        finally:
+            self.is_analyzing = False
 
     def get_vision_object_msg(self, id, confidence, img_x, img_y, width, height, cartesian_x, cartesian_y):
         msg = VisionObject()
@@ -114,10 +145,24 @@ class FaceDetector(Node):
                 # target_msg.y = float(y_center)
                 # target_msg.z = 0.0
 
+                # Lógica de DeepFace (ejecución asíncrona) controlada por el habilitador
+                if self.enable_age and (current_time - self.last_age_check >= 2.0) and not self.is_analyzing:
+                    y1, y2 = max(0, ymin), min(h, ymin + height)
+                    x1, x2 = max(0, xmin), min(w, xmin + width)
+                    
+                    face_crop = frame[y1:y2, x1:x2].copy()
+
+                    if face_crop.size > 0:
+                        self.last_age_check = current_time
+                        threading.Thread(target=self.analyze_age, args=(face_crop,), daemon=True).start()
+
                 # Calcular distancia estimada (180px representa ~0.5m)
                 distancia = (0.5 * 180.0) / height if height > 0 else 0.0
 
                 cv2.putText(frame, f"Dist: {distancia:.2f}m", (xmin, ymin - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                
+                if self.enable_age and self.estimated_age:
+                    cv2.putText(frame, f'Edad: {self.estimated_age}', (xmin, ymin - 70), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
                 vision_obj_msg = self.get_vision_object_msg(
                     "face", 
