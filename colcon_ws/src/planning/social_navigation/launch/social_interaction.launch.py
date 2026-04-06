@@ -23,14 +23,14 @@ def generate_launch_description():
     )
 
     # Incluir el launch del agente de IA (agente_SD)
-    agente_sd_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory('llm_planning'), 'launch', 'agente_SD.launch.py')
-        )
-    )
+ #   agente_sd_launch = IncludeLaunchDescription(
+ #       PythonLaunchDescriptionSource(
+ #           os.path.join(get_package_share_directory('llm_planning'), 'launch', 'agente_SD.launch.py')
+ #       )
+ #   )
 
     return LaunchDescription([
         person_follower_launch,
-        sm_node,
-        agente_sd_launch
+        sm_node
+        #agente_sd_launch
     ])
