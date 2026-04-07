@@ -5,7 +5,7 @@
 
 <p align="center">
     <b>
-        Official repository of the Pumanoids team for the RoboCup Soccer Humanoid League.
+        Official repository of the Pumas team for the RoboCup Soccer Humanoid League.
     </b>
 </p>
     
@@ -29,12 +29,12 @@
 
 ### Prerequisites
 
-- [Ubuntu 22.04](https://releases.ubuntu.com/jammy/)
-- [ROS2 humble](https://docs.ros.org/en/humble/Installation.html) (`ros-humble-desktop` and `ros-dev-tools` required)
-- [jetson-utils](https://github.com/dusty-nv/jetson-utils) (only Booster K1)
-- A lot of patience
+- [Ubuntu 22.04](https://releases.ubuntu.com/jammy/) or later.
+- [ROS2 humble](https://docs.ros.org/en/humble/Installation.html) (`ros-humble-desktop` and `ros-dev-tools` required).
+- [jetson-utils](https://github.com/dusty-nv/jetson-utils) (only Booster K1).
+- A lot of patience.
 
->ℹ️ **to-do**: add the remaining dependencies
+> ℹ️ **to-do**: add the remaining dependencies
 
 ### Installation
 
@@ -44,12 +44,12 @@ First, clone this repository:
 git clone --recurse-submodules https://github.com/LIRA-UNAM/Pumanoids.git
 cd Pumanoids
 ```
->[!NOTE]
-> If you forgot to clone the repository with the `--recurse-submodules` flag, you can initialize the submodules with the following commands:
->```bash
->git submodule init
->git submodule update
->```
+> [!NOTE]
+> If you didn't clone the repository with the `--recurse-submodules` flag, you can initialize the submodules with the following commands:
+> ```bash
+> git submodule init
+> git submodule update
+> ```
 
 Then, follow the instructions in the [Installation Guide](./Documentation/Guides/Installation.md) to set up the **development environment** and install the necessary **dependencies**.
 
