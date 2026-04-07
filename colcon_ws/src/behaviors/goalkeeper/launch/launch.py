@@ -18,5 +18,9 @@ def generate_launch_description():
         Node(
             package='twist_to_t1',
             executable='twist_to_t1',
+            output='screen'),
+        Node(
+            package='twist_to_t1',
+            executable='twist_to_t1',
             output='screen')
     ])
