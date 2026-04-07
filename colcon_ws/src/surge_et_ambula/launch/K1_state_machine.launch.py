@@ -48,4 +48,10 @@ def generate_launch_description():
             output = 'screen',
             arguments = [start_position],
         ),
+        Node(
+            package = 'goalkeeper',
+            executable = 'goalkeeper_guard',
+            name = 'goalkeeper_guard',
+            output = 'screen',
+        ),
     ])
