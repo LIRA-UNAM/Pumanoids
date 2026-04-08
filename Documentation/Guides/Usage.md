@@ -18,12 +18,6 @@ This guide provides instructions on how to execute this project, alongside with 
 > ℹ️ **to-do**: Complete this section.
 
 
-```mermaid
-graph TD
-    Root[Function] --> A[<a href='node.md'>node</a>]
-    Root --> B[<a href='readme.md'>to be defined</a>]
-```
-
 ## 🌕 The Master Launch
 
 To run all the necessary nodes, there's a master launch file called `X1_state_machine.launch.py`. Replace `X` with the model of the robot being used (i.e., `K1_state_machine.launch.py` for the *Booster K1*).
@@ -57,11 +51,11 @@ Here's a breakdown of the elements the master launch runs:
 
 | ROS 2 Element | Description |
 | :--- | :--- |
-| 🔶 [**X1_state_machine.launch.py**](../../colcon_ws/src/surge_et_ambula/Documentation/X1_state_machine.md) | Master launch file. |
+| 🔶 [**X1_state_machine.launch.py**](../../colcon_ws/src/surge_et_ambula/documentation/X1_state_machine.md) | Master launch file. |
 | ├── 🟢 [game_planner.py](../../colcon_ws/src/planning/game_planner/README.md) | General state machine. |
 | ├── 🟢 [position_start.cpp](../../colcon_ws/src/planning/position_start/README.md) | Positioning. |
 | ├── 🟢 [nv12_converter_node.cpp](../../colcon_ws/src/vision/boosterk1_image_proc/README.md) | Only for Booster K1. Video encoder conversion. |
-| ├── 🔶 [**x1_twist.launch.py**](../../colcon_ws/src/hardware/) | Movement launch file. |
+| ├── 🔶 [**x1_twist.launch.py**](../../colcon_ws/src/hardware/documentation/x1_twist.md) | Movement launch file. |
 | │&emsp;&emsp;├── 🟢 [twist_to_x1.py](./src/api/client.js) | Robot walking. |
 | │&emsp;&emsp;├── 🟢 [pantilt_to_x1.py](./src/api/client.js) | Head movement. |
 | │&emsp;&emsp;└── 🟢 [odom_to_tf.py](./src/api/client.js) | Odometry transformation. |

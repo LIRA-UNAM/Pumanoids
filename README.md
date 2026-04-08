@@ -8,6 +8,22 @@
         Official repository of the Pumas team for the RoboCup Soccer Humanoid League.
     </b>
 </p>
+
+<div align="center">
+    <h4>
+        <a href="./Documentation/Guides/Installation.md">
+            Installation
+        </a>
+        <span> | </span>
+        <a href="./Documentation/Guides/Usage.md">
+            Usage
+        </a>
+        <span> | </span>
+        <a href="https://lira.unam.mx/">
+            Website
+        </a>
+    </h4>
+</div>
     
 <p align="center">
     <img src="./Documentation/Images/team.jpg" width="500" align="middle" alt="Developed at LIRA">
