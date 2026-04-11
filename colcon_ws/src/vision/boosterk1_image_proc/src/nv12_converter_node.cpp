@@ -10,9 +10,6 @@
  * https://lira.unam.mx/
 */
 
-
-// To-to: convert to bgr8
-
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <jetson-utils/cudaColorspace.h>
