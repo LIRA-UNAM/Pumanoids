@@ -34,6 +34,8 @@ To run all the necessary nodes, there's a master launch file called `X1_state_ma
 > [!IMPORTANT]
 > This project is meant to be [launched automatically](#automatic-launch).
 
+To run this project manually, run:
+
 ```bash
 ros2 launch surge_et_ambula X1_state_machine.launch.py
 ```
