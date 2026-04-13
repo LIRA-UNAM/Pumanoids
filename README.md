@@ -48,6 +48,7 @@
 - [Ubuntu 22.04](https://releases.ubuntu.com/jammy/) or later.
 - [ROS2 humble](https://docs.ros.org/en/humble/Installation.html) (`ros-humble-desktop` and `ros-dev-tools` required).
 - [jetson-utils](https://github.com/dusty-nv/jetson-utils) (only Booster K1).
+- [Docker](https://docs.docker.com/engine/install/ubuntu/).
 - A lot of patience.
 
 > ℹ️ **to-do**: add the remaining dependencies

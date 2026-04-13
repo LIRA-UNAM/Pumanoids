@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+# Package: game_planner
 # Node: game_planner
 # The general state machine node to receive Game Controller messages and manage the robot behavior.
 # Written by Camile Frias and Sebastian Garcia.

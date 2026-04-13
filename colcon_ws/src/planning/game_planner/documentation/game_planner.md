@@ -2,9 +2,9 @@
 
 This is the node responsable for the main state machine for the general behavior of the robot.
 
-| Package | Node |
-|---|---|
-| `game_planner` | [`game_planner`](../game_planner/game_planner.py) |
+| Package | Node | Source file |
+| ------- | ---- | ----------- |
+| `game_planner` | `game_planner` | [`game_planner.py`](../game_planner/game_planner.py)
 
 ## Usage
 
