@@ -1,36 +1,38 @@
-# The Master Launch
+# 🌕 The Master Launch
 
 This page provides an overview of the master launch file, which is responsible for running all the necessary nodes for the robot's operation.
 
-In the [launch directory](../../colcon_ws/src/surge_et_ambula/launch) of the `surge_et_ambula` package, you will find three master launch files, one for each robot model:
+In the [launch directory](../../surge_et_ambula/launch/) of the `surge_et_ambula` package, you will find three master launch files, one for each robot model:
 
 - `G1_state_machine.launch.py` for the *Unitree G1*.
 - `T1_state_machine.launch.py` for the *Booster T1*.
 - `K1_state_machine.launch.py` for the *Booster K1*.
 
-## Launch file breakdown
+## ↪️ Launch file breakdown
+
+Here you can visualize what nodes are launched and what's their role. For more details on each node, click on their name to go to their documentation.
 
 | ROS 2 Element | Description |
 | :--- | :--- |
 | 🔶 **`X1_state_machine.launch`** | Master launch file. |
 | ├── 🟢 [`game_planner`](../../planning/game_planner/documentation/game_planner.md) | General state machine. |
-| ├── 🟢 [`position_start`](../../planning/position_start/README.md) | Positioning. |
+| ├── 🟢 [`position_start`](../../planning/position_start/README.md) | Positioning at startup. |
 | ├── 🟢 [`nv12_converter_node`](../../vision/boosterk1_image_proc/README.md) | Only for Booster K1. Video encoder conversion. |
-| ├── 🔶 [**x1_twist.launch.py**](../../hardware/documentation/x1_twist.md) | Movement launch file. |
-| │&emsp;&emsp;├── 🟢 [twist_to_x1.py](./src/api/client.js) | Robot walking. |
-| │&emsp;&emsp;├── 🟢 [pantilt_to_x1.py](./src/api/client.js) | Head movement. |
-| │&emsp;&emsp;└── 🟢 [odom_to_tf.py](./src/api/client.js) | Odometry transformation. |
-| └── 🔶 [**ball_follower.launch.py**](./src/components) | Ball following launch file. |
-| &emsp;&emsp;&nbsp;&nbsp;&nbsp;├── 🟢 [ball_detector.py](./src/api/client.js) | Ball detection through CV. |
-| &emsp;&emsp;&nbsp;&nbsp;&nbsp;├── 🟢 [ball_follower.py](./src/api/client.js) | Walking towards the ball. |
-| &emsp;&emsp;&nbsp;&nbsp;&nbsp;└── 🟢 [head_ball_follower.py](./src/api/client.js) | Following the ball with the head. |
+| ├── 🔶 [**`x1_twist.launch.py`**](../../hardware/documentation/x1_twist.md) | Movement launch file. |
+| │&emsp;&emsp;├── 🟢 [`twist_to_x1.py`](./src/api/client.js) | Robot walking. |
+| │&emsp;&emsp;├── 🟢 [`pantilt_to_x1.py`](./src/api/client.js) | Head movement. |
+| │&emsp;&emsp;└── 🟢 [`odom_to_tf.py`](./src/api/client.js) | Odometry transformation. |
+| └── 🔶 [**`ball_follower.launch.py`**](./src/components) | Ball following launch file. |
+| &emsp;&emsp;&nbsp;&nbsp;&nbsp;├── 🟢 [`ball_detector.py`](./src/api/client.js) | Ball detection through CV. |
+| &emsp;&emsp;&nbsp;&nbsp;&nbsp;├── 🟢 [`ball_follower.py`](./src/api/client.js) | Walking towards the ball. |
+| &emsp;&emsp;&nbsp;&nbsp;&nbsp;└── 🟢 [`head_ball_follower.py`](./src/api/client.js) | Following the ball with the head. |
 
 
-## Differences between the three launch files
+## 🔀 Differences between the three launch files
 
 While they share the majority of the nodes, there's some key differences that allows them to work with the specific hardware of each robot:
 
-### Movement nodes
+### 🏃‍♀️ Movement nodes
 
 For high-level movement control, there's specific nodes for each robot model.
 
@@ -42,11 +44,15 @@ For high-level movement control, there's specific nodes for each robot model.
 
 > The source files for the Unitree G1 nodes aren't in this repository, but in the `/home/unitree` directory on the robot itself.
 
-### Video encoding conversion
+### 📹 Video encoding conversion
 
-The native topics publishing the camera feed on the Booster K1 are encoded in `nv12`, which is not compatible our image processing nodes. To solve this, the [`nv12_converter_node`](../../vision/boosterk1_image_proc/src/nv12_converter_node.cpp) is included in the `K1_state_machine.launch.py` to convert the video encoding to `bgr8`.
+The native topics publishing the camera feed on the Booster K1 are encoded in `nv12`, which is not compatible with our image processing nodes. To solve this, the [`nv12_converter_node`](../../vision/boosterk1_image_proc/src/nv12_converter_node.cpp) is included in the `K1_state_machine.launch.py` to publish video in `bgr8`.
 
 | Robot Model | Node |
 |---|---|
 | Booster K1 | [`nv12_converter_node`](../../vision/boosterk1_image_proc/src/nv12_converter_node.cpp) |
+
+## ⚡ Running at startup
+
+This launch file is meant to be ran automatically when the robot is powered on. To achieve this, it must be added as a systemd service with the `robot_upstart` package.
 
