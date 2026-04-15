@@ -247,7 +247,8 @@ private:
         // making it necessary to catch the exception that is thrown when the transform is not found.
         catch (const tf2::TransformException & ex)
         {
-            RCLCPP_ERROR(this->get_logger(), "Could not transform odom to base_link: %s", ex.what());
+            //RCLCPP_ERROR(this->get_logger(), "Could not transform odom to base_link: %s", ex.what());
+            RCLCPP_INFO(this->get_logger(), "Waiting for odom to base_link transformation...");
             return;
         }
 

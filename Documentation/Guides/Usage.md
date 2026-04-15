@@ -3,7 +3,7 @@
 This guide provides instructions on how to execute this project, alongside with documentation for the execution and develop of the individual nodes.
 
 > [!WARNING]
-> This guide assumes that you have already completed the installation process and have set up the development environment. If not, please refer to the [Installation Guide](./Installation.md) before proceeding.
+> This guide assumes that you have already completed the installation process and have set up the development environment. If not, please refer to the [Installation Guide](/Documentation/Guides/Installation.md) before proceeding.
 
 ## 🔎 General Overview
 
@@ -42,9 +42,9 @@ ros2 launch surge_et_ambula X1_state_machine.launch.py
 
 #### ✅ Automatic launch
 
-For the launch to be ran at startup, it must be added as a systemd service with the [robot_upstart](../../colcon_ws/src/extras/robot_upstart/README.md) package.
+For the launch to be ran at startup, it must be added as a systemd service with the [robot_upstart](/colcon_ws/src/extras/robot_upstart/README.md) package.
 
-> ✅ The automatic launch can be set up with the [installation script](./Installation.md#running-the-installation-script).
+> ✅ The automatic launch can be set up with the [installation script](/Documentation/Guides/Installation.md#running-the-installation-script).
 
 
 ### What does it launch
@@ -53,20 +53,20 @@ Here's a breakdown of the elements the master launch runs:
 
 | ROS 2 Element | Description |
 | :--- | :--- |
-| 🔶 [**`X1_state_machine.launch.py`**](../../colcon_ws/src/surge_et_ambula/documentation/X1_state_machine.md) | Master launch file. |
-| ├── 🟢 [`game_planner.py`](../../colcon_ws/src/planning/game_planner/game_planner/game_planner.py) | General state machine. |
-| ├── 🟢 [`position_start.cpp`](../../colcon_ws/src/planning/position_start/src/position_start.cpp) | Positioning at startup. |
-| ├── 🟢 [`nv12_converter_node.cpp`](../../colcon_ws/src/vision/boosterk1_image_proc/src/nv12_converter_node.cpp) | Only for Booster K1. Video encoder conversion. |
-| ├── 🔶 [**`x1_twist.launch.py`**](../../colcon_ws/src/hardware/documentation/x1_twist.md) | Movement launch file. |
-| │&emsp;&emsp;├── 🟢 [`twist_to_x1.py`](./src/api/client.js) | Robot walking. |
-| │&emsp;&emsp;├── 🟢 [`pantilt_to_x1.py`](./src/api/client.js) | Head movement. |
-| │&emsp;&emsp;└── 🟢 [`odom_to_tf.py`](./src/api/client.js) | Odometry transformation. |
-| └── 🔶 [**`ball_follower.launch.py`**](./src/components) | Ball following launch file. |
-| &emsp;&emsp;&nbsp;&nbsp;&nbsp;├── 🟢 [`ball_detector.py`](./src/api/client.js) | Ball detection through CV. |
-| &emsp;&emsp;&nbsp;&nbsp;&nbsp;├── 🟢 [`ball_follower.py`](./src/api/client.js) | Walking towards the ball. |
-| &emsp;&emsp;&nbsp;&nbsp;&nbsp;└── 🟢 [`head_ball_follower.py`](./src/api/client.js) | Following the ball with the head. |
+| 🔶 [**`X1_state_machine.launch.py`**](/colcon_ws/src/surge_et_ambula/documentation/X1_state_machine.md) | Master launch file. |
+| ├── 🟢 [`game_planner`](/colcon_ws/src/planning/game_planner/documentation/game_planner.md) | General state machine. |
+| ├── 🟢 [`position_start`](/colcon_ws/src/planning/position_start/README.md) | Positioning at startup. |
+| ├── 🟢 [`nv12_converter_node`](/colcon_ws/src/vision/boosterk1_image_proc/README.md) | Only for Booster K1. Video encoder conversion. |
+| ├── 🔶 [**`x1_twist.launch.py`**](/colcon_ws/src/hardware/Documentation/x1_twist.md) | Movement launch file. |
+| │&emsp;&emsp;├── 🟢 [`twist_to_x1`](/colcon_ws/src/hardware/Documentation/twist_to_x1.md) | Robot walking. |
+| │&emsp;&emsp;├── 🟢 [`pantilt_to_x1`](/colcon_ws/src/hardware/Documentation/pantilt_to_x1.md) | Head movement. |
+| │&emsp;&emsp;└── 🟢 [`odom_to_tf`](/colcon_ws/src/hardware/Documentation/odom_to_tf.md) | Odometry transformation. |
+| └── 🔶 [**`ball_follower.launch.py`**](/colcon_ws/src/planning/ball_follower/documentation/ball_follower_launch.md) | Ball following launch file. |
+| &emsp;&emsp;&nbsp;&nbsp;&nbsp;├── 🟢 [`ball_detector.py`](/colcon_ws/src/vision/ball_detector/documentation/ball_detector.md) | Ball detection through CV. |
+| &emsp;&emsp;&nbsp;&nbsp;&nbsp;├── 🟢 [`ball_follower.py`](/colcon_ws/src/planning/ball_follower/documentation/ball_follower.md) | Walking towards the ball. |
+| &emsp;&emsp;&nbsp;&nbsp;&nbsp;└── 🟢 [`head_ball_follower.py`](/colcon_ws/src/planning/ball_follower/documentation/head_ball_follower.md) | Following the ball with the head. |
 
-> ℹ️ For more details on the master launch, see the [master launch documentation](../../colcon_ws/src/surge_et_ambula/documentation/X1_state_machine.md).
+> ℹ️ For more details on the master launch, see the [master launch documentation](/colcon_ws/src/surge_et_ambula/documentation/X1_state_machine.md).
 
 ## 📦 Other Packages
 
@@ -74,4 +74,4 @@ Here's a breakdown of the elements the master launch runs:
 
 This is an utility to manage ROS2 nodes as systemd services, allowing them to be **automatically started on boot** and easily managed with standard systemd tools.
 
-See [robot_upstart](./robot_upstart.md) for more.
+See [robot_upstart](/Documentation/Guides/robot_upstart.md) for more.

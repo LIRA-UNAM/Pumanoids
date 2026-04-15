@@ -1,6 +1,6 @@
 
 <h1 align="center">
-    <img src="./Documentation/Images/PUMANOIDS_title.svg" width="500" align="middle" alt="Pumanoids Logo">
+    <a><img src="./Documentation/Images/PUMANOIDS_title.svg" width="500" align="middle" alt="Pumanoids Logo"></a>
 </h1>
 
 <p align="center">
@@ -11,11 +11,11 @@
 
 <div align="center">
     <h4>
-        <a href="./Documentation/Guides/Installation.md">
+        <a href="/Documentation/Guides/Installation.md">
             Installation
         </a>
         <span> | </span>
-        <a href="./Documentation/Guides/Usage.md">
+        <a href="/Documentation/Guides/Usage.md">
             Usage
         </a>
         <span> | </span>
@@ -26,18 +26,18 @@
 </div>
     
 <p align="center">
-    <img src="./Documentation/Images/team.jpg" width="500" align="middle" alt="Developed at LIRA">
+    <a><img src="/Documentation/Images/team.jpg" width="500" align="middle" alt="Pumas Team"></a>
 </p>
 
 <p align="center">
-    <img src="https://img.shields.io/github/commit-activity/t/LIRA-UNAM/Pumanoids?style=for-the-badge&color=00254a" alt="Commit Activity">
-    <img src="https://img.shields.io/github/last-commit/LIRA-UNAM/Pumanoids?style=for-the-badge&color=013b75" alt="Last Commit">
-    <img src="https://img.shields.io/github/repo-size/LIRA-UNAM/Pumanoids?style=for-the-badge&color=005eb8" alt="Repo Size">
+    <a><img src="https://img.shields.io/github/commit-activity/t/LIRA-UNAM/Pumanoids?style=for-the-badge&color=00254a" alt="Commit Activity"></a>
+    <a><img src="https://img.shields.io/github/last-commit/LIRA-UNAM/Pumanoids?style=for-the-badge&color=013b75" alt="Last Commit"></a>
+    <a><img src="https://img.shields.io/github/repo-size/LIRA-UNAM/Pumanoids?style=for-the-badge&color=005eb8" alt="Repo Size"></a>
 </p>
 
 <p align="center">
     <a href="https://lira.unam.mx/">
-        <img src="./Documentation/Images/Developed_at_LIRA.png" height="40" align="middle" alt="Developed at LIRA">
+        <img src="/Documentation/Images/Developed_at_LIRA.png" height="40" align="middle" alt="Developed at LIRA">
     </a>
 </p>
 
@@ -68,7 +68,7 @@ cd Pumanoids
 > git submodule update
 > ```
 
-Then, follow the instructions in the [Installation Guide](./Documentation/Guides/Installation.md) to set up the **development environment** and install the necessary **dependencies**.
+Then, follow the instructions in the [Installation Guide](/Documentation/Guides/Installation.md) to set up the **development environment** and install the necessary **dependencies**.
 
 ## Usage
 
@@ -95,12 +95,12 @@ ros2 launch surge_et_ambula G1_state_machine.launch.py
 ---
 
 > [!NOTE]
-> For further instructions on how to run the code and use the different nodes, please refer to the [Usage Guide](./Documentation/Guides/Usage.md).
+> For further instructions on how to run the code and use the different nodes, please refer to the [Usage Guide](/Documentation/Guides/Usage.md).
 
 ## License
 
 Distributed under the **MIT License**. This allows for modification, distribution, and commercial use, provided the original copyright and license notice are included.
 
-See [LICENSE](./LICENSE) for details.
+See [LICENSE](/LICENSE) for details.
 
 &copy; 2025 - 2026 **Laboratorio de Investigación en Robotica Avanzada**
