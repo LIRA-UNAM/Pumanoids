@@ -25,7 +25,7 @@ git clone https://github.com/gmsebastian/robot_upstart.git
 ### 🛠️ Create a systemd service for a ROS2 node:
 
 ```bash
-ros2 run robot_upstart install <package_name>/launch/<launch_file.launch.py> --job <service_name> --setup <path/to/setup.bash> --symlink
+ros2 run robot_upstart install <package_name>/launch/<launch_file> --job <service_name> --setup <path/to/setup.bash> --symlink
 ```
 
 Where:
@@ -78,9 +78,6 @@ sudo systemctl daemon-reload
 ### 📌 Convenient aliases
 
 To avoid long systemd commands, I suggest adding the following bash functions to your `~/.bashrc` to manage the services.
-
-> [!TIP]
-> Add these definitions to your `~/.bashrc`.
 
 For `start`, `stop`, `enable` or `disable` services:
 
