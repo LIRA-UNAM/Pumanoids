@@ -37,3 +37,6 @@ g1sim:
 	@echo "Launching Project..."
 	source $(PUMANOIDS_PROJECT_PATH)/install/setup.bash
 	ros2 launch surge_et_ambula g1_sim_humble.launch.py
+
+g1play:
+	@echo "Launching ..."
