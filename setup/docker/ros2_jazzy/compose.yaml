@@ -31,6 +31,8 @@ services:
       - /dev/nvidia0:/dev/nvidia0
       - /dev/nvidiactl:/dev/nvidiactl
       - /dev/nvidia-modeset:/dev/nvidia-modeset
+      - ~/lira-bags:/home/miguel/lira-bags:rw
+      - ~/fun/GameController:/home/miguel/GC
 
     command: >
       bash -c "

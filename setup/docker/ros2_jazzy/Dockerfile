@@ -40,6 +40,21 @@ RUN apt-get install -y \
     ros-${DISTRO}-rmw-cyclonedds-cpp \
     && apt-get clean
 
+RUN apt install -y libwebkit2gtk-4.1-dev \
+    build-essential \
+    curl \
+    wget \
+    file \
+    libxdo-dev \
+    libssl-dev \
+    libayatana-appindicator3-dev \
+    librsvg2-dev
+
+RUN apt install -y cargo
+RUN apt install -y npm
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs >> test.sh && sh test.sh -y
+
 RUN apt-get install -y  curl lsb-release gnupg
 RUN curl https://packages.osrfoundation.org/gazebo.gpg --output /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg 
 RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null
@@ -48,14 +63,14 @@ RUN echo " CURL DONE"
 RUN apt-get update 
 RUN apt-get install -y gz-harmonic
 RUN echo "Ignition Installed"
-RUN apt-get update
-RUN apt-get upgrade -y
-
 ENV DEBIAN_FRONTEND=dialog
 
 ARG USERNAME=ros
 ARG USER_UID=1000
 ARG USER_GID=${USER_UID}
+
+RUN apt remove -y rustc
+
 
 # Create the user
 # RUN if id -u ${USER_UID} ; then userdel `id -un ${USER_UID}` ; fi
