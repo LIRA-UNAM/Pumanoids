@@ -114,8 +114,8 @@ class BallDetectorNode(Node):
             
 
             annotated_frame = results[0].plot()
-            cv2.imshow("YOLO Detection", annotated_frame)
-            cv2.waitKey(1)
+            #cv2.imshow("YOLO Detection", annotated_frame)
+            #cv2.waitKey(1)
 
         except Exception as e:
             self.get_logger().error(f"Detection error: {e}")
