@@ -38,5 +38,11 @@ g1sim:
 	source $(PUMANOIDS_PROJECT_PATH)/install/setup.bash
 	ros2 launch surge_et_ambula g1_sim_humble.launch.py
 
-g1play:
+g1:
 	@echo "Launching ..."
+	cd $(PUMANOIDS_PROJECT_PATH) && colcon build --packages-skip boosterk1_image_proc gazebo_envs dynamixel
+
+startg1:
+	@echo "Launching ..."
+	source $(PUMANOIDS_PROJECT_PATH)/install/setup.bash
+	ros2 launch surge_et_ambula g1_state_machine.launch.py

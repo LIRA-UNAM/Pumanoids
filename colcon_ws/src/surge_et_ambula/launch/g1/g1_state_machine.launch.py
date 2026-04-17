@@ -8,7 +8,11 @@ from ament_index_python.packages import get_package_share_directory
 import os
 
 def generate_launch_description():
-
+    model_path = os.path.join(
+        get_package_share_directory('ball_detector'),
+        'models',
+        'yolov8_center.pt' # <-- Change this to the model you want to use
+    )
     start_position = LaunchConfiguration('start_position')
 
     return LaunchDescription([
@@ -47,11 +51,15 @@ def generate_launch_description():
         ),
 
         Node(
-            package = 'ball_detector',
-            executable = 'ball_detector',
-            name = 'ball_detector',
-            output = 'screen',
-        ),
+            package='ball_detector',
+            executable='ball_detector',
+            name='ball_detector',
+            parameters=[{
+                'show_debug_window': False,
+                'model_path': model_path
+            }],
+            output='screen'
+	),
 
         Node(
             package = 'position_start',
@@ -60,4 +68,11 @@ def generate_launch_description():
             output = 'screen',
             arguments = [start_position],
         ),
+
+        Node(
+            package='ball_follower',
+            executable='ball_follower',
+            name='ball_follower',
+            output='screen')
+
     ])
