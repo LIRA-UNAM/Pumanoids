@@ -1,19 +1,19 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
-from geometry_msgs.msg import PoseArray, Pose, Quaternion, Point
-from localization_msg.msg import VisionLandmarkArray
+from geometry_msgs.msg import PoseArray, Pose, Quaternion, Point, PoseStamped
 from nav_msgs.msg import Odometry
+from localization_msg.msg import VisionLandmarkArray
 import numpy as np
 import math
 import random
 from std_msgs.msg import ColorRGBA
 from visualization_msgs.msg import Marker
 
-FIELD_X_MIN = -0.8
-FIELD_X_MAX =  0.8
-FIELD_Y_MIN = -1.3
-FIELD_Y_MAX =  1.3
+FIELD_X_MIN = -3.04
+FIELD_X_MAX =  3.04
+FIELD_Y_MIN = -4.53
+FIELD_Y_MAX =  4.53
 
 def yaw_to_quaternion(yaw):
     q = Quaternion()
@@ -35,55 +35,70 @@ class ParticleFilterNode(Node):
     def __init__(self):
         super().__init__('particle_filter')
         #FOV
-        self.fov_rad = math.radians(53.7)
+        self.forward_speed = 0.3
+        self.last_odom_time = None
+        self.fov_rad = math.radians(100)
         self.sigma_angle = math.radians(5.0)
+        self.pose_pub = self.create_publisher(PoseStamped, '/estimated_pose', 10)
         # 0:ball 1:goal, 2:robot, 3:L, 4:T, 5:X 
         self.map_landmarks = {
-            1: [(0.5, 1.4),
-                (-0.23, 1.4),
-                        ], 
-            3: [(-0.8, 1.3),
-                (-0.8, -1.3),
-                ( 0.8, 1.3),
-                ( 0.8, -1.3),
+            1: [
+                (0.52,4.53),
+                (-0.52, 4.53),
+                (-0.52,-4.53),
+                (0.52,-4.53),
+                    ], 
+            3: [
+                (-2.52, 2.57),
+                (-2.52, -2.57),
+                ( 2.52, 2.57),
+                ( 2.52, -2.57),
 
-                (-0.5, 0.9),
-                ( 0.5,  0.9),
-                ( -0.5, -0.9),
-                ( 0.5, -0.9),
+                (-1.52, 3.56),
+                ( 1.52,  3.56),
+                ( -1.52, -3.56),
+                ( 1.52, -3.56),
+		        ],
 
-                ( -0.23, -1.15),
-                ( 0.23, -1.15),
-                ( 0.23, 1.15),
-                ( -0.23, 1.15),], 
-            4: [(-0.5, 1.3),
-                (0.5, 1.3),
-                (0.5, -1.3),
-                (-0.5, -1.3),
+            4: [
+                (3.61, 4.53),
+                (-3.61, 4.53),
+                (3.61, -4.53),
+                (-3.61, -4.53),
 
-                (-0.23,  1.3),
-                (0.23, 1.3),
-                (-0.23,  -1.3),
-                (0.23, -1.3),
+                (3.04, 4.53),
+                (-3.04, 4.53),
+                (-3.04,  -4.53),
+                (3.04, -4.53),
 
-                (-0.8, 0.0),
-                (0.8, 0.0),],
-            5: [(-0.2, 0.9),
-                (0.2, 0.9),
-                (-0.2, -0.9),
-                (0.2, -0.9),
-                (-0.21,  0.0),
-                (0.21, 0.0),] 
+                (2.52, 4.53),
+                (-2.52, 4.53),
+                (2.52, -4.53),
+                (-2.52, -4.53),
+
+                (1.52, 4.53),
+                (-1.52, 4.53),
+                (1.52, -4.53),
+                (-1.52, -4.53),
+                ],
+            5: [
+                (0.74, 0.0),
+                (-0.74, 0.0),
+                (0.0, 0.0),
+                (3.04, 0.0),
+                (-3.04,  0.0),
+                ],
+            6: [(0.0, 0.0)],    
         }
 # --- GRAPH Neff and Average weight ---
-        self.start_time = self.get_clock().now().nanoseconds / 1e9
-        self.log_file = open('pf_data_log.csv', 'w')
-        self.log_file.write('time,avg_weight,neff,max_weight,moving\n')
-        self.get_logger().info("Archivo de log pf_data_log.csv creado.")
+        # self.start_time = self.get_clock().now().nanoseconds / 1e9
+        # self.log_file = open('pf_data_log.csv', 'w')
+        # self.log_file.write('time,avg_weight,neff,max_weight,moving\n')
+        # self.get_logger().info("Archivo de log pf_data_log.csv creado.")
 #------------------------------------------------------
         # Particles
-        self.num_particles = 500
-        self.field_x, self.field_y = 1.6, 2.6
+        self.num_particles = 700
+        self.field_x, self.field_y = 6.08, 9.06
         self.particles = []
         self.weights = []
         self.latest_observations = []
@@ -96,7 +111,7 @@ class ParticleFilterNode(Node):
         alpha3: Noise in translation caused by translation.
         alpha4: Noise in translation caused by rotation. 
         '''
-        self.alphas = [0.0001, 0.001, 0.0035, 0.001]
+        self.alphas = [0.001, 0.0003, 0.04, 0.001]
         # Initialization
         self.is_moving = False
         self.init_particles()
@@ -110,22 +125,37 @@ class ParticleFilterNode(Node):
             qos_profile_sensor_data)
 
         self.odom_sub = self.create_subscription(
-            Odometry, '/odom',
+            Odometry, '/odom_converted',
             self.odom_callback,
             qos_profile_sensor_data)
-
     def init_particles(self):
         self.particles = []
+        self.num_particles = 700
         for _ in range(self.num_particles):
             x = random.uniform(-self.field_x/2, self.field_x/2)
             y = random.uniform(-self.field_y/2, self.field_y/2)
             theta = random.uniform(-math.pi, math.pi)
             self.particles.append([x, y, theta])
         self.weights = [1.0 / self.num_particles] * self.num_particles
-    def __del__(self):
-        if hasattr(self, 'log_file'):
-            self.log_file.close()
-            self.get_logger().info("Archivo de log cerrado correctamente.")
+    def publish_estimated_pose(self):
+        if not self.particles:
+            return
+
+        avg_x     = sum(p[0] for p in self.particles) / len(self.particles)
+        avg_y     = sum(p[1] for p in self.particles) / len(self.particles)
+
+    # Promedio circular del ángulo (evita el problema del salto en ±π)
+        sin_sum   = sum(math.sin(p[2]) for p in self.particles)
+        cos_sum   = sum(math.cos(p[2]) for p in self.particles)
+        avg_theta = math.atan2(sin_sum, cos_sum)
+
+        msg = PoseStamped()
+        msg.header.frame_id = "map"
+        msg.header.stamp    = self.get_clock().now().to_msg()
+        msg.pose.position.x = avg_x
+        msg.pose.position.y = avg_y
+        msg.pose.orientation = yaw_to_quaternion(avg_theta)
+        self.pose_pub.publish(msg)
 # -----------MOTION MODEL -------------------------
 # Based on Table 5.6 page 136 PR
     def odom_callback(self, msg):
@@ -133,27 +163,43 @@ class ParticleFilterNode(Node):
         curr_y = msg.pose.pose.position.y
         curr_theta = get_yaw_from_quaternion(msg.pose.pose.orientation)
         curr_pose = [curr_x, curr_y, curr_theta]
-
+        curr_time = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+	
         if self.last_odom_pose is None:
             self.last_odom_pose = curr_pose
+            self.last_odom_time = curr_time
             return
 
         # 1. Calculate Deltas (Algorithm Table 5.6 lines 2-4)
         u_t = self.calculate_deltas(curr_pose, self.last_odom_pose)
+        delta_rot1, delta_trans_odom, delta_rot2 = u_t
         
-        # 2. Update particles only if there is significant motion
-        if u_t[1] > 0.02 or abs(u_t[0] + u_t[2]) > 0.02:
+        dt = curr_time - self.last_odom_time
+        dt = max(dt, 1e-4)
+        
+        if delta_trans_odom >0.02:
+            delta_trans = self.forward_speed * dt
             self.is_moving = True
+        elif abs(delta_rot1 + delta_rot2)>0.02:
+            delta_trans = 0.0
+            self.is_moving = True
+        else:
+            self.is_moving = False
+            
+        # 2. Update particles only if there is significant motion
+        if self.is_moving:
+            u_t_corrected = (delta_rot1, delta_trans, delta_rot2)
             new_particles = []
             for p in self.particles:
                 # Algorithm 5.4 lines 5-11
-                new_p = self.sample_motion_model(u_t, p, self.alphas)
+                new_p = self.sample_motion_model(u_t_corrected, p, self.alphas)
                 new_particles.append(new_p)
             self.particles = new_particles
-            # Movement
             self.publish_particles()
-
+        
         self.last_odom_pose = curr_pose
+        self.last_odom_time = curr_time
+        
     #Lines 2-4
     def calculate_deltas(self, p_curr, p_prev):
         dx = p_curr[0] - p_prev[0]
@@ -195,7 +241,18 @@ class ParticleFilterNode(Node):
 #------------OBSERVATION MODEL---------------------
     def observation_callback(self, msg):
         self.latest_observations = sorted(list(msg.landmarks), key=lambda l: l.angle)
-
+        #if self.particles:
+        #    p = self.particles[0]
+        #    preds = self.predict_measurements(p)
+        #    
+        #    # Imprimir en terminal ID y Ángulo (convertido a grados para leerlo fácil)
+        #    self.get_logger().info(f"--- Partícula ve {len(preds)} landmarks ---")
+        #    for pr in preds:
+        #        self.get_logger().info(f"ID: {pr['id']} | Ang: {math.degrees(pr['angle']):.2f}°")
+        #    
+        #    self.publish_particles() # Para ver la flecha en RViz
+        
+        #return 
         if self.latest_observations:
             #  CALCULAR PESOS (Update Step)
             new_weights = []
@@ -209,7 +266,7 @@ class ParticleFilterNode(Node):
             avg_weight = sum (new_weights)/len(new_weights)
             max_weight = max (new_weights)
             # DETECCIÓN DE DIVERGENCIA SEVERA
-            if max_weight < 1e-3:  # Pesos muy bajos
+            if max_weight < 1e-5:  # Pesos muy bajos
                 self.get_logger().warn(
                     f"Divergence detected - Max weight: {max_weight:.6f}"
                 )
@@ -223,7 +280,7 @@ class ParticleFilterNode(Node):
                     ]
                 self.get_logger().info(f"Looking for position...")
             #  NORMALIZAR PESOS (Total Probability Theorem) 
-            sum_w = sum(new_weights) + 1e-9
+            sum_w = sum(new_weights) + 1e-8
             self.weights = [w / sum_w for w in new_weights]
             #----LOGS----
             self.get_logger().info(f"Average weight : {avg_weight:.4f} | Max weight : {max_weight:.4f}")
@@ -233,12 +290,13 @@ class ParticleFilterNode(Node):
             neff = 1.0 / sq_weights
             self.get_logger().info(f"Neff : {neff:.4}")
             # ----------------------------------
-            if neff < self.num_particles * 0.5: 
+            if neff < self.num_particles * 0.4: 
                 self.resample(robot_is_moving=self.is_moving)
                 self.get_logger().info("Resampling Executed.")
             #  RESAMPLING (Selección Natural)
             #  Visualizar particulas
             self.publish_particles()
+            self.publish_estimated_pose()
         else:
             return
 
@@ -291,7 +349,7 @@ class ParticleFilterNode(Node):
             # LÍNEA 12: add x[i] to X_new
             p = self.particles[i]
             if not robot_is_moving:
-                jitter_xy = 0.0002
+                jitter_xy = 0.002
                 jitter_theta = 0.002
             else:
                 jitter_xy = 0.0
@@ -328,7 +386,7 @@ class ParticleFilterNode(Node):
 
     def similarity_function(self, predicted_dets, observations):
         if not observations or not predicted_dets:
-            return 1e-8
+            return 1e-9
         matched_errors = []
         matched_pred_indices = set()
         obs_idx = 0
@@ -349,7 +407,7 @@ class ParticleFilterNode(Node):
                 pred_idx += 1
         # bad particle
         if not matched_errors:
-            return 1e-9
+            return 1e-8
 
         num_matches = len(matched_errors)
         num_observations = len(observations)
@@ -389,7 +447,7 @@ class ParticleFilterNode(Node):
         if pred_not_observed > num_observations:
             # Solo penalizar si hay DEMASIADAS predicciones extra
             excess = pred_not_observed - num_observations
-            if excess > 2.5:  # Tolerancia de 3 landmarks extra
+            if excess > 3:  # Tolerancia de 3 landmarks extra
                 false_positive_penalty = 0.3 ** (excess - 3)
                 base_weight *= false_positive_penalty
         
@@ -406,3 +464,4 @@ def main():
 
 if __name__ == '__main__':
     main()   
+
