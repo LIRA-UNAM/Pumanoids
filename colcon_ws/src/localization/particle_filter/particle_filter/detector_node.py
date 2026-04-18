@@ -26,7 +26,7 @@ class YoloDetectorNode(Node):
         
         self.head_yaw = 0.0
         self.bridge = CvBridge()
-        self.camera_fov = math.radians(83)
+        self.camera_fov = math.radians(100)
         
         # Suscriptores
         self.joint_sub = self.create_subscription(JointState, "/joint_states", self.joint_callback, 10)
@@ -140,4 +140,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
