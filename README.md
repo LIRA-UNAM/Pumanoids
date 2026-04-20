@@ -26,7 +26,7 @@
 </div>
     
 <p align="center">
-    <a><img src="/Documentation/Images/team.jpg" width="500" align="middle" alt="Pumas Team"></a>
+    <img src="./Documentation/Images/PumasTMR2026.jpg" width="500" align="middle" alt="Pumas Team">
 </p>
 
 <p align="center">
@@ -37,7 +37,7 @@
 
 <p align="center">
     <a href="https://lira.unam.mx/">
-        <img src="/Documentation/Images/Developed_at_LIRA.png" height="40" align="middle" alt="Developed at LIRA">
+        <img src="./Documentation/Images/Developed_at_LIRA.png" height="40" align="middle" alt="Developed at LIRA">
     </a>
 </p>
 
