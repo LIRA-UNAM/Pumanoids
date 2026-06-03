@@ -15,6 +15,13 @@ SM_WAIT_BALL_CENTER = 1
 SM_ERROR_CALCULATION = 5
 SM_BALL_TRACKING = 6
 
+SM_SEARCH_BALL = 2  # El robot no ve la pelota
+SM_TRACK_BALL = 3   # El robot ya detectó la pelota. Ahora: sigue su posición, estima velocidad, mantiene alineación.
+SM_DEFEND = 4       # Elrobot se mueve rápidamente, cubre el ángulo y bloquea la trayectoria, 
+SM_INTERCEPT = 7    # El robot sale hacia el balón
+SM_CLEAR_BALL = 8   # El robot despeja la pelota: Manda la pelota: lejos o hacia un compañero
+SM_RECOVER =  9     # El robot perdió estabilidad o quedó fuera de posición, debe: regresar al centro, reorientarse,estabilizar sensores.
+
 class GoalkeeperGuard(Node):
     def callback_joint_states(self, msg):
         self.current_head_pan = msg.position[0]
