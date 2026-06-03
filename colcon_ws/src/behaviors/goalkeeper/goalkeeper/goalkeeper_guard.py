@@ -9,6 +9,7 @@ from std_msgs.msg import Float32MultiArray, Bool
 from rclpy.wait_for_message import wait_for_message
 from booster_interface.srv import RpcService
 from pumas_vision_msgs.msg import VisionObject
+from goalkeeper.KalmanBallTracker import KalmanBallTracker
 
 SM_INIT = 0
 SM_WAIT_BALL_CENTER = 1
@@ -42,6 +43,7 @@ class GoalkeeperGuard(Node):
         self.center_x = 640
         self.center_y = 360
         self.tolerance = 0
+        self.kalman = KalmanBallTracker(dt=0.033)
         self.sub_ball = self.create_subscription(VisionObject, '/vision/ball', self.callback_ball, 1)
         self.pub_cmd_vel = self.create_publisher(Twist, '/cmd_vel', 1)
         self.pub_sgn_enable = self.create_publisher(Bool, "/planning/head_ball_follower/enable", 1)
