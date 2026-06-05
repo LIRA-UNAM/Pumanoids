@@ -45,6 +45,12 @@ private:
   std::pair<double, double> getBallPosition(double img_x, double img_y,
                                             int img_width, int img_height);
 
+  double hfov_;
+  double vfov_;
+  double hfov;
+  double vfov;
+  double head_z_;
+  double ball_radius_;
   double proc_interval_;
   std::string model_path_;
   bool show_debug_;

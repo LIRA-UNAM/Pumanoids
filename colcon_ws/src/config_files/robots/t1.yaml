@@ -5,16 +5,16 @@ display_name: "Booster T1"
 camera:
   image_topic: "/boostercamera/head/rgb"
   optical_frame_id: "camera_color_optical_frame"
-  width: 640
-  height: 480
-  center_x: 320
-  center_y: 240
-  hfov_deg: 87.0
-  vfov_deg: 58.0
+  width: 1280 #640
+  height: 720 #480
+  center_x: 640
+  center_y: 360
+  hfov_deg: 92.5
+  vfov_deg: 60.0
   focal_length_px: 600.0
 
 head:
-  height_m: 1.25
+  height_m: 1.08
   offset_x_m: 0.0
   offset_y_m: 0.0
   pan_min: -1.0
@@ -34,7 +34,7 @@ head:
   acquire_gain_tilt: 0.50
 
 ball_follower:
-  image_center_x: 320
+  image_center_x: 640
   goal_bias: 0.15
   search_angular_speed: 0.5
   search_angle_deg: 45.0
