@@ -1,5 +1,5 @@
 class PIDController:
-    def __init__(self, kp, ki, kd, output_min=-0.3, output_max=0.3):
+    def __init__(self, kp, ki, kd, output_min=-0.7, output_max=0.7):
         self.kp = kp
         self.ki = ki
         self.kd = kd

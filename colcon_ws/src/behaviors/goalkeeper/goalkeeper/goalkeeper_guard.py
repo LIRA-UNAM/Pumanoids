@@ -112,7 +112,7 @@ class GoalkeeperGuard(Node):
         # Si el robot se mueve al lado contrario, cambia por -control_y
         cmd.linear.y = float(control_y)
 
-        #self.pub_cmd_vel.publish(cmd)
+        self.pub_cmd_vel.publish(cmd)
         self.get_logger().info("Se publica velocidad")
 
         self.get_logger().info(
