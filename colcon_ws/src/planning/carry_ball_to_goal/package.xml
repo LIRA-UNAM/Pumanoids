@@ -14,7 +14,10 @@
   <depend>tf2_ros</depend>
   <depend>carry_ball_to_goal_interfaces</depend>
 
-  <exec_depend>surge_et_ambula</exec_depend>
+  <exec_depend>config_files</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+
   <exec_depend>ball_detector</exec_depend>
   <exec_depend>ball_follower</exec_depend>
 

@@ -1,19 +1,14 @@
 import rclpy
+import os
+import yaml
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
-from geometry_msgs.msg import PoseArray, Pose, Quaternion, Point, PoseStamped
+from geometry_msgs.msg import PoseArray, Pose, Quaternion, PoseStamped
 from nav_msgs.msg import Odometry
 from localization_msg.msg import VisionLandmarkArray
-import numpy as np
+from ament_index_python.packages import get_package_share_directory
 import math
 import random
-from std_msgs.msg import ColorRGBA
-from visualization_msgs.msg import Marker
-
-FIELD_X_MIN = -3.04
-FIELD_X_MAX =  3.04
-FIELD_Y_MIN = -4.53
-FIELD_Y_MAX =  4.53
 
 def yaw_to_quaternion(yaw):
     q = Quaternion()
@@ -35,62 +30,17 @@ class ParticleFilterNode(Node):
     def __init__(self):
         super().__init__('particle_filter')
         #FOV
-        self.forward_speed = 0.3
+        self.forward_speed = 0.4
         self.last_odom_time = None
         self.fov_rad = math.radians(100)
-        self.sigma_angle = math.radians(5.0)
+        self.sigma_angle = math.radians(6.0)
         self.pose_pub = self.create_publisher(PoseStamped, '/estimated_pose', 10)
-        # 0:ball 1:goal, 2:robot, 3:L, 4:T, 5:X 
-        self.map_landmarks = {
-            1: [
-                (0.52,4.53),
-                (-0.52, 4.53),
-                (-0.52,-4.53),
-                (0.52,-4.53),
-                    ], 
-            3: [
-                (-2.52, 2.57),
-                (-2.52, -2.57),
-                ( 2.52, 2.57),
-                ( 2.52, -2.57),
-
-                (-1.52, 3.56),
-                ( 1.52,  3.56),
-                ( -1.52, -3.56),
-                ( 1.52, -3.56),
-		        ],
-
-            4: [
-                (3.61, 4.53),
-                (-3.61, 4.53),
-                (3.61, -4.53),
-                (-3.61, -4.53),
-
-                (3.04, 4.53),
-                (-3.04, 4.53),
-                (-3.04,  -4.53),
-                (3.04, -4.53),
-
-                (2.52, 4.53),
-                (-2.52, 4.53),
-                (2.52, -4.53),
-                (-2.52, -4.53),
-
-                (1.52, 4.53),
-                (-1.52, 4.53),
-                (1.52, -4.53),
-                (-1.52, -4.53),
-                ],
-            5: [
-                (0.74, 0.0),
-                (-0.74, 0.0),
-                (0.0, 0.0),
-                (3.04, 0.0),
-                (-3.04,  0.0),
-                ],
-            6: [(0.0, 0.0)],    
-        }
-# --- GRAPH Neff and Average weight ---
+        self.declare_parameter("map_file",os.path.join(get_package_share_directory('config_files'),'maps','cancha_tmr.yaml'))
+        map_file = self.get_parameter('map_file').value
+        # 0:ball 1:goal, 2:robot, 3:L, 4:T, 5:X
+        self.map_landmarks ={}
+        self.read_yaml(map_file)
+        # --- GRAPH Neff and Average weight ---
         # self.start_time = self.get_clock().now().nanoseconds / 1e9
         # self.log_file = open('pf_data_log.csv', 'w')
         # self.log_file.write('time,avg_weight,neff,max_weight,moving\n')
@@ -111,7 +61,7 @@ class ParticleFilterNode(Node):
         alpha3: Noise in translation caused by translation.
         alpha4: Noise in translation caused by rotation. 
         '''
-        self.alphas = [0.001, 0.0003, 0.04, 0.001]
+        self.alphas = [0.02, 0.0002, 0.01, 0.001]
         # Initialization
         self.is_moving = False
         self.init_particles()
@@ -128,9 +78,34 @@ class ParticleFilterNode(Node):
             Odometry, '/odom_converted',
             self.odom_callback,
             qos_profile_sensor_data)
+
+    def read_yaml(self,config_file):
+        with open(config_file, 'r') as file:
+            configs = yaml.safe_load(file)
+            self. map_name = configs["name"]
+            self.FIELD_X_MIN = configs["field"]["x_min"] 
+            self.FIELD_X_MAX = configs["field"]["x_max"] 
+            self.FIELD_Y_MIN = configs["field"]["y_min"] 
+            self.FIELD_Y_MAX = configs["field"]["y_max"]
+            
+            for _ , landmark in configs["landmarks"].items():
+                self.map_landmarks[landmark["id"]]=[]
+                for point in landmark["points"]:
+                    self.map_landmarks[landmark["id"]].append(tuple(point))
+            print(self.map_landmarks)
+
+    def mirror_y(self,x,y):
+        return (-x, y) 
+
+    def mirror_x(self,x,y):
+        return (x, -y) 
+
+    def mirror(self,x,y):
+        return (-x, -y) 
+
     def init_particles(self):
         self.particles = []
-        self.num_particles = 700
+        self.num_particles = 800
         for _ in range(self.num_particles):
             x = random.uniform(-self.field_x/2, self.field_x/2)
             y = random.uniform(-self.field_y/2, self.field_y/2)
@@ -234,8 +209,8 @@ class ParticleFilterNode(Node):
         theta_new = x_prev[2] + h_dr1 + h_dr2
         # CLAMPING: No permitir que salgan de los límites
         # Usamos un pequeño margen (0.1) por si los landmarks están fuera
-        x_new = max(FIELD_X_MIN - 0.1, min(x_new, FIELD_X_MAX + 0.1))
-        y_new = max(FIELD_Y_MIN - 0.1, min(y_new, FIELD_Y_MAX + 0.1))
+        x_new = max(self.FIELD_X_MIN - 0.1, min(x_new, self.FIELD_X_MAX + 0.1))
+        y_new = max(self.FIELD_Y_MIN - 0.1, min(y_new, self.FIELD_Y_MAX + 0.1))
         return [x_new, y_new, angle_diff(theta_new, 0)]
 
 #------------OBSERVATION MODEL---------------------
@@ -253,6 +228,16 @@ class ParticleFilterNode(Node):
         #    self.publish_particles() # Para ver la flecha en RViz
         
         #return 
+
+        self.latest_observations = sorted(list(msg.landmarks), key=lambda l: l.angle)
+
+        # Si hay menos de 3 landmarks, solo confiar en odometría
+        if len(self.latest_observations) < 3:
+            self.get_logger().info(f"Only {len(self.latest_observations)} landmarks — trusting odometry only.")
+            self.publish_particles()
+            self.publish_estimated_pose()
+            return
+
         if self.latest_observations:
             #  CALCULAR PESOS (Update Step)
             new_weights = []
@@ -271,7 +256,7 @@ class ParticleFilterNode(Node):
                     f"Divergence detected - Max weight: {max_weight:.6f}"
                 )
                 # Inyectar % de partículas aleatorias
-                num_random = int(0.2 * self.num_particles)
+                num_random = int(0.1 * self.num_particles)
                 for i in range(num_random):
                     self.particles[i] = [
                         random.uniform(-self.field_x/2, self.field_x/2),
@@ -290,7 +275,7 @@ class ParticleFilterNode(Node):
             neff = 1.0 / sq_weights
             self.get_logger().info(f"Neff : {neff:.4}")
             # ----------------------------------
-            if neff < self.num_particles * 0.4: 
+            if neff < self.num_particles * 0.3: 
                 self.resample(robot_is_moving=self.is_moving)
                 self.get_logger().info("Resampling Executed.")
             #  RESAMPLING (Selección Natural)
@@ -329,7 +314,7 @@ class ParticleFilterNode(Node):
         # LÍNEA 3: r = rand(0, M^-1)
         r = random.uniform(0, 1.0 / M)
         
-        # LÍNEA 4: c = w[0] (el peso de la primer partícula)
+        # LÍNEA 4: c = w[0] (el peso de la primer partícula)e
         c = self.weights[0]
         
         # LÍNEA 5: i = 1 
@@ -359,8 +344,8 @@ class ParticleFilterNode(Node):
             ny = p[1] + random.gauss(0, jitter_xy)
             nt = angle_diff(p[2], random.gauss(0, jitter_theta))
             # --- CLAMPING FINAL (No más partículas fuera de la cancha) ---
-            nx = max(FIELD_X_MIN, min(nx, FIELD_X_MAX))
-            ny = max(FIELD_Y_MIN, min(ny, FIELD_Y_MAX))
+            nx = max(self.FIELD_X_MIN, min(nx, self.FIELD_X_MAX))
+            ny = max(self.FIELD_Y_MIN, min(ny, self.FIELD_Y_MAX))
 
             new_particles.append([nx, ny, nt])
         self.particles = new_particles
@@ -386,7 +371,7 @@ class ParticleFilterNode(Node):
 
     def similarity_function(self, predicted_dets, observations):
         if not observations or not predicted_dets:
-            return 1e-9
+            return 1e-7
         matched_errors = []
         matched_pred_indices = set()
         obs_idx = 0

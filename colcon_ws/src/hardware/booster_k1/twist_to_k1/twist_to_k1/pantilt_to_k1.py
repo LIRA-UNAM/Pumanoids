@@ -1,15 +1,12 @@
 import rclpy
 import time
+import json
+import uuid
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray
-from booster_interface.srv import RpcService
+from booster_msgs.msg import RpcReqMsg
 
 class PantiltToT1Node(Node):
-    def get_rpc_request(self):
-        req = RpcService.Request()
-        req.msg.api_id = 2004
-        req.msg.body = "{\"pitch\": " + f"{self.pitch}" + ", \"yaw\": " + f"{self.yaw}" + "}"
-        return req
     
     def callback_pantilt_cmd(self, msg):
         self.pitch = msg.data[1]
@@ -21,28 +18,36 @@ class PantiltToT1Node(Node):
     def __init__(self):
         super().__init__('pantilt_to_t1')
         print("INITIALIZING PANTILT TO T1 NODE - ")
+
         self.pitch = 0.0
         self.yaw = 0.0
-        self.sub = self.create_subscription(Float32MultiArray, '/hardware/head/goal_pose', self.callback_pantilt_cmd, 10)
-        self.clt_rpc = self.create_client(RpcService, '/booster_rpc_service')
         self.new_cmd = False
+
+        self.sub = self.create_subscription(Float32MultiArray, '/hardware/head/goal_pose', self.callback_pantilt_cmd, 10)
         
+        self.publisher = self.create_publisher(RpcReqMsg, '/LocoApiTopicReq', 10)
+
+    def build_head_msg(self, pitch, yaw):
+        """Construct a RpcReqMsg for a RotateHead command."""
+        msg = RpcReqMsg()
+        msg.uuid = str(uuid.uuid4())
+        msg.header = json.dumps({
+            "api_id": 2004,                 # LocoApiId::kRotateHead
+            "expect_response": True
+        })
+        msg.body = json.dumps({
+            "pitch": pitch,
+            "yaw": yaw
+        })
+        return msg
+
     def spin(self):
-        rpc_service_ready = False
-        print("Waiting for rpc service...")
-        while not self.clt_rpc.wait_for_service(timeout_sec=1.0):
-            print('Waiting for rpc service...')
-        print("rpc service is now available...")
         while rclpy.ok():
             if self.new_cmd:
                 self.new_cmd = False
-                req = self.get_rpc_request()
-                future = self.clt_rpc.call_async(req)
-                rclpy.spin_until_future_complete(self, future, timeout_sec=1.0) 
-                if future.result() is not None:
-                    res = future.result()
-                else:
-                    self.get_logger().error('Service call failed %r' % (future.exception(),))
+                msg = self.build_head_msg(self.pitch, self.yaw)
+                self.publisher.publish(msg)
+                self.get_logger().debug(f"pitch: {self.pitch:.2f} , yaw: {self.yaw:.2f}")
             rclpy.spin_once(self)
             time.sleep(0.02)
 

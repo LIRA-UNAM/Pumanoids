@@ -5,9 +5,9 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     model_path = os.path.join(
-        get_package_share_directory('ball_detector'),
+        get_package_share_directory('new_ball_detector'),
         'models',
-        'yolov8_center.pt' # <-- Change this to the model you want to use
+        'yolov8_center_sys_low.engine' # <-- Change this to the model you want to use
     )
     return LaunchDescription([
         Node(
@@ -17,11 +17,11 @@ def generate_launch_description():
             output='screen'
         ),
         Node(
-            package='ball_detector',
+            package='new_ball_detector',
             executable='ball_detector',
             name='ball_detector',
             parameters=[{
-                'show_debug_window': False,                
+                'show_debug': False,                
                 'model_path': model_path
             }],
             output='screen'),

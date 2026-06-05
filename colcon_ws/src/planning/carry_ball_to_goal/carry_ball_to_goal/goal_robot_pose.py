@@ -112,7 +112,7 @@ class GoalRobotPoseNode(Node):
         ux = dx / dist
         uy = dy / dist
 
-        # Punto: 0.25m detrás del balón (opuesto al arco)
+        # Punto: 0.5m detrás del balón (opuesto al arco)
         # Balón queda en medio entre el punto y el goal_center
         point_x = self.ball_x - self.distance_from_ball * ux
         point_y = self.ball_y - self.distance_from_ball * uy

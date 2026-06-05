@@ -1,0 +1,5 @@
+# request: empty
+---
+float64 pan   # position of head pan
+float64 tilt  # position of head tilt
+bool success

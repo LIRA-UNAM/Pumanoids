@@ -17,6 +17,13 @@ def generate_launch_description():
                 'k1_twist.launch.py'),
             )
         ),
+        # Service node to respond the joint states values (used by head_ball_follower and ball_follower)
+        Node(
+            package = 'joint_states_package',
+            executable = 'joints_service',
+            name = 'joints_service',
+            output = 'screen'
+        ),
         # Include the ball_follower launch
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
