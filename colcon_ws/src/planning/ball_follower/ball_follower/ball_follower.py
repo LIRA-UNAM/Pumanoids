@@ -1,59 +1,68 @@
 import rclpy
 import math
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Bool
 from pumas_vision_msgs.msg import VisionObject
+from joint_states_package.srv import HeadJoints
 
+# Image center (in pixels) for every robot model
 center_x_t1 = 320
 center_x_k1 = 272
 
 class BallFollowerNode(Node):
-    def callback_joint_states(self, msg):
-        self.current_head_pan = msg.position[0]
-        self.current_head_tilt = msg.position[1]
-        
-    def callback_ball(self, msg):
-        if not self.is_enabled:
-            return
 
-        ball_center_x = msg.x
-        ball_center_y = msg.y
-        
-        error_x = (-ball_center_x + center_x_k1)/center_x_k1
-        if error_x < 0:
-            error_x = -math.sqrt(-error_x)
-        else:
-            error_x = math.sqrt(error_x)
-        
-        cmd_vel_msg = Twist()
-        cmd_vel_msg.linear.x = 0.2
-        cmd_vel_msg.angular.z = 0.8 * (error_x + self.current_head_pan)
-        #self.get_logger().info(f"{error_x}  ,  {self.current_head_pan}")
-        #self.get_logger().info(f"Pan position: {cmd_vel_msg.angular.z}")
-        self.pub_cmd_vel.publish(cmd_vel_msg)
-        
-        
     def __init__(self):
         print("INITIALIZING BALL FOLLOWER NODE - ")
         super().__init__("ball_follower")
-        self.is_enabled = False
-        self.current_head_pan  = 0
-        self.current_head_tilt = 0
-        self.sub_ball = self.create_subscription(VisionObject, '/vision/ball', self.callback_ball, 1)
-        self.pub_cmd_vel = self.create_publisher(Twist, '/cmd_vel', 1)
-        self.sub_joints  = self.create_subscription(JointState, "/joint_states", self.callback_joint_states, 1)
+
+        # --- VARIABLES ---
+        self.is_enabled = False     # To check enable status from game_planner
+        self.last_head_pan  = 0     # Lastest received head pan (yaw) position
+        self.last_head_tilt = 0     # Lastest received head tilt (pitch) position
+
+        self.ball_detected = False  # To check if a ball has been detected by ball_detector
+        self.ball_center_x = 0    # Ball position in the camera in the X axis
+        self.ball_center_y = 0    # Ball position in the camera in the Y axis
+
+        # --- TOPICS ---
+        # Enabling signal from game_planner node
         self.sub_enable = self.create_subscription(Bool, "/ball_follower/enable", self.callback_enable, 1)
+
+        # To receive detected objects from ball_detector node
+        self.sub_ball = self.create_subscription(VisionObject, '/vision/ball', self.callback_ball, 1)
         
+        # To send high-level movement commands to twist_to_x1 node (replacing x1 with your robot model)
+        self.pub_cmd_vel = self.create_publisher(Twist, '/cmd_vel', 1)
+
+        # --- SERVICES ---
+        # Jont positions client
+        self.cli = self.create_client(HeadJoints, 'get_head_joints')
+
+        if not self.cli.wait_for_service(timeout_sec=5.0):
+            self.get_logger().error('Service get_head_joints not available')
+
+        # --- TIMERS ---
+        # For requesting joint states
+        self.create_timer(0.1, self.joint_state_request)
+        # The main timer callback function. Most of the node logic goes here.
+        self.create_timer(0.1, self.main_timer) # <-- Needs testing to adjust timer period. Starting at 0.1
+
+
         self.get_logger().info("Waiting for enable signal")
-    
+
+    # Callback function of the enable signal from the game_planner
     def callback_enable(self, msg):
+        # TRUE received
         if msg.data:
             if not self.is_enabled:
                 self.get_logger().info("Ball Follower Enabled")
             self.is_enabled = True
+        # FALSE received
         else:
+            # If it was enabled, we stop everything
             if self.is_enabled:
                 self.get_logger().info("Ball Follower Disabled")
                 cmd_vel_msg = Twist()
@@ -61,7 +70,62 @@ class BallFollowerNode(Node):
                 cmd_vel_msg.angular.z = 0.0
                 self.pub_cmd_vel.publish(cmd_vel_msg)
             self.is_enabled = False
+
+    # Request function for joint states
+    def joint_state_request(self):
+        if not self.cli.service_is_ready():
+            return
+
+        req = HeadJoints.Request()
+
+        future = self.cli.call_async(req)
+        future.add_done_callback(self.joints_response_callback)
+
+    # Response function for joint states
+    def joints_response_callback(self, future):
+        try:
+            response = future.result()
+            if response.success:
+                self.last_head_pan = response.pan
+                self.last_head_tilt = response.tilt
+
+                self.get_logger().debug(f'Head joints: pan={response.pan:.3f}, tilt={response.tilt:.3f}', throttle_duration_sec=1.0)
+
+        except Exception as e:
+            self.get_logger().error(f'Joint service callback: {e}')
+    
+    # When ball_detector finds the ball, we store it's position in pixel coordinates
+    def callback_ball(self, msg):
+
+        if not self.is_enabled:
+            return
+
+        self.ball_detected = True
+        self.ball_center_x = msg.x
+        self.ball_center_y = msg.y
         
+        
+    def main_timer(self):
+
+        if not self.is_enabled or not self.ball_detected:
+            return
+
+        # Return the ball_detected flag to false
+        self.ball_detected = False
+        # Calculate the horizontal error from center to ball position
+        error_x = (center_x_k1 - self.ball_center_x) / center_x_k1
+        if error_x < 0:
+            error_x = -math.sqrt(-error_x)
+        else:
+            error_x = math.sqrt(error_x)
+        
+        # Send the movement command. The robot rotates depending on the horizontal position of the ball, taking in consideration the position of the ball in the camera and the head (yaw) position.
+        cmd_vel_msg = Twist()
+        cmd_vel_msg.linear.x = 0.1
+        cmd_vel_msg.angular.z = 0.5 * (error_x + self.last_head_pan)
+        #self.get_logger().info(f"{error_x}  ,  {self.current_head_pan}")
+        #self.get_logger().info(f"Pan position: {cmd_vel_msg.angular.z}")
+        self.pub_cmd_vel.publish(cmd_vel_msg)
 
 def main(args=None):
     rclpy.init(args=args)

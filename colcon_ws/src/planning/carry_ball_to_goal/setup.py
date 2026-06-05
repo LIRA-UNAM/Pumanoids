@@ -24,8 +24,8 @@ setup(
         'console_scripts': [
             'goal_robot_pose = carry_ball_to_goal.goal_robot_pose:main',
             'go_to_goal_pose = carry_ball_to_goal.go_to_goal_pose:main',
-            'go_to_ball_align_with_goal = carry_ball_to_goal.go_to_ball_align_with_goal:main',
             'law_of_cosines_nav = carry_ball_to_goal.law_of_cosines_nav:main',
+            'goal_robot_pose_service = carry_ball_to_goal.goal_robot_pose_service:main',
         ],
     },
 )

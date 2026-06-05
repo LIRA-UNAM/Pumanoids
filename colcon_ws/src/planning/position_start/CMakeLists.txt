@@ -8,6 +8,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(booster_interface REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(yaml-cpp REQUIRED)
@@ -22,6 +23,7 @@ target_compile_features(position_start PUBLIC c_std_99 cxx_std_17)  # Require C9
 ament_target_dependencies(
 position_start
 "rclcpp"
+"booster_interface"
 "geometry_msgs"
 "ament_index_cpp"
 "tf2"

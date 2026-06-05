@@ -1,11 +1,7 @@
 
-# position_start
+# position_start package
 
 This is package contains the `position_start` node. This node walks the robots from the side of the field to their starting positions for the ***kick-off***
-
-| Package | Node | Source file |
-| ------- | ---- | ----------- |
-| `position_start` | `position_start` | [`position_start.cpp`](src/position_start.cpp) |
 
 ## Usage
 

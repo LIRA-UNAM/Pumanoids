@@ -53,12 +53,16 @@ public:
             this->get_logger().set_level(rclcpp::Logger::Level::Info);
         }
         */
+        rclcpp::QoS qos_profile_for_enabling(10); // Initial depth of 10
+        qos_profile_for_enabling.reliability(rclcpp::ReliabilityPolicy::Reliable);
+        qos_profile_for_enabling.history(rclcpp::HistoryPolicy::KeepLast);
+        qos_profile_for_enabling.durability(rclcpp::DurabilityPolicy::TransientLocal);
 
         loadConfiguration("config/positions_demo.yaml"); // YAML file parsing function
 
         // Publisher and subscriber for state machine topics
-        state_mach_sub_ = this->create_subscription<std_msgs::msg::Bool>("/position_start/enable", 10, std::bind(&PositionStart::sm_enable, this, std::placeholders::_1));
-        state_mach_pub_ = this->create_publisher<std_msgs::msg::Bool>("/position_start/finish", 10);
+        state_mach_sub_ = this->create_subscription<std_msgs::msg::Bool>("/position_start/enable", qos_profile_for_enabling, std::bind(&PositionStart::sm_enable, this, std::placeholders::_1));
+        state_mach_pub_ = this->create_publisher<std_msgs::msg::Bool>("/position_start/finish", qos_profile_for_enabling);
 
         // Coordinate transformation
         tf_buffer_ =std::make_unique<tf2_ros::Buffer>(this->get_clock());
@@ -106,34 +110,34 @@ private:
 
     // -- VARIABLES --
     // Timer callback logic
-    int timer_period = 500; // Timer callback period
-    float current_timer_pos_x = 0; // Timer for X movement
-    float current_timer_pos_y = 0; // Timer for Y movement
+    int timer_period = 500;         // Timer callback period
+    float current_timer_pos_x = 0;  // Timer for X movement
+    float current_timer_pos_y = 0;  // Timer for Y movement
 
     // Robot position and orientation
-    float initial_theta_ = 0.0f; // Initial orientation of the robot
-    bool has_initial_theta_ = false; // Flag for the first angle reading
-    bool has_started_moving_ = false; // Flag for the first walking movement
-    float target_angle = 0.0f; // Target angle of rotation
-    float angular_error = 0.0f; // Error in angular position
-    float current_angle = 0.0f; // Current rotation angle of the robot
+    float initial_theta_ = 0.0f;            // Initial orientation of the robot
+    bool has_initial_theta_ = false;        // Flag for the first angle reading
+    bool has_started_moving_ = false;       // Flag for the first walking movement
+    float target_angle = 0.0f;              // Target angle of rotation
+    float angular_error = 0.0f;             // Error in angular position
+    float current_angle = 0.0f;             // Current rotation angle of the robot
     geometry_msgs::msg::TransformStamped t; // TransformStamped object for TF2 transformations
 
     // Target position parameters
-    std::string target_position_; // Target position specified by the user
-    double target_x_ = 0.0; // Target in the X axis
-    double target_y_ = 0.0; // Target in the Y axis
-    bool YAML_success = true; // Flag for YAML loading success
+    std::string target_position_;   // Target position specified by the user
+    double target_x_ = 0.0;         // Target in the X axis
+    double target_y_ = 0.0;         // Target in the Y axis
+    bool YAML_success = true;       // Flag for YAML loading success
 
 
     // -- STATES OF THE NODE --
     enum class State {
-        WAITING_FOR_STATE_MACHINE, // Waiting for true from the state machine
-        INITIAL_POSE, // Initial pose, waiting for the first angle reading
-        MOVING_X, // Moving forward along the X axis
-        ROTATING, // Rotating to the target angle
-        MOVING_Y, // Moving forward along the Y axis
-        FINISHED // Finished, published true to the state machine
+        WAITING_FOR_STATE_MACHINE,  // Waiting for true from the state machine
+        INITIAL_POSE,               // Initial pose, waiting for the first angle reading
+        MOVING_X,                   // Moving forward along the X axis
+        ROTATING,                   // Rotating to the target angle
+        MOVING_Y,                   // Moving forward along the Y axis
+        FINISHED                    // Finished, published true to the state machine
     };
 
     // Setting initial state.
@@ -247,8 +251,7 @@ private:
         // making it necessary to catch the exception that is thrown when the transform is not found.
         catch (const tf2::TransformException & ex)
         {
-            //RCLCPP_ERROR(this->get_logger(), "Could not transform odom to base_link: %s", ex.what());
-            RCLCPP_INFO(this->get_logger(), "Waiting for odom to base_link transformation...");
+            RCLCPP_ERROR(this->get_logger(), "Could not transform odom to base_link: %s", ex.what());
             return;
         }
 
@@ -284,7 +287,7 @@ private:
                 if (current_timer_pos_x < target_x_)
                 {
                     // Moving forward along the X axis.
-                    twist_msg.linear.x = 0.4; // Set the forward walk speed.
+                    twist_msg.linear.x = 0.1; // Set the forward walk speed.
                     movement_publisher_->publish(twist_msg); // Publish the movement command.
                     // The walk timer progress is calculated according to the timer period
                     current_timer_pos_x += timer_period / 1000.0;
@@ -320,7 +323,7 @@ private:
                 RCLCPP_DEBUG(this->get_logger(), "Angular error: %f rad", angular_error);
                 if (fabs(angular_error) > 0.1) // Rotation tolerance of 0.1 rad
                 {
-                    float angular_vel = 0.6 * angular_error / fabs(angular_error);
+                    float angular_vel = 0.2 * angular_error / fabs(angular_error);
                     // Rotate
                     twist_msg.angular.z = angular_vel;
                     movement_publisher_->publish(twist_msg);
@@ -339,7 +342,7 @@ private:
                 if (current_timer_pos_y < target_y_)
                 {
                     // Move forward along Y axis
-                    twist_msg.linear.x = 0.4; // Walk speed
+                    twist_msg.linear.x = 0.1; // Walk speed
                     movement_publisher_->publish(twist_msg);
                     current_timer_pos_y += timer_period / 1000.0; // Convert ms to seconds
 

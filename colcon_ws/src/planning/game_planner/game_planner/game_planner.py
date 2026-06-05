@@ -1,20 +1,24 @@
 #!/usr/bin/env python3
 
-# Package: game_planner
 # Node: game_planner
 # The general state machine node to receive Game Controller messages and manage the robot behavior.
 # Written by Camile Frias and Sebastian Garcia.
 # Developed at LIRA UNAM.
 # https://lira.unam.mx/
 
+import math
 import rclpy
 import socket
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 from rclpy.node import Node
+from tf2_ros import TransformException 
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
 from game_planner import gamestate
 from enum import Enum
 from std_msgs.msg import Bool
+from geometry_msgs.msg import Pose2D
 from booster_interface.srv import RpcService
-from carry_ball_to_goal_interfaces.srv import GetGoalRobotPose 
 
 # Ports to comunicate with the Game Controller under UDP packages
 SOURCE_PORT = 3838 # Game Controller broadcast messages through port 3838
@@ -33,6 +37,7 @@ INTERRUPTION_READY=          4
 class State(Enum):
 
         # -- MAIN STATES --
+    
     WAITING_CONNECTION = 0 # Not receiving any signal from the Game Controller
     STATE_INITIAL = 1 # Game controller STATE_READY. The initial state of Game Controller
     STATE_READY = 2 # The robots move from the side to their kickoff positions
@@ -66,17 +71,29 @@ class PlannerNode(Node):
         super().__init__('game_planner')
         self.get_logger().info('game_planner iniciado. Esperando...') 
         self.get_logger().info('Ctrl+C para cerrar.')
+
+        # -- QoS PROFILES --
+        qos_profile_for_enabling = QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            history=HistoryPolicy.KEEP_LAST,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            depth=10
+        )
         
+        # -- TF2 --
+        self.target_frame = self.declare_parameter('pumas_map', 'pumas_base_link').get_parameter_value().string_value
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
         # -- PUBLISHERS --
-        # position_start
-        self.head_ball_follower_enable_publisher = self.create_publisher(Bool, '/head_ball_follower/enable', 10)
-        self.ball_follower_enable_publisher = self.create_publisher(Bool, '/ball_follower/enable', 10)
-        self.position_start_enable_publisher = self.create_publisher(Bool, '/position_start/enable', 10)
+        self.head_ball_follower_enable_publisher = self.create_publisher(Bool, '/head_ball_follower/enable', qos_profile_for_enabling)
+        self.ball_follower_enable_publisher = self.create_publisher(Bool, '/ball_follower/enable', qos_profile_for_enabling)
+        self.target_position_publisher = self.create_publisher(Pose2D, '/go_to_target/target', qos_profile_for_enabling)
         
         # -- SUBSCRIBERS --
-        # position_start
-        self.position_start_enable_subscriber = self.create_subscription(Bool, '/position_start/finish', self.position_start_callback, 10)
-        #TODO MOVINGBALL subscriber
+
+        # carry_ball_to_goal
+        self.carry_ball_to_goal_pose_subscriber = self.create_subscription(Pose2D, '/carry_ball_to_goal/point', self.carry_ball_callback, qos_profile_for_enabling)
         
         # -- PARAMETERS --
 
@@ -84,6 +101,14 @@ class PlannerNode(Node):
         self.declare_parameter('player_number', 1)
         self.player_number = self.get_parameter('player_number').value
         self.get_logger().info(f'Jugador {self.player_number} Listo')
+
+        #start position 
+        self.declare_parameter('start_position', [-2, -4, math.pi/2])
+        self.start_position = Pose2D()
+        self.start_position.x = self.get_parameter('start_position').value[0]
+        self.start_position.y = self.get_parameter('start_position').value[1]
+        self.start_position.theta = self.get_parameter('start_position').value[2]
+        self.get_logger().info(f'posicion inicial(x,y): {self.start_position}')
 
         #team_number
         self.declare_parameter('team_number', 0)
@@ -96,12 +121,12 @@ class PlannerNode(Node):
         self.get_logger().info(f'Portero? {self.goalkeeper} ')
 
         #Is going to do the kickoff?
-        self.declare_parameter('kickoff', False)
+        self.declare_parameter('kickoff', True)
         self.kickoff_robot = self.get_parameter('kickoff').value
         self.get_logger().info(f'Irá a por el kickoff? {self.kickoff_robot} ')
 
         #Is going to do the kick?
-        self.declare_parameter('kick', False)
+        self.declare_parameter('kick', True)
         self.kick_robot = self.get_parameter('kick').value
         self.get_logger().info(f'Irá a por el kick para los subestados que lo necesiten? {self.kick_robot} ')
 
@@ -116,18 +141,8 @@ class PlannerNode(Node):
         self.getup_req.msg.api_id = 2008
         self.getup_req.msg.body = ""
 
-        #Ball to gate service 
-        self.go_to_gate_client = self.create_client(GetGoalRobotPose, '/get_goal_robot_pose')
-        while not self.go_to_gate_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Esperando servicio...')
-        
-        self.go_to_gate_req = GetGoalRobotPose.Request() #Request siempre vacío
-
-
-        
         # VARIABLES
         self.host ="0.0.0.0" # Always watching any IP
-        self.position_start = False
         self.move_ball = False
         self.game_controller = None
         self.target_team = None
@@ -137,7 +152,9 @@ class PlannerNode(Node):
         self.current_state = State.WAITING_CONNECTION
         self.sub_state = State.STATE_NORMAL
         self.last_available_state = State.WAITING_CONNECTION
-        
+        self.first_message = True
+        self.team_in_array = 0 # Position of our team in the array info of game controller 
+        self.carry_ball_position = None # Position from carry_ball_to_goal node
         # -- SOCKETS --
         #Broadcast from game_controller
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -145,28 +162,17 @@ class PlannerNode(Node):
         
         self.server_socket.setblocking(False)
     # -- CALLBACKS --    
-    def position_start_callback(self, msg):
-        self.position_start = msg.data
     
-    #TODO do the move_ball callback after the subscriber
+    def carry_ball_callback(self, msg):
+        self.carry_ball_position = (msg.x, msg.y, msg.theta)
 
-    # Primary function of the state machine.
-    # This function is called by the timer declared above.
     
     # -- SERVICE REQUEST --
 
     def send_getup_request(self):
         self.getup_res = self.getup_client.call_async(self.getup_req)
     
-    def send_go_to_gate_request(self):
-        self.go_to_gate_res = self.client.call_async(self.go_to_gate_req)
-        if self.go_to_gate_res.succes:
-            self.incident_x =self.go_to_gate_res.pose.position.x
-            self.incident_y =self.go_to_gate_res.pose.position.y
-            self.incident_z =self.go_to_gate_res.pose.position.z    
-            self.incident_z =self.go_to_gate_res.pose.orientation.z
-            self.incident_w =self.go_to_gate_res.pose.orientation.w
-    
+
     def rustic_smach(self):
         self.send_getup_request() # Check if is fall and getup if so
         if self.getup_res.done():
@@ -191,6 +197,14 @@ class PlannerNode(Node):
                 self.get_logger().debug(f"Received data from {addr}")
                 # Stores the data.
                 self.game_controller = gamestate.GameState.parse(data)
+                if self.first_message:
+                    if self.game_controller.teams[0].team_number == self.team_number:
+                        self.team_in_array = 0 
+                    else:
+                        self.team_in_array = 1
+                    self.first_message = False
+
+                self.player_info = self.game_controller.teams[self.team_in_array].players[self.player_number-1] # state of penalty of THIS player
                 # Update last connection timestamp.
                 self.last_packet_time = self.get_clock().now()
 
@@ -231,14 +245,27 @@ class PlannerNode(Node):
 
             self.sub_state = State[self.game_controller.secondary_state]
             self.last_available_sub_state = self.sub_state
-
-        if self.game_controller and (self.game_controller.secondary_state == "STATE_NORMAL" or self.game_controller.secondary_state =="STATE_OVERTIME"): # Estados principales y primarios del juego
+        
+        if self.game_controller and (self.player_info.penalty!=0):
+            if self.player_info.penalty == 30:
+                self.idle_state()
+            elif self.player_info.penalty == 31:
+                self.pushing()
+            elif self.player_info.penalty == 32:
+                self.illegal_atk()
+            elif self.player_info.penalty == 33:
+                self.illegal_def()
+            elif self.player_info.penalty == 34:
+                self.idle_state()
+            elif self.player_info.penalty == 35:
+                self.idle_state()
+        elif self.game_controller and (self.game_controller.secondary_state == "STATE_NORMAL" or self.game_controller.secondary_state =="STATE_OVERTIME"): # Estados principales y primarios del juego
             if self.current_state == State.WAITING_CONNECTION:
                 self.wait_state()
             elif self.current_state == State.STATE_INITIAL:
                 self.start_state()
             elif self.current_state == State.STATE_READY:
-                self.position_start_state()
+                self.ready_state()
             elif self.current_state == State.STATE_SET:
                 self.set_state()
             elif self.current_state == State.STATE_PLAYING:
@@ -268,7 +295,7 @@ class PlannerNode(Node):
             elif self.sub_state == State.STATE_THROWIN:
                 self.throwin() # NO IDEA of what is this
             elif self.sub_state == State.DROPBALL:
-                self.dropball() # NO IDEA of what is thisx
+                self.dropball() # NO IDEA of what is this x2 
             elif self.sub_state == State.UNKNOWN:
                 self.error_state()
 
@@ -289,10 +316,10 @@ class PlannerNode(Node):
     def start_state(self):
         self.get_logger().info("START_STATE waiting for ready from Game Controller")
 
-    def position_start_state(self):
-        self.position_start_enable_publisher.publish(Bool(data = True))
-        self.get_logger().info("POSITION_START_STATE walking to my position")
-    
+    def ready_state(self):
+        self.get_logger().info("READY_STATE going to my initial position")
+        self.target_position_publisher.publish(self.start_position)
+
     def set_state(self):
         self.get_logger().info("SET_STATE waiting for the referee to start the game")
     
@@ -305,16 +332,16 @@ class PlannerNode(Node):
             else:
                 print("Following the ball") #TODO ball follower enable and a way to not crash ones with others
 
+                if self.carry_ball_position.y <  
                 self.head_ball_follower_enable_publisher.publish(Bool(data = True))
                 self.ball_follower_enable_publisher.publish(Bool(data = True))
                 #TODO do the arrive to the ball node 
-                self.send_go_to_gate_request() # Ball to gate request 
                 #TODO do the evade other humanoids or pass ball node
 
         else:
             #TODO another way to decied wich robot do the kickoff
             if self.game_controller.kick_of_team == self.team_number and self.kickoff_robot:
-                #TODO another way to do the kickoff
+                #TODO Miguels kick implementation  
                 self.head_ball_follower_enable_publisher.publish(Bool(data = True))
                 self.ball_follower_enable_publisher.publish(Bool(data = True))
             else:
@@ -354,14 +381,22 @@ class PlannerNode(Node):
             #TODO go to the ball that the referee will put after the kick you have execute
             if byte_array[1] == 1:
                 self.get_logger().info("Posicioning to the ball")
-                self.send_go_to_gate_request() #Same ball to gate request to kick to the goal or try at least TODO find a better function
+                #TODO waiting for miguels function to kick 
             if byte_array[1] == 2:
                 self.get_logger().info("kicking the ball")
         else:
             #TODO function to not hinder the robot kick or go for the bounce 
             self.get_logger().info("going to another place")
 
-             
+    def illegal_atk(self):
+        print("Sorry i attacked before time") #TODO go back to avoid pushing other robot or try to scape the mob
+    
+    def illegal_def(self):
+        print("sorry i get in ur way") #TODO go back to avoid pushing other robot or try to scape the mob
+    
+    def pushing(self):
+        print("yikes need to get out of the mob") #TODO go back to avoid pushing other robot or try to scape the mob
+
     
     def idle_state(self):
         self.get_logger().info("IDLE_STATE new states comming soon")
@@ -385,12 +420,4 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-
-
-
-    def wait_state(self):
-        self.get_logger().info("WAITING_CONNECTION waiting for Game Controller conection")
-
-        # if self.game_controller is not None:
-        #     # If reconnecting, return to previous status.
-        #     
+   
