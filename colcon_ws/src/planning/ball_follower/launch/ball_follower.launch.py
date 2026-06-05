@@ -21,7 +21,11 @@ def generate_launch_description():
             executable='ball_detector',
             name='ball_detector',
             parameters=[{
-                'show_debug': False,                
+                'hfov': 93.0,
+                'vfov': 101.0,
+                'head_z': 0.85,
+                'ball_radius': 0.07,
+                'show_debug': True,                
                 'model_path': model_path
             }],
             output='screen'),
