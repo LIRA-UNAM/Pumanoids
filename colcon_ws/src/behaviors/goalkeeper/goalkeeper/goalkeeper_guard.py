@@ -182,7 +182,7 @@ class GoalkeeperGuard(Node):
         self.goal_x = 0.0
 
         # Ajusta estos valores al ancho real que puede cubrir el robot
-        self.min_goal_y = -1,0
+        self.min_goal_y = -1.0
         self.max_goal_y = 1.0
 
         # Rango de tiempo razonable para hacer la predicción
