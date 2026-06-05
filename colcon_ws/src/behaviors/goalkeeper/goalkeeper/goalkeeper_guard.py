@@ -29,6 +29,8 @@ class GoalkeeperGuard(Node):
 
 
     def callback_ball(self, msg):
+        self.last_ball_time = self.get_clock().now()
+
         measured_x = msg.pose.position.x
         measured_y = msg.pose.position.y
 
@@ -101,25 +103,39 @@ class GoalkeeperGuard(Node):
             self.stop_robot()
             return
 
-        # Como el robot está en y = 0 de su propio marco,
-        # el error es directamente el y donde cruzará la pelota.
         error_y = self.predicted_goal_y
+
+        if abs(error_y) < self.goal_y_tolerance:
+            self.pid_y.reset()
+            self.stop_robot()
+
+            self.get_logger().info(
+                f"PID STOP: error_y={error_y:.3f}, "
+                f"tolerance={self.goal_y_tolerance:.3f}"
+            )
+            return
 
         control_y = self.pid_y.update(error_y, dt)
 
         cmd = Twist()
-
-        # Si el robot se mueve al lado contrario, cambia por -control_y
         cmd.linear.y = float(control_y)
 
         self.pub_cmd_vel.publish(cmd)
-        self.get_logger().info("Se publica velocidad")
 
         self.get_logger().info(
-            f"PID: target_y={self.predicted_goal_y:.3f}, "
-            f"error_y={error_y:.3f}, "
-            f"cmd_y={control_y:.3f}"
+            f"PID: error_y={error_y:.3f}, cmd_y={control_y:.3f}"
         )
+
+
+    def update_ball_timeout(self):
+        now = self.get_clock().now()
+        elapsed = (now - self.last_ball_time).nanoseconds / 1e9
+
+        if elapsed > self.ball_timeout:
+            self.has_ball = False
+            self.has_prediction = False
+            self.pid_y.reset()
+            self.stop_robot()
 
 
     def stop_robot(self):
@@ -159,12 +175,15 @@ class GoalkeeperGuard(Node):
         self.located_ball_flag = False
         self.has_ball = False
         self.has_prediction = False
+        self.last_ball_time = self.get_clock().now()
+        self.ball_timeout = 0.2
+        self.goal_y_tolerance = 0.07  # 5 cm
         # Como el robot está sobre la línea de portería, la portería está en x = 0
         self.goal_x = 0.0
 
         # Ajusta estos valores al ancho real que puede cubrir el robot
-        self.min_goal_y = -0.6
-        self.max_goal_y = 0.6
+        self.min_goal_y = -1,0
+        self.max_goal_y = 1.0
 
         # Rango de tiempo razonable para hacer la predicción
         self.min_prediction_time = 0.05
@@ -181,8 +200,8 @@ class GoalkeeperGuard(Node):
             kp=1.0,
             ki=0.0,
             kd=0.1,
-            output_min=-0.35,
-            output_max=0.35
+            output_min=-0.5,
+            output_max=0.5
         )
         self.last_control_time = self.get_clock().now()
         self.sub_ball = self.create_subscription(VisionObject, '/vision/ball', self.callback_ball, 1)
@@ -210,6 +229,10 @@ class GoalkeeperGuard(Node):
 
         while rclpy.ok():
 
+            
+            rclpy.spin_once(self, timeout_sec=0)
+            self.update_ball_timeout()        
+
             if state == SM_INIT:
                 self.get_logger().info("SM_INIT")
 
@@ -232,22 +255,27 @@ class GoalkeeperGuard(Node):
                 else:
                     state = SM_SEARCH_BALL
 
+
+
+
+
             elif state == SM_TRACK_BALL:
                 self.get_logger().info("SM_TRACK_BALL")
 
-                # En este estado ya hay pelota, pero puede o no venir hacia portería.
                 if not self.has_ball:
                     self.stop_robot()
                     self.pid_y.reset()
                     state = SM_SEARCH_BALL
 
                 elif self.has_prediction:
+                    self.control_goalkeeper_y()
                     state = SM_DEFEND
 
                 else:
-                    # Hay pelota, pero no hay trayectoria peligrosa o no se puede predecir.
                     self.stop_robot()
                     state = SM_TRACK_BALL
+
+
 
             elif state == SM_DEFEND:
                 self.get_logger().info("SM_DEFEND")
@@ -263,9 +291,10 @@ class GoalkeeperGuard(Node):
                     state = SM_TRACK_BALL
 
                 else:
-                    # Aquí se aplica el PID
                     self.control_goalkeeper_y()
-                    state = SM_TRACK_BALL
+                    state = SM_DEFEND
+
+
 
             elif state == SM_RECOVER:
                 self.get_logger().info("SM_RECOVER")
@@ -276,7 +305,7 @@ class GoalkeeperGuard(Node):
 
                 state = SM_SEARCH_BALL
 
-            rclpy.spin_once(self, timeout_sec=0)
+            
             time.sleep(0.02)
 
 
