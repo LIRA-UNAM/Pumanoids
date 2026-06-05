@@ -10,6 +10,9 @@
  * https://lira.unam.mx/
 */
 
+
+// To-to: convert to bgr8
+
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <jetson-utils/cudaColorspace.h>
@@ -19,7 +22,7 @@ class NV12ConverterNode : public rclcpp::Node {
 public:
     NV12ConverterNode() : Node("nv12_converter_node") {
         sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-            "/booster_camera_bridge/StereoNetNode/rectified_image", 10, 
+            "/image_left_raw", 10, 
             std::bind(&NV12ConverterNode::image_callback, this, std::placeholders::_1));
         pub_ = this->create_publisher<sensor_msgs::msg::Image>("/camera/color/image_raw", 10);
         RCLCPP_INFO(this->get_logger(), "GPU Converter Started with Memory Mapping...");
