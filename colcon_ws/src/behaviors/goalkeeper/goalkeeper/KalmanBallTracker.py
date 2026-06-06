@@ -2,7 +2,7 @@ import numpy as np
 
 
 class KalmanBallTracker:
-    def __init__(self, dt=0.033):
+    def __init__(self, dt=0.1):
         self.dt = dt
 
         # Estado: [x, y, vx, vy]
@@ -21,24 +21,33 @@ class KalmanBallTracker:
             [0, 0, 0, 1]
         ], dtype=float)
 
-        # Matriz de observación
-        # Solo medimos x, y
+        # Matriz de observación: x, y
         self.H = np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0]
         ], dtype=float)
 
         # Incertidumbre inicial
-        self.P = np.eye(4) * 1000.0
+        self.P = np.array([
+            [10,   0,    0,    0],
+            [0,    10,   0,    0],
+            [0,    0,    1000, 0],
+            [0,    0,    0,    1000]
+        ], dtype=float)
 
         # Ruido de medición
         self.R = np.array([
-            [5, 0],
-            [0, 5]
+            [2, 0],
+            [0, 2]
         ], dtype=float)
 
         # Ruido del modelo
-        self.Q = np.eye(4) * 0.1
+        self.Q = np.array([
+            [0.05, 0,    0,    0],
+            [0,    0.05, 0,    0],
+            [0,    0,    1.0,  0],
+            [0,    0,    0,    1.0]
+        ], dtype=float)
 
         # Matriz identidad
         self.I = np.eye(4)
