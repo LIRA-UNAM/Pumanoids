@@ -1,3 +1,11 @@
+# ---------------------------
+# This is the main launch file to use the ball_follower nodes.
+# ---------------------------
+# Other launch files that use or want to use the ball_follower nodes,
+# like the master launch, summon this.
+
+# NOTE: For testing, there are other launch files inside this package.
+
 import os
 from ament_index_python import get_package_share_directory
 from launch import LaunchDescription
@@ -10,12 +18,7 @@ def generate_launch_description():
         'yolov8_center_sys_low.engine' # <-- Change this to the model you want to use
     )
     return LaunchDescription([
-        Node(
-            package='boosterk1_image_proc',
-            executable='nv12_converter_node',
-            name='nv12_converter_node',
-            output='screen'
-        ),
+        # Vision node to detect field elements
         Node(
             package='new_ball_detector',
             executable='ball_detector',
@@ -24,16 +27,18 @@ def generate_launch_description():
                 'hfov': 93.0,
                 'vfov': 101.0,
                 'head_z': 0.85,
-                'ball_radius': 0.07,
-                'show_debug': True,                
+                'ball_radius': 0.07, # NOTE: RoboCup ball is 0.11 !!!!
+                'show_debug': True, # <-- Only set to True if testing through ethernet
                 'model_path': model_path
             }],
             output='screen'),
+        # To follow the ball with the head
         Node(
             package='ball_follower',
             executable='head_ball_follower',
             name='head_ball_follower',
             output='screen'),
+        # To follow the ball walking
         Node(
             package='ball_follower',
             executable='ball_follower',
