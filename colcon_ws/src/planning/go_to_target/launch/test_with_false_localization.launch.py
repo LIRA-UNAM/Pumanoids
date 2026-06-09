@@ -21,19 +21,11 @@ from launch_ros.actions import Node
 # And read the point with:
 # ros2 topic echo /carry_ball_to_goal/point
 
-def generate_launch_description():
-    return LaunchDescription([
-        # Include the twist control launch
-        # This runs the odom_to_tf node, that publishes pumas_odom->pumas_base_link
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(
-                get_package_share_directory('new_twist_to_t1'),
-                'launch',
-                't1_twist.launch.py'),
-            )
-        ),
+def launch_setup(context: LaunchContext, *args, **kwargs):
+    robot_name = LaunchConfiguration('robot').perform(context)
     
+    nodes = [
+
         # pumas_map->pumas_odom identity transform
         Node(
             package='tf2_ros',
@@ -65,5 +57,41 @@ def generate_launch_description():
                 'pumas_base_link'
             ]
         )
+    ]
+
+    if robot_name == 'k1':
+        nodes.append(
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(
+                    get_package_share_directory('new_twist_to_k1'),
+                    'launch',
+                    'k1_twist.launch.py'),
+                )
+            )
+        )
+
+    if robot_name == 't1':
+        nodes.append(
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(
+                    get_package_share_directory('new_twist_to_t1'),
+                    'launch',
+                    't1_twist.launch.py'),
+                )
+            )
+        )
+
+    return nodes
+
+def generate_launch_description():
+    return LaunchDescription([
+        DeclareLaunchArgument(
+            'robot',
+            default_value='t1',
+            description='Modelo del robot'
+        ),
+        OpaqueFunction(function=launch_setup)
     ])
 
