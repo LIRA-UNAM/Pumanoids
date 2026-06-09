@@ -70,6 +70,10 @@ install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
 )
 
+install(DIRECTORY models
+    DESTINATION share/${PROJECT_NAME}
+)
+
 if(BUILD_TESTING)
   find_library(TensorRT_LIB nvinfer PATHS /usr/lib/aarch64-linux-gnu REQUIRED)
   find_package(ament_lint_auto REQUIRED)
