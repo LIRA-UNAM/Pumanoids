@@ -75,7 +75,7 @@ class PlannerNode(Node):
         # --- PARAMETERS ---
         # robot_model
         self.declare_parameter('robot_model', 'k1')
-        self.robot_model_ = self.get_parameter('robot_model').get_parameter_value().string.value
+        self.robot_model_ = self.get_parameter('robot_model').get_parameter_value().string_value
         if self.robot_model_ == 'k1' or self.robot_model_ == 't1':
             self.get_logger().info(f"Selected robot: {self.robot_model_}")
         else:
@@ -87,7 +87,7 @@ class PlannerNode(Node):
         self.get_logger().info(f'Jugador {self.player_number} Listo')
 
         # start_position 
-        self.declare_parameter('start_position', [-2, -4, math.pi/2])
+        self.declare_parameter('start_position', [-2.0, -4.0, math.pi/2])
         self.start_position = Pose2D()
         self.start_position.x = self.get_parameter('start_position').value[0]
         self.start_position.y = self.get_parameter('start_position').value[1]
