@@ -13,12 +13,12 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
     robot_name = LaunchConfiguration('robot').perform(context)
     
     if robot_name == 'NONE':
-    print("\n" + "="*50)
-    print("[ERROR] Robot model not specified!")
-    print("Usage: ros2 launch surge_et_ambula state_machine.launch.py robot:=<model_name>")
-    print("Example: ros2 launch surge_et_ambula state_machine.launch.py robot:=k1")
-    print("="*50 + "\n")
-    sys.exit(1)
+        print("\n" + "="*50)
+        print("[ERROR] Robot model not specified!")
+        print("Usage: ros2 launch surge_et_ambula state_machine.launch.py robot:=<model_name>")
+        print("Example: ros2 launch surge_et_ambula state_machine.launch.py robot:=k1")
+        print("="*50 + "\n")
+        sys.exit(1)
 
 
     yaml_path = os.path.join(
@@ -53,21 +53,8 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
                 get_package_share_directory('ball_follower'),
                 'launch',
                 'ball_follower.launch.py'),
-            )
-        ),
-        Node(
-            package='new_ball_detector',
-            executable='ball_detector',
-            name='ball_detector',
-            parameters=[{
-                'hfov': params['camera']['hfov_deg'],
-                'vfov': params['camera']['vfov_deg'],
-                'head_z': params['head']['height_m'],
-                'ball_radius': 0.07, # NOTE: RoboCup ball is 0.11 !!!!
-                'show_debug': True, # <-- Only set to True if testing through ethernet
-                'model_path': model_path
-            }],
-            output='screen'
+            ),
+            launch_arguments={'robot': robot_name}.items()
         ),
         Node(
             package='carry_ball_to_goal',
@@ -103,12 +90,6 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
     # ROBOT-DEPENDENT NODES
     if robot_name == 'k1':
         nodes.append(
-            Node(
-                package='boosterk1_image_proc',
-                executable='nv12_converter_node',
-                name='nv12_converter_node',
-                output='screen',
-            ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     os.path.join(

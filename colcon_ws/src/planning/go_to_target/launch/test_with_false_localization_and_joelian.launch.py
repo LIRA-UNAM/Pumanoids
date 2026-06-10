@@ -80,7 +80,7 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
     ]
 
     if robot_name == 'k1':
-        nodes.append(
+        nodes.extend(
             Node(
                 package='boosterk1_image_proc',
                 executable='nv12_converter_node',
