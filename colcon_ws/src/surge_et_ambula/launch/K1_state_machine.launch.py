@@ -37,7 +37,12 @@ def generate_launch_description():
                 'ball_follower.launch.py'),
             )
         ),
-
+        Node(
+            package='boosterk1_image_proc',
+            executable='nv12_converter_node',
+            name='nv12_converter_node',
+            output='screen'
+        ),
         Node(
             package = 'game_planner',
             executable = 'game_planner',

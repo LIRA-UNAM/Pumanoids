@@ -11,7 +11,7 @@ import rclpy
 import socket
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 from rclpy.node import Node
-from tf2_ros import TransformException 
+from tf2_ros import TransformException, LookupException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from game_planner import gamestate
@@ -25,7 +25,7 @@ SOURCE_PORT = 3838 # Game Controller broadcast messages through port 3838
 DESTINATION_PORT = 3939 # This node sends messages to Game Controller through port 3939
 COACH_PORT = 3839 # To communicate with the coach
 
-# -- RETURN_MSGS --
+# --- RETURN_MSGS ---
 PENALISE=                    0
 UNPENALISE=                  1
 ALIVE=                       2
@@ -33,26 +33,26 @@ GOALKEEPER=                  3
 INTERRUPTION_READY=          4
 
 
-# The states of the node 
+# --- STATES OF THE NODE ---
 class State(Enum):
 
-        # -- MAIN STATES --
+    # Main states
     
-    WAITING_CONNECTION = 0 # Not receiving any signal from the Game Controller
-    STATE_INITIAL = 1 # Game controller STATE_READY. The initial state of Game Controller
-    STATE_READY = 2 # The robots move from the side to their kickoff positions
-    STATE_SET = 3 # Game controller STATE_SET. Robots must not move in this state.
-    STATE_PLAYING = 4 # To follow the ball detected by the robot's camrea. If goalkeeper, run the defense node.
-    STATE_FINISHED = 5 # THE END
+    WAITING_CONNECTION= 0 # Not receiving any signal from the Game Controller
+    STATE_INITIAL=      1 # The initial state of Game Controller
+    STATE_READY=        2 # The robots move from the side to their kickoff positions
+    STATE_SET=          3 # Game controller STATE_SET. Robots must not move in this state.
+    STATE_PLAYING=      4 # Main game state. Play or goalkeep.
+    STATE_FINISHED=     5 # The end
 
-        # -- SUB STATES --
+    # Sub states
 
-    STATE_NORMAL=6
-    STATE_PENALTYSHOOT=7
-    STATE_OVERTIME=8
-    STATE_TIMEOUT=9
-    STATE_DIRECT_FREEKICK=10
-    STATE_INDIRECT_FREEKICK=11
+    STATE_NORMAL=               6
+    STATE_PENALTYSHOOT=         7
+    STATE_OVERTIME=             8
+    STATE_TIMEOUT=              9
+    STATE_DIRECT_FREEKICK=      10
+    STATE_INDIRECT_FREEKICK=    11
     STATE_PENALTYKICK=12
     STATE_CORNERKICK=13
     STATE_GOALKICK=14
@@ -60,7 +60,7 @@ class State(Enum):
     DROPBALL=16
     UNKNOWN=17
 
-        # -- DEBUG STATES --
+    # Debug states
 
     IDLE = 18 # IDLE
     ERROR = 19 # Not good
@@ -71,38 +71,22 @@ class PlannerNode(Node):
         super().__init__('game_planner')
         self.get_logger().info('game_planner iniciado. Esperando...') 
         self.get_logger().info('Ctrl+C para cerrar.')
-
-        # -- QoS PROFILES --
-        qos_profile_for_enabling = QoSProfile(
-            reliability=ReliabilityPolicy.RELIABLE,
-            history=HistoryPolicy.KEEP_LAST,
-            durability=DurabilityPolicy.TRANSIENT_LOCAL,
-            depth=10
-        )
         
-        # -- TF2 --
-        self.target_frame = self.declare_parameter('pumas_map', 'pumas_base_link').get_parameter_value().string_value
-        self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self)
+        # --- PARAMETERS ---
+        # robot_model
+        self.declare_parameter('robot_model', 'k1')
+        self.robot_model_ = self.get_parameter('robot_model').get_parameter_value().string.value
+        if self.robot_model_ == 'k1' or self.robot_model_ == 't1':
+            self.get_logger().info(f"Selected robot: {self.robot_model_}")
+        else:
+            self.get_logger().error(f"Unknown robot model: {self.robot_model_}")
 
-        # -- PUBLISHERS --
-        self.head_ball_follower_enable_publisher = self.create_publisher(Bool, '/head_ball_follower/enable', qos_profile_for_enabling)
-        self.ball_follower_enable_publisher = self.create_publisher(Bool, '/ball_follower/enable', qos_profile_for_enabling)
-        self.target_position_publisher = self.create_publisher(Pose2D, '/go_to_target/target', qos_profile_for_enabling)
-        
-        # -- SUBSCRIBERS --
-
-        # carry_ball_to_goal
-        self.carry_ball_to_goal_pose_subscriber = self.create_subscription(Pose2D, '/carry_ball_to_goal/point', self.carry_ball_callback, qos_profile_for_enabling)
-        
-        # -- PARAMETERS --
-
-        #player_number
+        # player_number
         self.declare_parameter('player_number', 1)
         self.player_number = self.get_parameter('player_number').value
         self.get_logger().info(f'Jugador {self.player_number} Listo')
 
-        #start position 
+        # start_position 
         self.declare_parameter('start_position', [-2, -4, math.pi/2])
         self.start_position = Pose2D()
         self.start_position.x = self.get_parameter('start_position').value[0]
@@ -110,12 +94,12 @@ class PlannerNode(Node):
         self.start_position.theta = self.get_parameter('start_position').value[2]
         self.get_logger().info(f'posicion inicial(x,y): {self.start_position}')
 
-        #team_number
+        # team_number
         self.declare_parameter('team_number', 0)
         self.team_number = self.get_parameter('team_number').value
         self.get_logger().info(f'Equipo número {self.team_number} PUMANOIDS')
 
-        #Is goalkeeper?
+        # Is goalkeeper?
         self.declare_parameter('goalkeeper', False)
         self.goalkeeper = self.get_parameter('goalkeeper').value
         self.get_logger().info(f'Portero? {self.goalkeeper} ')
@@ -130,8 +114,52 @@ class PlannerNode(Node):
         self.kick_robot = self.get_parameter('kick').value
         self.get_logger().info(f'Irá a por el kick para los subestados que lo necesiten? {self.kick_robot} ')
 
-        # -- SERVICES CLIENTS --
+        # --- QoS PROFILES ---
+        qos_profile_for_enabling = QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            history=HistoryPolicy.KEEP_LAST,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            depth=10
+        )
 
+        # --- TF2 ---
+        self.target_frame = self.declare_parameter('pumas_map', 'pumas_base_link').get_parameter_value().string_value
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
+        # --- PUBLISHERS ---
+        self.head_ball_follower_enable_publisher = self.create_publisher(
+                Bool,
+                '/head_ball_follower/enable',
+                qos_profile_for_enabling)
+
+        self.ball_follower_enable_publisher = self.create_publisher(
+                Bool,
+                '/ball_follower/enable',
+                qos_profile_for_enabling)
+
+        self.target_position_publisher = self.create_publisher(
+                Pose2D,
+                '/go_to_target/target',
+                qos_profile_for_enabling)
+        
+        # --- SUBSCRIBERS ---
+        # carry_ball_to_goal
+        self.carry_ball_to_goal_pose_subscriber = self.create_subscription(
+                Pose2D,
+                '/carry_ball_to_goal/point',
+                self.carry_ball_callback,
+                qos_profile_for_enabling)
+        
+        # go_to_target success
+        self.target_arrive_success = self.create_subscription(
+                Bool,
+                '/go_to_target/success',
+                self.go_to_target_success_callback,
+                qos_profile_for_enabling)
+        
+
+        # --- SERVICES CLIENTS ---
         #Getup service TODO for booster T1
         self.getup_client = self.create_client(RpcService, '/booster_rpc_service')
         while not self.getup_client.wait_for_service(timeout_sec=1.0):
@@ -141,38 +169,46 @@ class PlannerNode(Node):
         self.getup_req.msg.api_id = 2008
         self.getup_req.msg.body = ""
 
-        # VARIABLES
+        # --- TIMERS ---
+        # State machine
+        self.timer = self.create_timer(0.1, self.rustic_smach)
+
+        # tf2
+        self.tf_timer = self.create_timer(0.15, self.tf_callback)
+
+        # --- VARIABLES ---
+        # Game Controller
         self.host ="0.0.0.0" # Always watching any IP
         self.move_ball = False
         self.game_controller = None
         self.target_team = None
+        self.team_in_array = 0 # Position of our team in the array info of game controller 
         self.connection_timeout = 0.7 # <-- Adjust this to set the connection tolerance in seconds :)
         self.last_packet_time = self.get_clock().now()
-        self.timer = self.create_timer(0.1, self.rustic_smach) # Timer for the rustic_smach function.
+        
+        # State machine
         self.current_state = State.WAITING_CONNECTION
         self.sub_state = State.STATE_NORMAL
         self.last_available_state = State.WAITING_CONNECTION
         self.first_message = True
-        self.team_in_array = 0 # Position of our team in the array info of game controller 
+        
+        # Positioning
+        self.go_to_target_success = False
+        self.current_robot_position = None
         self.carry_ball_position = None # Position from carry_ball_to_goal node
-        # -- SOCKETS --
+
+        # --- SOCKETS ---
         #Broadcast from game_controller
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.server_socket.bind((self.host,SOURCE_PORT))
-        
         self.server_socket.setblocking(False)
-    # -- CALLBACKS --    
+        
     
-    def carry_ball_callback(self, msg):
-        self.carry_ball_position = (msg.x, msg.y, msg.theta)
-
-    
-    # -- SERVICE REQUEST --
-
+    # Service request
     def send_getup_request(self):
         self.getup_res = self.getup_client.call_async(self.getup_req)
     
-
+    # State machine method
     def rustic_smach(self):
         self.send_getup_request() # Check if is fall and getup if so
         if self.getup_res.done():
@@ -185,8 +221,6 @@ class PlannerNode(Node):
             except Exception as e:
                 self.get_logger().error(f'Error: {e}')
                 self.current_state = self.error_state
-
-
 
         try:
             # Loop to get the latest packet and clear the buffer
@@ -303,16 +337,6 @@ class PlannerNode(Node):
     def wait_state(self):
         self.get_logger().info("WAITING_CONNECTION waiting for Game Controller conection")
 
-        # if self.game_controller is not None:
-        #     # If reconnecting, return to previous status.
-        #     if self.last_available_state != State.WAITING_CONNECTION:
-        #         self.get_logger().debug("Reconnecting")
-        #         self.current_state = self.last_available_state
-        #     # If not, means is the first connection
-        #     else:
-        #         self.current_state = State.STATE_INITIAL
-        #         self.last_available_state = self.current_state
-
     def start_state(self):
         self.get_logger().info("START_STATE waiting for ready from Game Controller")
 
@@ -330,13 +354,34 @@ class PlannerNode(Node):
             if self.goalkeeper:
                 print("goal keeping") #TODO goal keeper guard enable publisher
             else:
-                print("Following the ball") #TODO ball follower enable and a way to not crash ones with others
+                print("Following the ball")
+                if self.carry_ball_position is not None and self.current_robot_position is not None:
+                    # Calculate distante to the joelian point
+                    joelian_point = [self.carry_ball_position[0], self.carry_ball_position[1]]
+                    robot_position = [self.current_robot_position[0], self.current_robot_position[1]]
+                    self.get_logger().debug(f"Dist to joelian point: {math.dist(joelian_point, robot_position)}")
 
-                if self.carry_ball_position.y <  
-                self.head_ball_follower_enable_publisher.publish(Bool(data = True))
-                self.ball_follower_enable_publisher.publish(Bool(data = True))
-                #TODO do the arrive to the ball node 
-                #TODO do the evade other humanoids or pass ball node
+                    # If the robot arraived at the joelian point, start pushing the ball (ball_follower)
+                    if self.go_to_target_success:
+                        self.get_logger().info("Pushing the ball")
+                        self.head_ball_follower_enable_publisher.publish(Bool(data = True))
+                        self.ball_follower_enable_publisher.publish(Bool(data = True))
+
+                    # If the robot is far from the joelian point, go to it.
+                    else:
+                        self.head_ball_follower_enable_publisher.publish(Bool(data = True))
+                        self.ball_follower_enable_publisher.publish(Bool(data = False))
+
+                        target = Pose2D()
+                        target.x = carry_ball_position[0]
+                        target.y = carry_ball_position[1]
+                        target.theta = carry_ball_position[2]
+                        self.target_position_publisher.publish(target)
+                        #TODO do the evade other robots
+                else:
+                    self.head_ball_follower_enable_publisher.publish(Bool(data = True))
+                    self.ball_follower_enable_publisher.publish(Bool(data = False))
+
 
         else:
             #TODO another way to decied wich robot do the kickoff
@@ -405,6 +450,30 @@ class PlannerNode(Node):
     def error_state(self):
         self.get_logger().error("error_state")
         self.current_state = State.IDLE
+
+    # --- CALLBACKS ---
+    def carry_ball_callback(self, msg):
+        self.carry_ball_position = (msg.x, msg.y, msg.theta)
+
+    def go_to_target_success_callback(self, msg):
+        self.go_to_target_success = msg.data
+
+    # To get and store the robot absolute position
+    def tf_callback(self):
+        try:
+            t = self.tf_buffer.lookup_transform(
+                'pumas_map',
+                'pumas_base_link',
+                rclpy.time.Time())
+            self.current_robot_position = {
+                    t.transform.translation.x,
+                    t.transform.translation.y,
+                    math.atan2(t.transform.rotation.z, t.transform.rotation.w)*2
+                    }
+        except (LookupException):
+            self.get_logger().info('Waiting for pumas_map->pumas_base_link')
+        except TransformException as ex:
+            self.get_logger().error(f'TF2 exception: {ex}')
 
 
 def main(args=None):

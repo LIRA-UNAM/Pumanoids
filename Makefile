@@ -46,3 +46,7 @@ startg1:
 	@echo "Launching ..."
 	source $(PUMANOIDS_PROJECT_PATH)/install/setup.bash
 	ros2 launch surge_et_ambula g1_state_machine.launch.py
+
+k1:
+	@echo "Building ..."
+	cd $(PUMANOIDS_PROJECT_PATH) && colcon build --packages-skip gazebo_envs dynamixel new_twist_to_t1 social_navigation

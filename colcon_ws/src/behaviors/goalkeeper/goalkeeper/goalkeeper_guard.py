@@ -215,7 +215,7 @@ class GoalkeeperGuard(Node):
         self.has_ball = False
         self.has_prediction = False
         self.last_ball_time = self.get_clock().now()
-        self.ball_timeout = 0.2
+        self.ball_timeout = 0.4
         self.goal_y_tolerance = 0.07  # 5 cm
         self.target_y = 0.0
         self.control_mode = "search"
@@ -227,8 +227,8 @@ class GoalkeeperGuard(Node):
         self.max_goal_y = 1.0
 
         # Rango de tiempo razonable para hacer la predicción
-        self.min_prediction_time = 0.05
-        self.max_prediction_time = 2.0
+        self.min_prediction_time = 0.1
+        self.max_prediction_time = 3.0
 
         self.move = 0.0
         self.current_head_pan  = 0
@@ -238,7 +238,7 @@ class GoalkeeperGuard(Node):
         self.tolerance = 0
         self.kalman = KalmanBallTracker(dt=0.1)
         self.pid_y = PIDController(
-            kp=1.0,
+            kp=0.7,
             ki=0.0,
             kd=0.1,
             output_min=-0.5,
