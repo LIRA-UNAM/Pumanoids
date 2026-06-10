@@ -31,52 +31,76 @@ class GoalkeeperGuard(Node):
     def callback_ball(self, msg):
         self.last_ball_time = self.get_clock().now()
 
+        # Datos crudos enviados por visión
         measured_x = msg.pose.position.x
         measured_y = msg.pose.position.y
 
         self.measured_x = measured_x
         self.measured_y = measured_y
 
-        state = self.kalman.step(measured_x, measured_y)
+        # Kalman se mantiene actualizado siempre para mantener una estimación válida de posición y velocidad.
+        estimated_state = self.kalman.step(measured_x, measured_y)
 
-        self.ball_x = state["x"]
-        self.ball_y = state["y"]
-        self.ball_vx = state["vx"]
-        self.ball_vy = state["vy"]
+        self.ball_x = estimated_state["x"]
+        self.ball_y = estimated_state["y"]
+        self.ball_vx = estimated_state["vx"]
+        self.ball_vy = estimated_state["vy"]
 
         self.has_ball = True
 
-        prediction = self.predict_goal_crossing()
+        # Solo predecir si la pelota va hacia la portería.
+        if self.is_ball_approaching_goal():
+            prediction = self.predict_goal_crossing()
 
-        if prediction is not None:
-            self.predicted_goal_y, self.t_cross = prediction
-            self.has_prediction = True
+            if prediction is not None:
+                self.predicted_goal_y, self.t_cross = prediction
+                self.has_prediction = True
+
+                self.get_logger().info(
+                    f"DEFEND: "
+                    f"raw_x={self.measured_x:.3f}, "
+                    f"raw_y={self.measured_y:.3f}, "
+                    f"vx={self.ball_vx:.3f}, "
+                    f"vy={self.ball_vy:.3f}, "
+                    f"y_cross={self.predicted_goal_y:.3f}, "
+                    f"t_cross={self.t_cross:.3f}"
+                )
+            else:
+                self.has_prediction = False
+
+        else:
+            # No se calcula ninguna trayectoria de cruce.
+            # El robot seguirá el dato crudo de Y.
+            self.has_prediction = False
+            self.t_cross = 0.0
 
             self.get_logger().info(
-                f"Kalman: x={self.ball_x:.3f}, y={self.ball_y:.3f}, "
-                f"vx={self.ball_vx:.3f}, vy={self.ball_vy:.3f}, "
-                f"y_cross={self.predicted_goal_y:.3f}, "
-                f"t_cross={self.t_cross:.3f}"
+                f"TRACK RAW: "
+                f"raw_x={self.measured_x:.3f}, "
+                f"raw_y={self.measured_y:.3f}, "
+                f"vx={self.ball_vx:.3f}"
             )
-        else:
-            self.has_prediction = False
+
+
+
+    def is_ball_approaching_goal(self):
+        # Determina si la pelota se mueve hacia el plano de la portería. Se asume que la portería está en x = 0
+        minimum_approach_speed = 0.05  # m/s
+        return ((self.ball_x > self.goal_x) and (self.ball_vx < -minimum_approach_speed))
 
 
 
     def predict_goal_crossing(self):
-        # Predice en qué y cruzará la pelota la línea de portería. Como el robot está sobre la línea de portería, la portería está en x = 0 respecto al robot.
-
+        # Predice dónde cruzará la pelota la línea de portería. solo debe llamarse si la pelota se acerca.
         x = self.ball_x
         y = self.ball_y
         vx = self.ball_vx
         vy = self.ball_vy
 
-        # Si vx >= 0, la pelota no viene hacia el robot/portería
-        if vx >= -0.001:
+        if abs(vx) < 0.001:
             return None
 
-        # Tiempo para llegar al plano x = 0
-        t_cross = -x / vx
+        t_cross = (self.goal_x - x) / vx
 
         if t_cross <= self.min_prediction_time:
             return None
@@ -85,10 +109,8 @@ class GoalkeeperGuard(Node):
             return None
 
         predicted_y = y + vy * t_cross
-
-        # Limitar al rango físico que puede cubrir el portero
         predicted_y = max(self.min_goal_y, min(self.max_goal_y, predicted_y))
-
+        
         return predicted_y, t_cross
 
 
@@ -105,15 +127,15 @@ class GoalkeeperGuard(Node):
             self.control_mode = "search"
             return
 
-        # Si hay predicción válida, defiende el punto donde cruzará la pelota.
         if self.has_prediction:
+            # Pelota acercándose: usar punto futuro calculado con Kalman.
             self.target_y = self.predicted_goal_y
             self.control_mode = "defend"
 
-        # Si no hay predicción, sigue la pelota directamente en Y.
         else:
-            self.target_y = self.ball_y
-            self.control_mode = "track"
+            # Pelota sin acercarse: seguir inmediatamente el dato crudo de cámara.
+            self.target_y = self.measured_y
+            self.control_mode = "track_raw"
 
         error_y = self.target_y
 
@@ -123,9 +145,9 @@ class GoalkeeperGuard(Node):
 
             self.get_logger().info(
                 f"PID STOP [{self.control_mode}]: "
+                f"raw_y={self.measured_y:.3f}, "
                 f"target_y={self.target_y:.3f}, "
-                f"error_y={error_y:.3f}, "
-                f"tolerance={self.goal_y_tolerance:.3f}"
+                f"error_y={error_y:.3f}"
             )
             return
 
@@ -133,13 +155,13 @@ class GoalkeeperGuard(Node):
 
         cmd = Twist()
         cmd.linear.y = float(control_y)
-
         self.pub_cmd_vel.publish(cmd)
 
         self.get_logger().info(
             f"PID [{self.control_mode}]: "
+            f"raw_y={self.measured_y:.3f}, "
+            f"kalman_y={self.ball_y:.3f}, "
             f"target_y={self.target_y:.3f}, "
-            f"error_y={error_y:.3f}, "
             f"cmd_y={control_y:.3f}"
         )
 
@@ -214,7 +236,7 @@ class GoalkeeperGuard(Node):
         self.center_x = 640
         self.center_y = 360
         self.tolerance = 0
-        self.kalman = KalmanBallTracker(dt=0.033)
+        self.kalman = KalmanBallTracker(dt=0.1)
         self.pid_y = PIDController(
             kp=1.0,
             ki=0.0,
