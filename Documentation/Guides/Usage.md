@@ -55,16 +55,16 @@ Here's a breakdown of the elements the master launch runs:
 | :--- | :--- |
 | 🔶 [**`X1_state_machine.launch.py`**](/colcon_ws/src/surge_et_ambula/documentation/X1_state_machine.md) | Master launch file. |
 | ├── 🟢 [`game_planner`](/colcon_ws/src/planning/game_planner/documentation/game_planner.md) | General state machine. |
-| ├── 🟢 [`position_start`](/colcon_ws/src/planning/position_start/README.md) | Positioning at startup. |
+| ├── 🟢 [`go_to_target`](/colcon_ws/src/planning/go_to_target/README.md) | Positioning in the field. |
 | ├── 🟢 [`nv12_converter_node`](/colcon_ws/src/vision/boosterk1_image_proc/README.md) | Only for Booster K1. Video encoder conversion. |
 | ├── 🔶 [**`x1_twist.launch.py`**](/colcon_ws/src/hardware/Documentation/x1_twist.md) | Movement launch file. |
 | │&emsp;&emsp;├── 🟢 [`twist_to_x1`](/colcon_ws/src/hardware/Documentation/twist_to_x1.md) | Robot walking. |
 | │&emsp;&emsp;├── 🟢 [`pantilt_to_x1`](/colcon_ws/src/hardware/Documentation/pantilt_to_x1.md) | Head movement. |
 | │&emsp;&emsp;└── 🟢 [`odom_to_tf`](/colcon_ws/src/hardware/Documentation/odom_to_tf.md) | Odometry transformation. |
 | └── 🔶 [**`ball_follower.launch.py`**](/colcon_ws/src/planning/ball_follower/documentation/ball_follower_launch.md) | Ball following launch file. |
-| &emsp;&emsp;&nbsp;&nbsp;&nbsp;├── 🟢 [`ball_detector.py`](/colcon_ws/src/vision/ball_detector/documentation/ball_detector.md) | Ball detection through CV. |
-| &emsp;&emsp;&nbsp;&nbsp;&nbsp;├── 🟢 [`ball_follower.py`](/colcon_ws/src/planning/ball_follower/documentation/ball_follower.md) | Walking towards the ball. |
-| &emsp;&emsp;&nbsp;&nbsp;&nbsp;└── 🟢 [`head_ball_follower.py`](/colcon_ws/src/planning/ball_follower/documentation/head_ball_follower.md) | Following the ball with the head. |
+| &emsp;&emsp;&nbsp;&nbsp;&nbsp;├── 🟢 [`ball_detector`](/colcon_ws/src/vision/ball_detector/documentation/ball_detector.md) | Ball detection through CV. |
+| &emsp;&emsp;&nbsp;&nbsp;&nbsp;├── 🟢 [`ball_follower`](/colcon_ws/src/planning/ball_follower/documentation/ball_follower.md) | Walking towards the ball. |
+| &emsp;&emsp;&nbsp;&nbsp;&nbsp;└── 🟢 [`head_ball_follower`](/colcon_ws/src/planning/ball_follower/documentation/head_ball_follower.md) | Following the ball with the head. |
 
 > ℹ️ For more details on the master launch, see the [master launch documentation](/colcon_ws/src/surge_et_ambula/documentation/X1_state_machine.md).
 

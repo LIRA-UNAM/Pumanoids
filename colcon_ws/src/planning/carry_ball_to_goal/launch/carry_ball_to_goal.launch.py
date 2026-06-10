@@ -58,7 +58,7 @@ def generate_launch_description():
             parameters=[{
                 'map_yaml': map_yaml,
                 'attack_goal': 'negative_y',
-                'distance_from_ball_m': 1.25,
+                'distance_from_ball_m': 1.25, # 1.25 for testing. 0.5 for real game
                 'ball_pose_topic': '/vision/map_ball',
             }],
             output='screen',

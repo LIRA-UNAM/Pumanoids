@@ -70,6 +70,21 @@ cd Pumanoids
 
 Then, follow the instructions in the [Installation Guide](/Documentation/Guides/Installation.md) to set up the **development environment** and install the necessary **dependencies**.
 
+## Building
+
+After cloning the repository and installing the dependencies, build the project at the root of the workspace:
+
+```bash
+cd colcon_ws/
+colcon build
+```
+
+If the build was successful, source the workspace:
+
+```bash
+source install/setup.bash
+```
+
 ## Usage
 
 After initializing the environment, run the following command to launch the main nodes:
