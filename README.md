@@ -89,23 +89,13 @@ source install/setup.bash
 
 After initializing the environment, run the following command to launch the main nodes:
 
-### For booster T1:
-
 ```bash
-ros2 launch surge_et_ambula T1_state_machine.launch.py
+ros2 launch surge_et_ambula state_machine.launch.py robot:=<robot_model>
 ```
 
-### For booster K1:
-
-```bash
-ros2 launch surge_et_ambula K1_state_machine.launch.py
-```
-
-### For Unitree G1:
-
-```bash
-ros2 launch surge_et_ambula G1_state_machine.launch.py
-```
+where `<robot_model>` can be:
+- `k1`
+- `t1`
 
 ---
 
