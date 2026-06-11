@@ -1,0 +1,10 @@
+float64 ball_x
+float64 ball_y
+float64 kick_dir
+float64 goal_x
+float64 goal_y
+float64 robot_theta_to_field
+float64 power
+---
+bool success
+string message
