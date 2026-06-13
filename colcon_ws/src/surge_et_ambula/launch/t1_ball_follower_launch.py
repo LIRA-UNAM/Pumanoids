@@ -1,6 +1,4 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 def generate_launch_description():
@@ -8,16 +6,16 @@ def generate_launch_description():
         Node(
             package='ball_detector',
             executable='ball_detector',
-            name='ball_detector',
-            output='screen'),
+            name='ball_detector',),
+#            output='screen'),
         Node(
             package='ball_follower',
             executable='head_ball_follower',
-            name='head_ball_follower',
-            output='screen'),
+            name='head_ball_follower',),
+#            output='screen'),
         Node(
             package='ball_follower',
             executable='ball_follower',
-            name='ball_follower',
-            output='screen')
+            name='ball_follower',),
+#            output='screen')
     ])
