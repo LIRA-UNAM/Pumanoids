@@ -66,7 +66,7 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
                 'distance_from_ball_m': 1.25, # 1.25 for testing. 0.5 for real game
                 'ball_pose_topic': '/vision/map_ball',
             }],
-            output='screen',
+#            output='screen',
         ),
         Node(
             package = 'game_planner',
@@ -77,6 +77,8 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
             parameters=
             [
                 {
+
+                    "start_position": [float(i) for i in configs['start_position']],
                     "player_number":configs['player_number'], 
                     "team_number":configs['team_number'], 
                     "goalkeeper":configs['goalkeeper'], 
