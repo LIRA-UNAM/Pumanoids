@@ -169,7 +169,7 @@ std::vector<Detection> BallDetectorNode::angularPrune(
     std::vector<Candidate> candidates;
     candidates.reserve(dets.size());
     for (auto & d : dets) {
-        candidates.push_back({d, computeAngle(d.center_x * img_width, img_width)});
+        candidates.push_back({d, computeAngle(d.center_x, img_width)});
     }
     std::sort(
             candidates.begin(), candidates.end(),
@@ -194,14 +194,29 @@ std::vector<Detection> BallDetectorNode::angularPrune(
     return result;
 }
 
+// double BallDetectorNode::computeAngle(double img_x, int img_width)
+// {
+//     double norm_x = (img_x - img_width / 2.0) / (img_width / 2.0);
+//     double alpha_cam = -(norm_x * (hfov / 2.0));
+//     double alpha_body = alpha_cam + current_head_pan_;
+//     return std::atan2(std::sin(alpha_body), std::cos(alpha_body));
+// }
 double BallDetectorNode::computeAngle(double img_x, int img_width)
 {
-    double norm_x = (img_x - img_width / 2.0) / (img_width / 2.0);
-    double alpha_cam = -(norm_x * (hfov / 2.0));
+    // 1. Calcular la distancia focal simulada en píxeles usando el HFOV real
+    double f_x = (img_width / 2.0) / std::tan(hfov / 2.0);
+
+    // 2. Calcular el ángulo real relativo a la cámara (Trigonométrico, no lineal)
+    // Nota: El signo negativo depende de tu convención. Si la derecha es negativo en ROS, se queda el '-'
+    double delta_x = (img_width / 2.0) - img_x; 
+    double alpha_cam = std::atan2(delta_x, f_x);
+
+    // 3. Combinar con el PAN actual de la cabeza
     double alpha_body = alpha_cam + current_head_pan_;
+
+    // 4. Normalizar el ángulo entre -PI y PI
     return std::atan2(std::sin(alpha_body), std::cos(alpha_body));
 }
-
 void BallDetectorNode::jointStateRequest()
 {
     if (!joint_client_->service_is_ready()) {
