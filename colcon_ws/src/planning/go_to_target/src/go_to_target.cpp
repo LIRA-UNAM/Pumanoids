@@ -119,6 +119,8 @@ class GoToTarget : public rclcpp::Node
         void target_callback(const geometry_msgs::msg::Pose2D::SharedPtr msg)
         {
             RCLCPP_INFO(this->get_logger(), "Target point x= '%.3f' y= '%.3f'", msg->x, msg->y);
+            success.data = false;
+            success_publisher->publish(success);
             new_target = true;
             enable = true;
             target = *msg;
