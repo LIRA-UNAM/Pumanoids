@@ -141,7 +141,7 @@ class PlannerNode(Node):
         self.target_position_publisher = self.create_publisher(
                 Pose2D,
                 '/go_to_target/target',
-                qos_profile_for_enabling)
+                10)
         
         # --- SUBSCRIBERS ---
         # carry_ball_to_goal
@@ -149,21 +149,21 @@ class PlannerNode(Node):
                 Pose2D,
                 '/carry_ball_to_goal/point',
                 self.carry_ball_callback,
-                qos_profile_for_enabling)
+                10)
         
         # go_to_target success
         self.target_arrive_success = self.create_subscription(
                 Bool,
                 '/go_to_target/success',
                 self.go_to_target_success_callback,
-                qos_profile_for_enabling)
+                10)
         
         # map_ball localization
         self.ball_position_subscriber = self.create_subscription(
                 Pose2D,
                 '/vision/map_ball',
                 self.map_ball_callback,
-                qos_profile_for_enabling)
+                10)
 
         # --- SERVICES CLIENTS ---
         self.getup_client = self.create_client(RpcService, '/booster_rpc_service')
@@ -186,6 +186,7 @@ class PlannerNode(Node):
         self.host ="0.0.0.0" # Always watching any IP
         self.move_ball = False
         self.game_controller = None
+        self.ball_position = None
         self.target_team = None
         self.team_in_array = 0 # Position of our team in the array info of game controller 
         self.connection_timeout = 0.7 # <-- Adjust this to set the connection tolerance in seconds :)
@@ -224,7 +225,7 @@ class PlannerNode(Node):
                     self.get_logger().debug("Robot no se puede levantar ")
                     self.current_state = self.error_state
             except Exception as e:
-                self.get_logger().error(f'Error: {e}')
+  #              self.get_logger().error(f'Error: {e}')
                 self.current_state = self.error_state
 
         try:
@@ -233,7 +234,7 @@ class PlannerNode(Node):
             while True:
                 # Attempts to read up to 1024 bytes from the UDP socket.
                 data, addr = self.server_socket.recvfrom(1024)
-                self.get_logger().debug(f"Received data from {addr}")
+#                self.get_logger().debug(f"Received data from {addr}")
                 # Stores the data.
                 self.game_controller = gamestate.GameState.parse(data)
                 if self.first_message:
@@ -251,10 +252,10 @@ class PlannerNode(Node):
                 gc_ip = addr[0]
                 #Message with number and if is or not goalkeeper
                 return_message = gamestate.ReturnData.build(dict(
-                version=gamestate.GAME_CONTROLLER_RESPONSE_VERSION,
-                team=self.team_number,
-                player=self.player_number,
-                message=GOALKEEPER if self.goalkeeper else ALIVE
+                    version=gamestate.GAME_CONTROLLER_RESPONSE_VERSION,
+                    team=self.team_number,
+                    player=self.player_number,
+                    message=GOALKEEPER if self.goalkeeper else ALIVE
                 )) 
                 #Send message
                 self.server_socket.sendto(return_message, (gc_ip, DESTINATION_PORT))
@@ -347,7 +348,8 @@ class PlannerNode(Node):
 
     def ready_state(self):
         self.get_logger().info("READY_STATE going to my initial position")
-        self.target_position_publisher.publish(self.start_position)
+        if not self.go_to_target_success:
+            self.target_position_publisher.publish(self.start_position)
 
     def set_state(self):
         self.get_logger().info("SET_STATE waiting for the referee to start the game")
@@ -355,31 +357,43 @@ class PlannerNode(Node):
     def playing_state(self):
         # TODO check if ball is outside of center 
         if self.game_controller.secondary_seconds_remaining==0 or self.goalkeeper: # TODO insert here the ball outside center comparision
-            self.get_logger().info("PLAYING_STATE follow ball or goalkeeper guard")
+#            self.get_logger().info("PLAYING_STATE follow ball or goalkeeper guard")
             if self.goalkeeper:
                 print("goal keeping") #TODO goal keeper guard enable publisher
             else:
-                print("Following the ball")
-                if self.carry_ball_position is not None and self.current_robot_position is not None:
+                if self.current_robot_position is None:
+                    self.get_logger().info("Not pumas map yet")
+                    return
+                if self.carry_ball_position is not None  and self.ball_position is not None:
+                    self.get_logger().info("I've my position and the ball position")
+
                     # Calculate distante to the joelian point
                     joelian_point = [self.carry_ball_position[0], self.carry_ball_position[1]]
                     robot_position = [self.current_robot_position[0], self.current_robot_position[1]]
                     self.get_logger().debug(f"Dist to joelian point: {math.dist(joelian_point, robot_position)}")
-                    # Calculate line ecuation between joelian point and ball position 
-                    y = (((joelian_point[1] - self.ball_position[1])/(joelian_point[0] - self.ball_position[0]))(robot_position[0] - self.ball_position[0]))+self.ball_position[1] 
-                    # If the point is below of 0.5 of error in y and is before the ball point activate ball follwer else go to target in joelian point 
-                    if abs(y-robot_position[1])<0.5 and robot_position[1]<self.ball_position[1]: # To change the error in the line change this 0.5 
+
+                    # --- CHOOSING BETWEEN GO_TO_TARGET AND BALL_FOLLOWER ---
+                    # Calculate a line that goes through ball and goal
+                    self.get_logger().info(f"ball position: {self.ball_position}, joelian_point: {joelian_point}, robot_position: {robot_position}")
+                    y = (((joelian_point[1] - self.ball_position[1])/(joelian_point[0]
+                        - self.ball_position[0]))*(robot_position[0]
+                        - self.ball_position[0]))+self.ball_position[1]
+                    # If the robot is inside that line activate ball follwer 
+                    if abs(y-robot_position[1]) < 0.5 and robot_position[1] < self.ball_position[1]:
                         self.head_ball_follower_enable_publisher.publish(Bool(data = True))
                         self.ball_follower_enable_publisher.publish(Bool(data = True))
+                    # else go to the target in joelian point.
                     else:
-
                         target = Pose2D()
                         target.x = self.carry_ball_position[0]
                         target.y = self.carry_ball_position[1]
                         target.theta = self.carry_ball_position[2]
                         self.target_position_publisher.publish(target)
-
-
+                    # -------------------------------------------------------
+                else:
+                    self.get_logger().info("Searching the ball")
+                    self.head_ball_follower_enable_publisher.publish(Bool(data = True))
+                    self.ball_follower_enable_publisher.publish(Bool(data = False))
         else:
             #TODO another way to decied wich robot do the kickoff
             if self.game_controller.kick_of_team == self.team_number and self.kickoff_robot:
@@ -394,8 +408,9 @@ class PlannerNode(Node):
         self.get_logger().info("FINISH_STATE good half game")
         self.ball_follower_enable_publisher.publish(Bool(data = False))
         self.head_ball_follower_enable_publisher.publish(Bool(data = False))
-        self.get_logger().info("THE END going with team")     
-        self.target_position_publisher.publish(self.start_position)
+        self.get_logger().info("THE END going with team")    
+        if self.target_arrive_success:
+            self.target_position_publisher.publish(self.start_position)
 
     def penalty_shoot(self):
         self.get_logger().info("PENALTYSHOOT sub state")
@@ -450,7 +465,7 @@ class PlannerNode(Node):
 
     # --- CALLBACKS ---
     def map_ball_callback(self, msg):
-        self.ball_position = (msg.x, msg.y)
+        self.ball_position = [msg.x, msg.y]
 
     def carry_ball_callback(self, msg):
         self.carry_ball_position = (msg.x, msg.y, msg.theta)

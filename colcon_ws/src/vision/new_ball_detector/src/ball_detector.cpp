@@ -97,7 +97,7 @@ BallDetectorNode::BallDetectorNode()
     pub_ball_ = this->create_publisher<pumas_vision_msgs::msg::VisionObject>(
             "/vision/ball", 1);
     pub_ball_map_ = this->create_publisher<geometry_msgs::msg::Pose2D>(
-            ball_map_topic_, 1);
+            ball_map_topic_, 10);
     pub_landmarks_ = this->create_publisher<localization_msg::msg::VisionLandmarkArray>(
             "/vision/landmarks", 1);
 
