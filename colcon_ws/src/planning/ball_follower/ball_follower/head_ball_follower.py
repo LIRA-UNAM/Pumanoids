@@ -152,7 +152,7 @@ class HeadBallFollowerNode(Node):
 
     def head_rotation_timer_callback(self):
         if self.head_timer_enable:
-            self.get_logger().info("Rotation head ENABLED")
+            self.get_logger().debug("Rotation head ENABLED")
             # Assign a head position to head_pose and move it to the end of the list to create a cycle.
             head_pose = self.look_for_poses.pop(0)
             self.look_for_poses.append(head_pose)
@@ -167,7 +167,7 @@ class HeadBallFollowerNode(Node):
             self.get_logger().debug(f"Looking for ball at ({head_pose[0]},{head_pose[1]})")
             self.pub_pantilt.publish(pantilt_msg)
         else:
-            self.get_logger().info("Rotation head DISABLED")
+            self.get_logger().debug("Rotation head DISABLED")
 
     # Main function that implements the state machine for the head ball follower, following a timer-based approach.
     def main_timer_callback(self):

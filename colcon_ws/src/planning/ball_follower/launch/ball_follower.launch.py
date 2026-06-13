@@ -37,7 +37,7 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
             package = 'joint_states_package',
             executable = 'joints_service',
             name = 'joints_service',
-            output = 'screen'
+           # output = 'screen'
         ),
         Node(
             package='new_ball_detector',
@@ -51,19 +51,19 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
                 'show_debug': True,
                 'model_path': model_path
             }],
-            output='screen'
+            #output='screen'
         ),
         Node(
             package='ball_follower',
             executable='head_ball_follower',
             name='head_ball_follower',
-            output='screen'
+            #output='screen'
         ),
         Node(
             package='ball_follower',
             executable='ball_follower',
             name='ball_follower',
-            output='screen'
+            #output='screen'
         )
     ]
     if robot_name == 'k1':
@@ -72,7 +72,7 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
                 package='boosterk1_image_proc',
                 executable='nv12_converter_node',
                 name='nv12_converter_node',
-                output='screen',
+                #output='screen',
             )
         )
 

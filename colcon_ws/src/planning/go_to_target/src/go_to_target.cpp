@@ -52,7 +52,7 @@ class GoToTarget : public rclcpp::Node
         movement_publisher = this->create_publisher<geometry_msgs::msg::Twist>(
                 "/cmd_vel", 10);
         success_publisher = this->create_publisher<std_msgs::msg::Bool>(
-                "/go_to_target/success", 1);
+                "/go_to_target/success", 10);
 
         // Subscribers
         pose_subscriber = this->create_subscription<geometry_msgs::msg::Pose2D>(
