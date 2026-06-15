@@ -53,9 +53,9 @@ class State(Enum):
     STATE_TIMEOUT=              9
     STATE_DIRECT_FREEKICK=      10
     STATE_INDIRECT_FREEKICK=    11
-    STATE_PENALTYKICK=12
-    STATE_CORNERKICK=13
-    STATE_GOALKICK=14
+    STATE_PENALTYKICK=          12
+    STATE_CORNERKICK=           13
+    STATE_GOALKICK=             14
     STATE_THROWIN=15
     DROPBALL=16
     UNKNOWN=17
@@ -348,7 +348,9 @@ class PlannerNode(Node):
 
     def ready_state(self):
         self.get_logger().info("READY_STATE going to my initial position")
-        if not self.go_to_target_success:
+        if self.go_to_target_success:
+            return
+        else:
             self.target_position_publisher.publish(self.start_position)
 
     def set_state(self):
