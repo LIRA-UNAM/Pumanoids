@@ -53,4 +53,4 @@ k1:
 
 t1:
 	@echo "Building for Booster T1..."
-	cd $(PUMANOIDS_PROJECT_PATH) && colcon build --packages-skip gazebo_envs dynamixel new_twist_to_t1 social_navigation boosterk1_image_proc
+	cd $(PUMANOIDS_PROJECT_PATH) && colcon build --packages-skip gazebo_envs dynamixel new_twist_to_k1 social_navigation boosterk1_image_proc
