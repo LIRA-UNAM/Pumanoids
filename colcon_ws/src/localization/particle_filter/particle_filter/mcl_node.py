@@ -9,6 +9,8 @@ from localization_msg.msg import VisionLandmarkArray
 from ament_index_python.packages import get_package_share_directory
 import math
 import random
+from tf2_ros import TransformBroadcaster
+from geometry_msgs.msg import TransformStamped
 
 def yaw_to_quaternion(yaw):
     q = Quaternion()
@@ -40,7 +42,14 @@ class ParticleFilterNode(Node):
         # 0:ball 1:goal, 2:robot, 3:L, 4:T, 5:X
         self.map_landmarks ={}
         self.read_yaml(map_file)
-        # --- GRAPH Neff and Average weight ---
+        self.tf_broadcaster = TransformBroadcaster(self)
+        self.best_x     = -3.0
+        self.best_y     = -3.5
+        self.best_theta = 0.0
+
+        # Timer for TF 10 Hz
+        self.tf_timer = self.create_timer(0.1, self.publish_tf_continuous)
+	# --- GRAPH Neff and Average weight ---
         # self.start_time = self.get_clock().now().nanoseconds / 1e9
         # self.log_file = open('pf_data_log.csv', 'w')
         # self.log_file.write('time,avg_weight,neff,max_weight,moving\n')
@@ -78,7 +87,47 @@ class ParticleFilterNode(Node):
             Odometry, '/odom_converted',
             self.odom_callback,
             qos_profile_sensor_data)
+    def compute_best_pose(self):
+        if not self.particles:
+            return
 
+        max_w = max(self.weights)
+        uniform_w = 1.0 / len(self.particles)
+
+        if max_w > uniform_w * 1.5:
+            # Hay convergencia → mejor partícula por peso
+            best_idx = self.weights.index(max_w)
+            best_particle = self.particles[best_idx]
+            self.best_x     = best_particle[0]
+            self.best_y     = best_particle[1]
+            self.best_theta = best_particle[2]
+        else:
+            # Sin convergencia aún → promedio de todas (se mueve con odometría)
+            self.best_x = sum(p[0] for p in self.particles) / len(self.particles)
+            self.best_y = sum(p[1] for p in self.particles) / len(self.particles)
+            sin_sum = sum(math.sin(p[2]) for p in self.particles)
+            cos_sum = sum(math.cos(p[2]) for p in self.particles)
+            self.best_theta = math.atan2(sin_sum, cos_sum)
+
+    def publish_tf_continuous(self):
+        self.compute_best_pose()
+
+        now = self.get_clock().now().to_msg()
+
+        t = TransformStamped()
+        t.header.stamp    = now
+        t.header.frame_id = "pumas_map"
+        t.child_frame_id  = "pumas_odom"
+
+        t.transform.translation.x = self.best_x
+        t.transform.translation.y = self.best_y
+        t.transform.translation.z = 0.0
+        t.transform.rotation.x = 0.0
+        t.transform.rotation.y = 0.0
+        t.transform.rotation.z = float(math.sin(self.best_theta / 2.0))
+        t.transform.rotation.w = float(math.cos(self.best_theta / 2.0))
+
+        self.tf_broadcaster.sendTransform(t)
     def read_yaml(self,config_file):
         with open(config_file, 'r') as file:
             configs = yaml.safe_load(file)
@@ -92,46 +141,57 @@ class ParticleFilterNode(Node):
                 self.map_landmarks[landmark["id"]]=[]
                 for point in landmark["points"]:
                     self.map_landmarks[landmark["id"]].append(tuple(point))
-            print(self.map_landmarks)
+            #print(self.map_landmarks)
 
-    def mirror_y(self,x,y):
-        return (-x, y) 
-
-    def mirror_x(self,x,y):
-        return (x, -y) 
-
-    def mirror(self,x,y):
-        return (-x, -y) 
+    #def init_particles(self):
+    #    self.particles = []
+    #    self.num_particles = 800
+    #    for _ in range(self.num_particles):
+    #        x = random.uniform(-self.field_x/2, self.field_x/2)
+    #        y = random.uniform(-self.field_y/2, self.field_y/2)
+    #        theta = random.uniform(-math.pi, math.pi)
+    #        self.particles.append([x, y, theta])
+    #    self.weights = [1.0 / self.num_particles] * self.num_particles
+    #    self.particle_scores = [1.0 / self.num_particles] * self.num_particles
 
     def init_particles(self):
         self.particles = []
         self.num_particles = 800
-        for _ in range(self.num_particles):
-            x = random.uniform(-self.field_x/2, self.field_x/2)
-            y = random.uniform(-self.field_y/2, self.field_y/2)
-            theta = random.uniform(-math.pi, math.pi)
-            self.particles.append([x, y, theta])
-        self.weights = [1.0 / self.num_particles] * self.num_particles
-        self.particle_scores = [1.0 / self.num_particles] * self.num_particles
     
+    # Start pose
+        init_x     = self.best_x
+        init_y     = self.best_y
+        init_theta = self.best_theta   # rad orientation
+    
+    # Start point
+        sigma_xy    = 0.5
+        sigma_theta = math.radians(20)
+    
+        for _ in range(self.num_particles):
+            x     = random.gauss(init_x,     sigma_xy)
+            y     = random.gauss(init_y,     sigma_xy)
+            theta = random.gauss(init_theta, sigma_theta)
+        
+            # Clamping
+            x = max(self.FIELD_X_MIN, min(x, self.FIELD_X_MAX))
+            y = max(self.FIELD_Y_MIN, min(y, self.FIELD_Y_MAX))
+        
+            self.particles.append([x, y, theta])
+    
+        self.weights       = [1.0 / self.num_particles] * self.num_particles
+        self.particle_scores = [1.0 / self.num_particles] * self.num_particles
     def publish_estimated_pose(self):
         if not self.particles:
             return
-
-        avg_x     = sum(p[0] for p in self.particles) / len(self.particles)
-        avg_y     = sum(p[1] for p in self.particles) / len(self.particles)
-
-    # Promedio circular del ángulo (evita el problema del salto en ±π)
-        sin_sum   = sum(math.sin(p[2]) for p in self.particles)
-        cos_sum   = sum(math.cos(p[2]) for p in self.particles)
-        avg_theta = math.atan2(sin_sum, cos_sum)
-
         msg = PoseStamped()
-        msg.header.frame_id = "map"
-        msg.header.stamp    = self.get_clock().now().to_msg()
-        msg.pose.position.x = avg_x
-        msg.pose.position.y = avg_y
-        msg.pose.orientation = yaw_to_quaternion(avg_theta)
+        msg.header.frame_id = "pumas_map"
+        msg.header.stamp       = self.get_clock().now().to_msg()
+        msg.pose.position.x    = self.best_x
+        msg.pose.position.y    = self.best_y
+        msg.pose.orientation.x = 0.0
+        msg.pose.orientation.y = 0.0
+        msg.pose.orientation.z = float(math.sin(self.best_theta / 2.0))
+        msg.pose.orientation.w = float(math.cos(self.best_theta / 2.0))
         self.pose_pub.publish(msg)
 # -----------MOTION MODEL -------------------------
 # Based on Table 5.6 page 136 PR
