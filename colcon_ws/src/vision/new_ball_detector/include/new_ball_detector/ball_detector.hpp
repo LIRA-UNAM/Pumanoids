@@ -53,6 +53,7 @@ private:
   double ball_radius_;
   double proc_interval_;
   std::string model_path_;
+  std::string camera_topic_;
   bool show_debug_;
   std::string base_frame_;
   std::string map_frame_;
