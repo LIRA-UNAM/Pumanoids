@@ -40,6 +40,7 @@ BallDetectorNode::BallDetectorNode()
 
     // --- PARAMS ---
     // Camera
+    this->declare_parameter("camera_topic", "/boostercamera/head/rgb");
     this->declare_parameter("hfov", 93.0);
     this->declare_parameter("vfov_rad", 101.0);
     this->declare_parameter("head_z", 0.87);
@@ -59,6 +60,7 @@ BallDetectorNode::BallDetectorNode()
     this->declare_parameter("base_frame", "pumas_base_link");
     this->declare_parameter("map_frame", "pumas_map");
 
+    this->get_parameter("camera_topic", camera_topic_);
     this->get_parameter("hfov", hfov_deg);
     this->get_parameter("vfov_rad", vfov_deg);
     this->get_parameter("head_z", head_z_);
@@ -87,7 +89,8 @@ BallDetectorNode::BallDetectorNode()
     // --- SUBSCRIBERS ---
     // Camera image
     sub_img_ = this->create_subscription<sensor_msgs::msg::Image>(
-            "/camera/color/image_raw", 1,
+            camera_topic_, 1,
+            //"/camera/color/image_raw", 1,
             //"/boostercamera/head/rgb", 1,
             std::bind(&BallDetectorNode::imageCallback, this, std::placeholders::_1));
 
