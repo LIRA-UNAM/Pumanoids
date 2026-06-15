@@ -47,7 +47,7 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
                 'hfov': params['camera']['hfov_deg'],
                 'vfov': params['camera']['vfov_deg'],
                 'head_z': params['head']['height_m'],
-                'ball_radius': 0.07, # NOTE: RoboCup ball is 0.11 !!!!
+                'ball_radius': 0.11, # NOTE: RoboCup ball is 0.11 !!!!
                 'show_debug': True,
                 'model_path': model_path
             }],

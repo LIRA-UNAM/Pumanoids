@@ -69,6 +69,13 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
 #            output='screen',
         ),
         Node(
+            package = 'go_to_target',
+            executable = 'go_to_target',
+            name = 'go_to_target',
+            #output = 'screen'
+        ),
+
+        Node(
             package = 'game_planner',
             executable = 'game_planner',
             name = 'game_planner',
