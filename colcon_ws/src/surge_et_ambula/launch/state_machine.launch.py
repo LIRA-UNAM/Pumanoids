@@ -94,6 +94,24 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
                 }
             ]
         ),
+        Node(
+            package = 'particle_filter',
+            executable = 'bridge_odom',
+            name = 'bridge_odom',
+            output = 'screen',
+        ),
+        Node(
+            package = 'particle_filter',
+            executable = 'map_node',
+            name = 'map_node',
+            output = 'screen',
+        ),
+        Node(
+            package = 'particle_filter',
+            executable = 'mcl_node',
+            name = 'mcl_node',
+            output = 'screen',
+        )
     ]
 
     # ROBOT-DEPENDENT NODES
