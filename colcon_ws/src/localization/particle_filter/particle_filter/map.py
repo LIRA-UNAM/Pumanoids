@@ -92,7 +92,7 @@ class SoccerMap(Node):
     # -------------------------
     def publish_axes(self):
         axes = Marker()
-        axes.header.frame_id = "map"
+        axes.header.frame_id = "pumas_map"
         axes.ns = "axes"
         axes.id = 999
         axes.type = Marker.LINE_LIST
@@ -127,7 +127,7 @@ class SoccerMap(Node):
         W = self.FIELD_WIDTH
 
         m = Marker()
-        m.header.frame_id = "map"
+        m.header.frame_id = "pumas_map"
         m.header.stamp = self.get_clock().now().to_msg()
         m.ns = "field_lines"
         m.id = 1
@@ -155,7 +155,7 @@ class SoccerMap(Node):
 
     def publish_center_circle(self):
         m = Marker()
-        m.header.frame_id = "map"
+        m.header.frame_id = "pumas_map"
         m.header.stamp = self.get_clock().now().to_msg()
         m.ns = "center_circle"
         m.id = 3
@@ -179,7 +179,7 @@ class SoccerMap(Node):
         x1, x2 = 3.04, -3.04
 
         m = Marker()
-        m.header.frame_id = "map"
+        m.header.frame_id = "pumas_map"
         m.header.stamp = self.get_clock().now().to_msg()
         m.ns = "penalty"
         m.id = 4
@@ -248,7 +248,7 @@ class SoccerMap(Node):
         for name, positions in self.landmarks_map.items():
             for i, (x, y) in enumerate(positions):
                 tf = TransformStamped()
-                tf.header.frame_id = "map"
+                tf.header.frame_id = "pumas_map"
                 tf.child_frame_id = f"{name}_{i}"
                 tf.header.stamp = self.get_clock().now().to_msg()
 
@@ -264,7 +264,7 @@ class SoccerMap(Node):
 
     def publish_ground(self):
         ground = Marker()
-        ground.header.frame_id = "map"
+        ground.header.frame_id = "pumas_map"
         ground.header.stamp = self.get_clock().now().to_msg()
         ground.ns = "ground"
         ground.id = 0
@@ -293,7 +293,7 @@ class SoccerMap(Node):
         for name, positions in self.landmarks_map.items():
             for (x, y) in positions:
                 m = Marker()
-                m.header.frame_id = "map"
+                m.header.frame_id = "pumas_map"
                 m.header.stamp = self.get_clock().now().to_msg()
                 m.ns = "landmarks"
                 m.id = i
