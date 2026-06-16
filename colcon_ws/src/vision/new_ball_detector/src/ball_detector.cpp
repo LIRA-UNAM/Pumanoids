@@ -107,6 +107,10 @@ BallDetectorNode::BallDetectorNode()
     pub_landmarks_ = this->create_publisher<localization_msg::msg::VisionLandmarkArray>(
             "/vision/landmarks", 1);
 
+    // Model preview (to view through rqt_image_view)
+    pub_debug_img_ = this->create_publisher<sensor_msgs::msg::Image>(
+            "/vision/debug_image", 1);
+
     // --- SERVICES ---
     joint_client_ = this->create_client<joint_states_package::srv::HeadJoints>(
             "get_head_joints");
@@ -330,7 +334,7 @@ void BallDetectorNode::imageCallback(const sensor_msgs::msg::Image::SharedPtr ms
             pub_landmarks_->publish(lm_array);
         }
 
-        if (show_debug_) {
+        if (pub_debug_img_->get_subscription_count() > 0) {
             for (const auto & d : detections) {
                 double x1 = d.center_x - d.width / 2.0;
                 double y1 = d.center_y - d.height / 2.0;
@@ -355,8 +359,8 @@ void BallDetectorNode::imageCallback(const sensor_msgs::msg::Image::SharedPtr ms
                         cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0), 1);
             }
 
-            cv::imshow("Ball Detector", bgr);
-            cv::waitKey(1);
+            auto debug_msg = cv_bridge::CvImage(msg->header, "bgr8", bgr).toImageMsg();
+            pub_debug_img_->publish(*debug_msg);
         }
     } catch (const std::exception & e) {
         (void)e;
