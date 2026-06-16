@@ -28,15 +28,33 @@ public:
 private:
     void callback_odometer(const booster_interface::msg::Odometer::SharedPtr msg)
     {
-        robot_x_ = static_cast<double>(msg->x);
-        robot_y_ = static_cast<double>(msg->y);
-        double yaw = static_cast<double>(msg->theta);
-        // Normalize to [-pi, pi)
-        robot_a_ = std::fmod(yaw + M_PI, 2.0 * M_PI) - M_PI;
+        double current_x = static_cast<double>(msg->x);
+        double current_y = static_cast<double>(msg->y);
+        double current_a = static_cast<double>(msg->theta);
+
+        if (!initial_pose_set_) {
+            init_x_ = current_x;
+            init_y_ = current_y;
+            init_a_ = current_a;
+            initial_pose_set_ = true;
+            RCLCPP_INFO(this->get_logger(), "Initial odometry captured. Setting starting frame to (0,0,0).");
+        }
+
+        double dx = current_x - init_x_;
+        double dy = current_y - init_y_;
+
+        robot_x_ = dx * std::cos(init_a_) + dy * std::sin(init_a_);
+        robot_y_ = -dx * std::sin(init_a_) + dy * std::cos(init_a_);
+
+        double relative_yaw = current_a - init_a_;
+        robot_a_ = std::atan2(std::sin(relative_yaw), std::cos(relative_yaw));
+
     }
 
     void timer_callback()
     {
+        if (!initial_pose_set_) return;
+
         auto t = this->get_clock()->now();
 
         geometry_msgs::msg::TransformStamped transform;
@@ -73,6 +91,12 @@ private:
     rclcpp::Subscription<booster_interface::msg::Odometer>::SharedPtr subscription_;
     rclcpp::TimerBase::SharedPtr timer_;
     std::shared_ptr<tf2_ros::TransformBroadcaster> broadcaster_;
+
+    bool initial_pose_set_ = false;
+    double init_x_ = 0.0;
+    double init_y_ = 0.0;
+    double init_a_ = 0.0;
+    
 
     double robot_x_ = 0.0;
     double robot_y_ = 0.0;
