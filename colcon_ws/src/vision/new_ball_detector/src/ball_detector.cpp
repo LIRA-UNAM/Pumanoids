@@ -7,6 +7,7 @@
 
 #include <cv_bridge/cv_bridge.h>
 #include <geometry_msgs/msg/point_stamped.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2/exceptions.h>
 
@@ -130,6 +131,8 @@ BallDetectorNode::BallDetectorNode()
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_, this);
 
+    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(this);    
+
     RCLCPP_INFO(
             this->get_logger(),
             "Ball topics: /vision/ball (%s), %s (map Pose2D)",
@@ -165,8 +168,26 @@ void BallDetectorNode::publishBallInMap(double bx, double by, const rclcpp::Time
     }
 
     pub_ball_map_->publish(pose_map);
+
+    // ======================================
+    
     geometry_msgs::msg::TransformStamped t;
     t.header.stamp = stamp;
+    t.header.frame_id = "pumas_base_link";
+    t.child_frame_id = "pumas_ball";
+
+    t.transform.translation.x = bx; 
+    t.transform.translation.y = by;
+    t.transform.translation.z = 0.0;
+
+    t.transform.rotation.x = 0.0;
+    t.transform.rotation.y = 0.0;
+    t.transform.rotation.z = 0.0;
+    t.transform.rotation.w = 1.0;
+
+    if (tf_broadcaster_) {
+        tf_broadcaster_->sendTransform(t);
+    }
 }
 
 std::vector<Detection> BallDetectorNode::angularPrune(
