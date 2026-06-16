@@ -138,6 +138,11 @@ class PlannerNode(Node):
                 '/ball_follower/enable',
                 qos_profile_for_enabling)
 
+        self.go_to_target_enable_publisher = self.create_publisher(
+                Bool,
+                '/go_to_target/enable',
+                qos_profile_for_enabling)
+
         self.target_position_publisher = self.create_publisher(
                 Pose2D,
                 '/go_to_target/target',
@@ -470,10 +475,18 @@ class PlannerNode(Node):
 
     
     def idle_state(self):
-        self.get_logger().info("IDLE_STATE new states comming soon")
-        prep_res = self.rpc_client.call_async(self.prep_req)
-        self.get_logger().debug(f"RPC Service response: {prep_res}")
+        self.go_to_target_enable_publisher.publish(Bool(data = False)) 
+        self.head_ball_follower_enable_publisher.publish(Bool(data = False))
+        self.ball_follower_enable_publisher.publish(Bool(data = False))
+        if self.last_available_state != State.IDLE or self.last_available_state != State.WAITING_CONNECTION: 
+            self.counter = 0 
+        else:
+            self.counter+=1
+        if self.counter>=20:
+            prep_res = self.rpc_client.call_async(self.prep_req)
+            self.get_logger().debug(f"RPC Service response: {prep_res}")
         self.current_state = State.IDLE
+        self.get_logger().info(f"IDLE_STATE {self.counter}")
 
     def error_state(self):
         self.get_logger().error("error_state")
