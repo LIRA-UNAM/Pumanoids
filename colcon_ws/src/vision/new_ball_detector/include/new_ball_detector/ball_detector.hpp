@@ -31,6 +31,7 @@ private:
   rclcpp::Publisher<pumas_vision_msgs::msg::VisionObject>::SharedPtr pub_ball_;
   rclcpp::Publisher<geometry_msgs::msg::Pose2D>::SharedPtr pub_ball_map_;
   rclcpp::Publisher<localization_msg::msg::VisionLandmarkArray>::SharedPtr pub_landmarks_;
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr pub_debug_img_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
