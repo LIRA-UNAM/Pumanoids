@@ -67,6 +67,9 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
             package='ball_follower',
             executable='head_ball_follower',
             name='head_ball_follower',
+            parameters=[{
+                'camera_topic': params['camera']['image_topic']
+            }]
             #output='screen'
         ),
         Node(
