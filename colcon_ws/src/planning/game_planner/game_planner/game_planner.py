@@ -166,13 +166,18 @@ class PlannerNode(Node):
                 10)
 
         # --- SERVICES CLIENTS ---
-        self.getup_client = self.create_client(RpcService, '/booster_rpc_service')
-        while not self.getup_client.wait_for_service(timeout_sec=1.0):
+        self.rpc_client = self.create_client(RpcService, '/booster_rpc_service')
+        while not self.rpc_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Esperando servicio...')
         
         self.getup_req = RpcService.Request() # Mensaje de request para getup, llama al Api ID siempre igual
         self.getup_req.msg.api_id = 2008
         self.getup_req.msg.body = ""
+
+        self.prep_req = RpcService.Request() # Mensaje de request para prep mode 
+        self.prep_req.msg.api_id = 2000
+        self.prep_req.msg.body = '{"mode":1}'
+
 
         # --- TIMERS ---
         # State machine
@@ -212,7 +217,7 @@ class PlannerNode(Node):
     
     # Service request
     def send_getup_request(self):
-        self.getup_res = self.getup_client.call_async(self.getup_req)
+        self.getup_res = self.rpc_client.call_async(self.getup_req)
     
     # State machine method
     def rustic_smach(self):
@@ -287,17 +292,17 @@ class PlannerNode(Node):
             self.last_available_sub_state = self.sub_state
         
         if self.game_controller and (self.player_info.penalty!=0):
-            if self.player_info.penalty == 30:
+            if self.player_info.penalty == 30: #Ball manipulation
                 self.idle_state()
-            elif self.player_info.penalty == 31:
+            elif self.player_info.penalty == 31: #pushing
                 self.pushing()
-            elif self.player_info.penalty == 32:
+            elif self.player_info.penalty == 32: # illegal_atk
                 self.illegal_atk()
-            elif self.player_info.penalty == 33:
+            elif self.player_info.penalty == 33: # illegal_def
                 self.illegal_def()
-            elif self.player_info.penalty == 34:
+            elif self.player_info.penalty == 34: # pickup 
                 self.idle_state()
-            elif self.player_info.penalty == 35:
+            elif self.player_info.penalty == 35: # Service No idea of what
                 self.idle_state()
         elif self.game_controller and (self.game_controller.secondary_state == "STATE_NORMAL" or self.game_controller.secondary_state =="STATE_OVERTIME"): # Estados principales y primarios del juego
             if self.current_state == State.WAITING_CONNECTION:
@@ -466,6 +471,8 @@ class PlannerNode(Node):
     
     def idle_state(self):
         self.get_logger().info("IDLE_STATE new states comming soon")
+        prep_res = self.rpc_client.call_async(self.prep_req)
+        self.get_logger().debug(f"RPC Service response: {prep_res}")
         self.current_state = State.IDLE
 
     def error_state(self):
