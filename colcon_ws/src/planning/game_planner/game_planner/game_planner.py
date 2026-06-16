@@ -199,7 +199,7 @@ class PlannerNode(Node):
         self.first_message = True
         
         # Positioning
-        self.go_to_target_success = False
+        self.go_to_target_success = True 
         self.current_robot_position = None
         self.carry_ball_position = None # Position from carry_ball_to_goal node
 
@@ -339,6 +339,16 @@ class PlannerNode(Node):
             elif self.sub_state == State.UNKNOWN:
                 self.error_state()
 
+    def go_to_target(self, point):
+        if self.current_robot_position is None:
+            self.get_logger().info("Not pose yet")
+            return
+        else:
+            distance = math.sqrt((math.pow((self.current_robot_position[0] - point.x),2)+math.pow((self.current_robot_position[1] - point.y),2)))
+            send =(self.go_to_target_success  and distance > 0.5) 
+            if send:
+                self.get_logger().info(f"going to {point}")
+                self.target_position_publisher.publish(point)
 
     def wait_state(self):
         self.get_logger().info("WAITING_CONNECTION waiting for Game Controller conection")
@@ -348,10 +358,7 @@ class PlannerNode(Node):
 
     def ready_state(self):
         self.get_logger().info("READY_STATE going to my initial position")
-        if self.go_to_target_success:
-            return
-        else:
-            self.target_position_publisher.publish(self.start_position)
+        self.go_to_target(self.start_position)
 
     def set_state(self):
         self.get_logger().info("SET_STATE waiting for the referee to start the game")
@@ -390,7 +397,7 @@ class PlannerNode(Node):
                         target.x = self.carry_ball_position[0]
                         target.y = self.carry_ball_position[1]
                         target.theta = self.carry_ball_position[2]
-                        self.target_position_publisher.publish(target)
+                        self.go_to_target(target)
                     # -------------------------------------------------------
                 else:
                     self.get_logger().info("Searching the ball")
@@ -412,7 +419,7 @@ class PlannerNode(Node):
         self.head_ball_follower_enable_publisher.publish(Bool(data = False))
         self.get_logger().info("THE END going with team")    
         if self.target_arrive_success:
-            self.target_position_publisher.publish(self.start_position)
+            self.go_to_target(self.start_position)
 
     def penalty_shoot(self):
         self.get_logger().info("PENALTYSHOOT sub state")
