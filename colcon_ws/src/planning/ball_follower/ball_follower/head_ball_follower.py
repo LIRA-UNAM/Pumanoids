@@ -65,7 +65,7 @@ class HeadBallFollowerNode(Node):
         success, msg = wait_for_message(
             msg_type=Image,
             node=self,
-            topic="/camera/color/image_raw",
+            topic=self.get_parameter('camera_topic').get_parameter_value().string_value,
             qos_profile=qos_profile,
             time_to_wait=timeout_seconds
         )
@@ -99,6 +99,7 @@ class HeadBallFollowerNode(Node):
         self.last_head_pan  = 0     # Lastest received head pan (yaw) position
         self.last_head_tilt = 0     # Lastest received head tilt (pitch) position
 
+        self.declare_parameter("camera_topic", "/boostercamera/head/rgb")
         self.declare_parameter("body_search_cycles_before_turn", 1)
         self.declare_parameter("body_search_turn_deg", 90.0)
         self.declare_parameter("body_search_ang_vel", 0.7)
@@ -152,7 +153,7 @@ class HeadBallFollowerNode(Node):
 
     def head_rotation_timer_callback(self):
         if self.head_timer_enable:
-            self.get_logger().info("Rotation head ENABLED")
+            self.get_logger().debug("Rotation head ENABLED")
             # Assign a head position to head_pose and move it to the end of the list to create a cycle.
             head_pose = self.look_for_poses.pop(0)
             self.look_for_poses.append(head_pose)
@@ -167,7 +168,7 @@ class HeadBallFollowerNode(Node):
             self.get_logger().debug(f"Looking for ball at ({head_pose[0]},{head_pose[1]})")
             self.pub_pantilt.publish(pantilt_msg)
         else:
-            self.get_logger().info("Rotation head DISABLED")
+            self.get_logger().debug("Rotation head DISABLED")
 
     # Main function that implements the state machine for the head ball follower, following a timer-based approach.
     def main_timer_callback(self):

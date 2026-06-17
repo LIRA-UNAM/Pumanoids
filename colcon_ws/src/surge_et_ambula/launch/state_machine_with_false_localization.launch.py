@@ -30,7 +30,7 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
     model_path = os.path.join(
         get_package_share_directory('new_ball_detector'),
         'models',
-        'yolov8_center_sys_low.engine' # <-- Change this to the model you want to use
+        f'yolov8_center_sys_low_{robot_name}.engine'
     )
 
     state_machine_config_path = '/home/booster/Pumanoids/colcon_ws/src/surge_et_ambula/configs/state_machine_parameters.yaml'
@@ -96,21 +96,20 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
         ),
         Node(
             package = 'particle_filter',
-            executable = 'bridge_odom',
-            name = 'bridge_odom',
-            output = 'screen',
-        ),
-        Node(
-            package = 'particle_filter',
             executable = 'map_node',
             name = 'map_node',
             output = 'screen',
         ),
         Node(
-            package = 'particle_filter',
-            executable = 'mcl_node',
-            name = 'mcl_node',
-            output = 'screen',
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='pumas_map_to_pumas_odom',
+            arguments=[
+                '3', '3', '0',    # x y z
+                '3.14', '0', '0',    # yaw pitch roll
+                'pumas_map',
+                'pumas_odom'
+            ]
         )
     ]
 

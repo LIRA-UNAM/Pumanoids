@@ -15,6 +15,7 @@
 #include <joint_states_package/srv/head_joints.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
+#include <tf2_ros/transform_broadcaster.h>
 #include <opencv2/opencv.hpp>
 #include "tensorrt_detector.hpp"
 
@@ -31,9 +32,12 @@ private:
   rclcpp::Publisher<pumas_vision_msgs::msg::VisionObject>::SharedPtr pub_ball_;
   rclcpp::Publisher<geometry_msgs::msg::Pose2D>::SharedPtr pub_ball_map_;
   rclcpp::Publisher<localization_msg::msg::VisionLandmarkArray>::SharedPtr pub_landmarks_;
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr pub_debug_img_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
+  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
   void imageCallback(const sensor_msgs::msg::Image::SharedPtr msg);
   void jointStateRequest();
@@ -45,14 +49,15 @@ private:
   std::pair<double, double> getBallPosition(double img_x, double img_y,
                                             int img_width, int img_height);
 
-  double hfov_;
-  double vfov_;
-  double hfov;
-  double vfov;
+  double hfov_deg;
+  double vfov_deg;
+  double hfov_rad;
+  double vfov_rad;
   double head_z_;
   double ball_radius_;
   double proc_interval_;
   std::string model_path_;
+  std::string camera_topic_;
   bool show_debug_;
   std::string base_frame_;
   std::string map_frame_;

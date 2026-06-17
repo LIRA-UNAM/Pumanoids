@@ -48,6 +48,12 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
             name = 'go_to_target'
         ),
 
+        Node(
+            package = 'joint_states_package',
+            executable = 'joints_service',
+            name = 'joints_service'
+        ),
+
         # To print the current robot position (pumas_map->pumas_base_link)
         Node(
             package = 'tf2_ros',

@@ -52,7 +52,7 @@ class GoToTarget : public rclcpp::Node
         movement_publisher = this->create_publisher<geometry_msgs::msg::Twist>(
                 "/cmd_vel", 10);
         success_publisher = this->create_publisher<std_msgs::msg::Bool>(
-                "/go_to_target/success", 1);
+                "/go_to_target/success", 10);
 
         // Subscribers
         pose_subscriber = this->create_subscription<geometry_msgs::msg::Pose2D>(
@@ -118,7 +118,9 @@ class GoToTarget : public rclcpp::Node
         // -- METHODS --
         void target_callback(const geometry_msgs::msg::Pose2D::SharedPtr msg)
         {
-            RCLCPP_INFO(this->get_logger(), "Target point x= '%.3f' y= '%.3f'", msg->x, msg->y);
+            //RCLCPP_INFO(this->get_logger(), "Target point x= '%.3f' y= '%.3f'", msg->x, msg->y);
+            success.data = false;
+            success_publisher->publish(success);
             new_target = true;
             enable = true;
             target = *msg;
@@ -126,7 +128,7 @@ class GoToTarget : public rclcpp::Node
 
         void enable_callback(const std_msgs::msg::Bool::SharedPtr msg)
         {
-            RCLCPP_INFO(this->get_logger(), "Recived: '%s'", msg->data ? "true" : "false");
+            //RCLCPP_INFO(this->get_logger(), "Recived: '%s'", msg->data ? "true" : "false");
             enable = msg->data;
         }
 
@@ -146,7 +148,7 @@ class GoToTarget : public rclcpp::Node
               err_a    = normalizeAngle(atan2(target.y - robot_y, target.x - robot_x) - robot_yaw);
               vel      = v_max * std::exp((std::pow(err_a, 2)) / (-alpha));
               w        = w_max * (2 / (1 + std::exp(-err_a / beta)) - 1);
-              RCLCPP_INFO(this->get_logger(), "\n err_dist: %.2f, err_a: %.2f, vel: %.2f, w: %.2f", err_dist, err_a, vel, w );
+              //RCLCPP_INFO(this->get_logger(), "\n err_dist: %.2f, err_a: %.2f, vel: %.2f, w: %.2f", err_dist, err_a, vel, w );
               if(!enable) state = State::iddle;
               switch(state)
               {
@@ -164,20 +166,20 @@ class GoToTarget : public rclcpp::Node
                   break;
 
                 case State::ball_align:
-                  RCLCPP_INFO(this->get_logger(), "Facing to the ball");
+                  //RCLCPP_INFO(this->get_logger(), "Facing to the ball");
                   twist_msg.angular.z = w;
                   state = std::abs(err_a) < 0.2 ? State::forward : State::ball_align;
                   break;
 
                 case State::forward:
-                  RCLCPP_INFO(this->get_logger(), "Walking forward");
+                  //RCLCPP_INFO(this->get_logger(), "Walking forward");
                   twist_msg.linear.x = vel;
                   twist_msg.angular.z = w;//std::abs(err_a) > 0.2 ? w : 0.0;
                   state = err_dist < dist_min ? State::goal_align : State::forward;
                   break;
 
                 case State::goal_align:
-                  RCLCPP_INFO(this->get_logger(), "Facing the goal");
+                  //RCLCPP_INFO(this->get_logger(), "Facing the goal");
                   twist_msg.linear.x = 0.0;
                   err_a = normalizeAngle(target.theta - robot_yaw);
                   w = w_max * (2/(1 + std::exp(-err_a / beta)) - 1);
@@ -198,12 +200,12 @@ class GoToTarget : public rclcpp::Node
           // This one happens a lot. Takes a few secons for the transformation to be published.
           catch (const tf2::LookupException& ex)
           {
-              RCLCPP_INFO(this->get_logger(), "Waiting for pumas_map -> pumas_base_link");
+              //RCLCPP_INFO(this->get_logger(), "Waiting for pumas_map -> pumas_base_link");
           }
           // Any other exception should not happen.
           catch (const tf2::TransformException& ex) 
           {
-              RCLCPP_ERROR(this->get_logger(), "TF2 exception: %s", ex.what());
+              //RCLCPP_ERROR(this->get_logger(), "TF2 exception: %s", ex.what());
           }
         }
 
