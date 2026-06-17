@@ -18,6 +18,10 @@ class BallFollowerNode(Node):
         print("INITIALIZING BALL FOLLOWER NODE - ")
         super().__init__("ball_follower")
 
+        # --- PARAMETERS ---
+        self.declare_parameter('angular_speed', 0.5)
+        self.declare_parameter('linear_speed', 0.1)
+
         # --- VARIABLES ---
         self.is_enabled = False     # To check enable status from game_planner
         self.last_head_pan  = 0     # Lastest received head pan (yaw) position
@@ -26,6 +30,9 @@ class BallFollowerNode(Node):
         self.ball_detected = False  # To check if a ball has been detected by ball_detector
         self.ball_center_x = 0    # Ball position in the camera in the X axis
         self.ball_center_y = 0    # Ball position in the camera in the Y axis
+
+        self.linear_speed = self.get_parameter('linear_speed').value
+        self.angular_speed = self.get_parameter('angular_speed').value
 
         # --- TOPICS ---
         # Enabling signal from game_planner node
@@ -121,8 +128,8 @@ class BallFollowerNode(Node):
         
         # Send the movement command. The robot rotates depending on the horizontal position of the ball, taking in consideration the position of the ball in the camera and the head (yaw) position.
         cmd_vel_msg = Twist()
-        cmd_vel_msg.linear.x = 0.1
-        cmd_vel_msg.angular.z = 0.5 * (error_x + self.last_head_pan)
+        cmd_vel_msg.linear.x = self.linear_speed 
+        cmd_vel_msg.angular.z = self.angular_speed * (error_x + self.last_head_pan)
         #self.get_logger().info(f"{error_x}  ,  {self.current_head_pan}")
         #self.get_logger().info(f"Pan position: {cmd_vel_msg.angular.z}")
         self.pub_cmd_vel.publish(cmd_vel_msg)

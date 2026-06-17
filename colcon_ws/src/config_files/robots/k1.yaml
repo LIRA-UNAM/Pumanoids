@@ -14,6 +14,10 @@ camera:
   vfov_deg: 101.0
   focal_length_px: 600.0
 
+movement:
+  angular_speed: 0.5
+  linear_speed: 0.1
+
 head:
   height_m: 0.87
   offset_x_m: 0.0
