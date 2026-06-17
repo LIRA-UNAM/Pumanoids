@@ -38,7 +38,7 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
     map_yaml = os.path.join(config_share, 'maps', 'cancha_tmr.yaml')
 
     with open(yaml_path, "r") as file:
-    params = yaml.safe_load(file)
+        params = yaml.safe_load(file)
     
     nodes = [
         IncludeLaunchDescription(
@@ -46,7 +46,7 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
                 os.path.join(
                 get_package_share_directory('go_to_target'),
                 'launch',
-                'test_with_false_localization_k1.launch.py'),
+                'test_with_false_localization.launch.py'),
             ),
             launch_arguments={'robot': robot_name}.items()
         ),

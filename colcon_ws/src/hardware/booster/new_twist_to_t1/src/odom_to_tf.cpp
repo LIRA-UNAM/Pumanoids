@@ -78,13 +78,22 @@ private:
         // an estimation with the velocities sent through /cmd_vel. We only retreive
         // the angular reading of the odometer.
         
-        if (!first_odom_) first_odom_ = true;
+
+        double current_yaw = static_cast<double>(msg->theta);
+
+        if (!first_odom_) {
+            init_yaw_ = current_yaw;
+            first_odom_ = true;
+            RCLCPP_INFO(this->get_logger(),
+                    "Initial yaw captured: %.3f rad. Setting baseline to 0.", init_yaw_);
+        }
+
+        double relative_yaw = current_yaw - init_yaw_;
 
         //robot_x_ = static_cast<double>(msg->x);
         //robot_y_ = static_cast<double>(msg->y);
-        double yaw = static_cast<double>(msg->theta);
         // Normalize to [-pi, pi)
-        robot_a_ = std::fmod(yaw + M_PI, 2.0 * M_PI) - M_PI;
+        robot_a_ = std::atan2(std::sin(relative_yaw), std::cos(relative_yaw));
     }
 
 
@@ -174,6 +183,7 @@ private:
     double robot_y_ {};
     double robot_a_ {};
     double vyaw_ {};
+    double init_yaw_ { 0.0 };
 
     // -- ERROR CONSTANTS --
     double error_x_ { 0.59 };

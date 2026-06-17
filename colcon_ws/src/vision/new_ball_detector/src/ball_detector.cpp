@@ -7,10 +7,9 @@
 
 #include <cv_bridge/cv_bridge.h>
 #include <geometry_msgs/msg/point_stamped.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-
 #include <tf2/exceptions.h>
-
 
 static constexpr double head_x = 0.0;
 static constexpr double head_y = 0.0;
@@ -40,34 +39,37 @@ BallDetectorNode::BallDetectorNode()
 {
     RCLCPP_INFO(this->get_logger(), "Initializing BallDetectorNode (C++)");
 
-    // -- PARAMS --
-    // Camera 
+    // --- PARAMS ---
+    // Camera
+    this->declare_parameter("camera_topic", "/boostercamera/head/rgb");
     this->declare_parameter("hfov", 93.0);
-    this->declare_parameter("vfov", 101.0);
+    this->declare_parameter("vfov_rad", 101.0);
     this->declare_parameter("head_z", 0.87);
 
+    // Yolo
     this->declare_parameter("ball_radius", 0.11);
-
-
-    this->declare_parameter("proc_interval", 0.1);
     this->declare_parameter("show_debug", false);
     this->declare_parameter("model_path", "");
     this->declare_parameter(
             "class_names",
             std::vector<std::string>{"ball", "goal", "robot", "L", "T", "X", "center"});
-    this->declare_parameter("base_frame", "pumas_base_link");
-    this->declare_parameter("map_frame", "pumas_map");
     this->declare_parameter("ball_map_topic", "/vision/map_ball");
 
+    this->declare_parameter("proc_interval", 0.1);
 
-    this->get_parameter("hfov", hfov_);
-    this->get_parameter("vfov", vfov_);
+    // tf2
+    this->declare_parameter("base_frame", "pumas_base_link");
+    this->declare_parameter("map_frame", "pumas_map");
+
+    this->get_parameter("camera_topic", camera_topic_);
+    this->get_parameter("hfov", hfov_deg);
+    this->get_parameter("vfov_rad", vfov_deg);
     this->get_parameter("head_z", head_z_);
 
     this->get_parameter("ball_radius", ball_radius_);
+    this->get_parameter("show_debug", show_debug_);
 
     this->get_parameter("proc_interval", proc_interval_);
-    this->get_parameter("show_debug", show_debug_);
     this->get_parameter("model_path", model_path_);
     this->get_parameter("base_frame", base_frame_);
     this->get_parameter("map_frame", map_frame_);
@@ -75,9 +77,8 @@ BallDetectorNode::BallDetectorNode()
     std::vector<std::string> class_names;
     this->get_parameter("class_names", class_names);
 
-    hfov = (hfov_ * M_PI) / 180.0;
-    vfov = (vfov_ * M_PI) / 180.0;
-
+    hfov_rad = (hfov_deg * M_PI) / 180.0;
+    vfov_rad = (vfov_deg * M_PI) / 180.0;
 
     if (model_path_.empty()) {
         RCLCPP_ERROR(this->get_logger(), "model_path parameter is empty!");
@@ -86,21 +87,32 @@ BallDetectorNode::BallDetectorNode()
 
     detector_ = std::make_unique<YoloDetector>(model_path_, class_names);
 
+    // --- SUBSCRIBERS ---
+    // Camera image
     sub_img_ = this->create_subscription<sensor_msgs::msg::Image>(
-            "/camera/color/image_raw", 1,
+            camera_topic_, 1,
+            //"/camera/color/image_raw", 1,
             //"/boostercamera/head/rgb", 1,
             std::bind(&BallDetectorNode::imageCallback, this, std::placeholders::_1));
 
-    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
-    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_, this);
-
+    // --- PUBLISHERS ---
+    // Ball position in the image frame
     pub_ball_ = this->create_publisher<pumas_vision_msgs::msg::VisionObject>(
             "/vision/ball", 1);
+
+    // Ball position relative to the robot
     pub_ball_map_ = this->create_publisher<geometry_msgs::msg::Pose2D>(
-            ball_map_topic_, 1);
+            ball_map_topic_, 10);
+
+    // Landmarks publisher for localization
     pub_landmarks_ = this->create_publisher<localization_msg::msg::VisionLandmarkArray>(
             "/vision/landmarks", 1);
 
+    // Model preview (to view through rqt_image_view)
+    pub_debug_img_ = this->create_publisher<sensor_msgs::msg::Image>(
+            "/vision/debug_image", 1);
+
+    // --- SERVICES ---
     joint_client_ = this->create_client<joint_states_package::srv::HeadJoints>(
             "get_head_joints");
     while (!joint_client_->wait_for_service(std::chrono::seconds(1))) {
@@ -115,6 +127,11 @@ BallDetectorNode::BallDetectorNode()
             std::bind(&BallDetectorNode::jointStateRequest, this));
 
     last_proc_time_ = this->now();
+
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_, this);
+
+    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(this);    
 
     RCLCPP_INFO(
             this->get_logger(),
@@ -151,8 +168,26 @@ void BallDetectorNode::publishBallInMap(double bx, double by, const rclcpp::Time
     }
 
     pub_ball_map_->publish(pose_map);
+
+    // ======================================
+    
     geometry_msgs::msg::TransformStamped t;
     t.header.stamp = stamp;
+    t.header.frame_id = "pumas_base_link";
+    t.child_frame_id = "pumas_ball";
+
+    t.transform.translation.x = bx; 
+    t.transform.translation.y = by;
+    t.transform.translation.z = 0.0;
+
+    t.transform.rotation.x = 0.0;
+    t.transform.rotation.y = 0.0;
+    t.transform.rotation.z = 0.0;
+    t.transform.rotation.w = 1.0;
+
+    if (tf_broadcaster_) {
+        tf_broadcaster_->sendTransform(t);
+    }
 }
 
 std::vector<Detection> BallDetectorNode::angularPrune(
@@ -169,7 +204,7 @@ std::vector<Detection> BallDetectorNode::angularPrune(
     std::vector<Candidate> candidates;
     candidates.reserve(dets.size());
     for (auto & d : dets) {
-        candidates.push_back({d, computeAngle(d.center_x * img_width, img_width)});
+        candidates.push_back({d, computeAngle(d.center_x, img_width)});
     }
     std::sort(
             candidates.begin(), candidates.end(),
@@ -194,14 +229,24 @@ std::vector<Detection> BallDetectorNode::angularPrune(
     return result;
 }
 
+// double BallDetectorNode::computeAngle(double img_x, int img_width)
+// {
+//     double norm_x = (img_x - img_width / 2.0) / (img_width / 2.0);
+//     double alpha_cam = -(norm_x * (hfov_rad / 2.0));
+//     double alpha_body = alpha_cam + current_head_pan_;
+//     return std::atan2(std::sin(alpha_body), std::cos(alpha_body));
+// }
 double BallDetectorNode::computeAngle(double img_x, int img_width)
 {
-    double norm_x = (img_x - img_width / 2.0) / (img_width / 2.0);
-    double alpha_cam = -(norm_x * (hfov / 2.0));
+    double f_x = (img_width / 2.0) / std::tan(hfov_rad / 2.0);
+
+    double delta_x = (img_width / 2.0) - img_x; 
+    double alpha_cam = std::atan2(delta_x, f_x);
+
     double alpha_body = alpha_cam + current_head_pan_;
+
     return std::atan2(std::sin(alpha_body), std::cos(alpha_body));
 }
-
 void BallDetectorNode::jointStateRequest()
 {
     if (!joint_client_->service_is_ready()) {
@@ -211,23 +256,22 @@ void BallDetectorNode::jointStateRequest()
     auto request = std::make_shared<joint_states_package::srv::HeadJoints::Request>();
 
     joint_client_->async_send_request(
-            request,
-            [this](rclcpp::Client<joint_states_package::srv::HeadJoints>::SharedFuture result_future) {
+        request,
+        [this](rclcpp::Client<joint_states_package::srv::HeadJoints>::SharedFuture result_future) {
             try {
-            auto response = result_future.get();
-            if (response->success) {
-            current_head_pan_ = response->pan;
-            current_head_tilt_ = response->tilt;
-            RCLCPP_DEBUG(
-                    this->get_logger(), "Head joints: pan=%.3f, tilt=%.3f",
+                auto response = result_future.get();
+                if (response->success) {
+                    current_head_pan_ = response->pan;
+                    current_head_tilt_ = response->tilt;
+                RCLCPP_DEBUG(this->get_logger(), "Head joints: pan=%.3f, tilt=%.3f",
                     response->pan, response->tilt);
-            } else {
-            RCLCPP_WARN(this->get_logger(), "Head joint service returned failure");
-            }
+                } else {
+                    RCLCPP_WARN(this->get_logger(), "Head joint service returned failure");
+                }
             } catch (const std::exception & e) {
-            RCLCPP_ERROR(this->get_logger(), "Joint service call failed: %s", e.what());
+                RCLCPP_ERROR(this->get_logger(), "Joint service call failed: %s", e.what());
             }
-            });
+        });
 }
 
 void BallDetectorNode::imageCallback(const sensor_msgs::msg::Image::SharedPtr msg)
@@ -311,7 +355,7 @@ void BallDetectorNode::imageCallback(const sensor_msgs::msg::Image::SharedPtr ms
             pub_landmarks_->publish(lm_array);
         }
 
-        if (show_debug_) {
+        if (pub_debug_img_->get_subscription_count() > 0) {
             for (const auto & d : detections) {
                 double x1 = d.center_x - d.width / 2.0;
                 double y1 = d.center_y - d.height / 2.0;
@@ -336,8 +380,8 @@ void BallDetectorNode::imageCallback(const sensor_msgs::msg::Image::SharedPtr ms
                         cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0), 1);
             }
 
-            cv::imshow("Ball Detector", bgr);
-            cv::waitKey(1);
+            auto debug_msg = cv_bridge::CvImage(msg->header, "bgr8", bgr).toImageMsg();
+            pub_debug_img_->publish(*debug_msg);
         }
     } catch (const std::exception & e) {
         (void)e;
@@ -347,8 +391,8 @@ void BallDetectorNode::imageCallback(const sensor_msgs::msg::Image::SharedPtr ms
 std::pair<double, double> BallDetectorNode::getBallPosition(
         double img_x, double img_y, int img_width, int img_height)
 {
-    double theta = -(img_x - img_width / 2.0) * hfov / img_width + current_head_pan_;
-    double phi = (img_y - img_height / 2.0) * vfov / img_height + current_head_tilt_;
+    double theta = -(img_x - img_width / 2.0) * hfov_rad / img_width + current_head_pan_;
+    double phi = (img_y - img_height / 2.0) * vfov_rad / img_height + current_head_tilt_;
     double ux = std::cos(theta) * std::cos(phi);
     double uy = std::sin(theta) * std::cos(phi);
     double uz = -std::sin(phi);
