@@ -9,6 +9,7 @@
 import math
 import rclpy
 import socket
+import json
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 from rclpy.node import Node
 from tf2_ros import TransformException, LookupException
@@ -177,12 +178,20 @@ class PlannerNode(Node):
         
         self.getup_req = RpcService.Request() # Mensaje de request para getup, llama al Api ID siempre igual
         self.getup_req.msg.api_id = 2008
-        self.getup_req.msg.body = ""
+        self.getup_req.msg.body = ''
 
         self.prep_req = RpcService.Request() # Mensaje de request para prep mode 
         self.prep_req.msg.api_id = 2000
         self.prep_req.msg.body = '{"mode":1}'
 
+        self.walk_req = RpcService.Request() # Mensaje de request para walk mode 
+        self.walk_req.msg.api_id = 2000
+        self.walk_req.msg.body = '{"mode":2}'
+        
+        
+        self.mode_req = RpcService.Request() # Mensaje de request para saber el mode 
+        self.mode_req.msg.api_id = 2017
+        self.mode_req.msg.body = ''
 
         # --- TIMERS ---
         # State machine
@@ -198,6 +207,8 @@ class PlannerNode(Node):
         self.game_controller = None
         self.ball_position = None
         self.target_team = None
+        self.mode_future = None
+        self.robot_mode = None
         self.team_in_array = 0 # Position of our team in the array info of game controller 
         self.connection_timeout = 0.7 # <-- Adjust this to set the connection tolerance in seconds :)
         self.last_packet_time = self.get_clock().now()
@@ -221,12 +232,33 @@ class PlannerNode(Node):
         
     
     # Service request
+
+    def send_get_mode_request(self):
+        if self.mode_future is None:
+            self.mode_future = self.rpc_client.call_async(self.mode_req)
+
+    def get_mode(self):
+        self.send_get_mode_request()
+        if self.mode_future is not None and self.mode_future.done():
+            try:
+                response = self.mode_future.result()
+                data = json.loads(response.msg.body)
+                self.robot_mode = data["mode"]
+                self.get_logger().debug(
+                f"Robot mode: {self.robot_mode}"
+                )
+            except Exception as e:
+                self.get_logger().error(f"RPC error: {e}")
+
+            self.mode_future = None
+
     def send_getup_request(self):
         self.getup_res = self.rpc_client.call_async(self.getup_req)
     
     # State machine method
     def rustic_smach(self):
         self.send_getup_request() # Check if is fall and getup if so
+        self.get_mode() # Check the mode of the robot
         if self.getup_res.done():
             try:
                 if self.getup_res.result().msg.status == 0:
@@ -235,7 +267,7 @@ class PlannerNode(Node):
                     self.get_logger().debug("Robot no se puede levantar ")
                     self.current_state = self.error_state
             except Exception as e:
-  #              self.get_logger().error(f'Error: {e}')
+                self.get_logger().error(f'Error: {e}')
                 self.current_state = self.error_state
 
         try:
@@ -290,11 +322,13 @@ class PlannerNode(Node):
 
         #Update state from game controller messages
         if self.game_controller:
-            self.current_state = State[self.game_controller.game_state]
-            self.last_available_state = self.current_state
+            self.get_logger().info(f"Current state{self.current_state}")
+            if self.current_state is not State.IDLE:
+                self.current_state = State[self.game_controller.game_state]
+                self.last_available_state = self.current_state
 
-            self.sub_state = State[self.game_controller.secondary_state]
-            self.last_available_sub_state = self.sub_state
+                self.sub_state = State[self.game_controller.secondary_state]
+                self.last_available_sub_state = self.sub_state
         
         if self.game_controller and (self.player_info.penalty!=0):
             if self.player_info.penalty == 30: #Ball manipulation
@@ -310,6 +344,8 @@ class PlannerNode(Node):
             elif self.player_info.penalty == 35: # Service No idea of what
                 self.idle_state()
         elif self.game_controller and (self.game_controller.secondary_state == "STATE_NORMAL" or self.game_controller.secondary_state =="STATE_OVERTIME"): # Estados principales y primarios del juego
+            if self.robot_mode is not None and self.robot_mode == 1:
+                walk_res = self.rpc_client.call_async(self.walk_req)
             if self.current_state == State.WAITING_CONNECTION:
                 self.wait_state()
             elif self.current_state == State.STATE_INITIAL:
@@ -365,13 +401,22 @@ class PlannerNode(Node):
 
     def start_state(self):
         self.get_logger().info("START_STATE waiting for ready from Game Controller")
+        self.go_to_target_enable_publisher.publish(Bool(data = False))
+        self.head_ball_follower_enable_publisher.publish(Bool(data = False))
+        self.ball_follower_enable_publisher.publish(Bool(data = False))
 
     def ready_state(self):
         self.get_logger().info("READY_STATE going to my initial position")
+        self.go_to_target_enable_publisher.publish(Bool(data = True))
+        self.head_ball_follower_enable_publisher.publish(Bool(data = False))
+        self.ball_follower_enable_publisher.publish(Bool(data = False))
         self.go_to_target(self.start_position)
 
     def set_state(self):
         self.get_logger().info("SET_STATE waiting for the referee to start the game")
+        self.go_to_target_enable_publisher.publish(Bool(data = False))
+        self.head_ball_follower_enable_publisher.publish(Bool(data = False))
+        self.ball_follower_enable_publisher.publish(Bool(data = False))
     
     def playing_state(self):
         # TODO check if ball is outside of center 
@@ -411,7 +456,7 @@ class PlannerNode(Node):
                     # If the robot is inside that line activate ball follwer 
                     #if abs(y-robot_position[1]) < 10.0 :
                     #if distancia < 1.0:
-                    if abs(theta) < 1.0:
+                    if abs(theta) < 1.0 and self.target_arrive_success:
                         self.go_to_target_enable_publisher.publish(Bool(data = False))
                         self.head_ball_follower_enable_publisher.publish(Bool(data = True))
                         self.ball_follower_enable_publisher.publish(Bool(data = True))
@@ -494,14 +539,21 @@ class PlannerNode(Node):
         self.head_ball_follower_enable_publisher.publish(Bool(data = False))
         self.ball_follower_enable_publisher.publish(Bool(data = False))
         self.get_logger().info(f"Las state aviable {self.last_available_state}")
-        if self.last_available_state != State.IDLE or self.last_available_state != State.WAITING_CONNECTION: 
+        if self.last_available_state is not State.IDLE: 
             self.counter = 0 
         else:
+            self.get_logger().info("counter + 1")
             self.counter+=1
         if self.counter>=20:
             prep_res = self.rpc_client.call_async(self.prep_req)
             self.get_logger().debug(f"RPC Service response: {prep_res}")
-        self.current_state = State.IDLE
+        if self.game_controller and (self.player_info.penalty!=0):
+            self.last_available_state = self.current_state
+            self.current_state = State.IDLE
+        else:
+            self.last_available_state = self.current_state
+            self.current_state = State[self.game_controller.game_state]
+
         self.get_logger().info(f"IDLE_STATE {self.counter}")
 
     def error_state(self):
