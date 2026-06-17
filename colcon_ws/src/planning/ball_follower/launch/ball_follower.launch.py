@@ -76,6 +76,10 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
             package='ball_follower',
             executable='ball_follower',
             name='ball_follower',
+            parameters=[{
+                'linear_speed': params['movement']['linear_speed'],
+                'angular_speed': params['movement']['angular_speed']
+            }]
             #output='screen'
         )
     ]

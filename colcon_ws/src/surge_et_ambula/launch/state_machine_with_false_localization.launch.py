@@ -72,6 +72,10 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
             package = 'go_to_target',
             executable = 'go_to_target',
             name = 'go_to_target',
+            parameters=[{
+                'v_max': params['movement']['linear_speed'],
+                'w_max': params['movement']['angular_speed']
+            }]
             #output = 'screen'
         ),
 
