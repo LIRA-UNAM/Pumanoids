@@ -31,10 +31,10 @@ class ParticleFilterNode(Node):
 
     def __init__(self):
         super().__init__('particle_filter')
-        #FOV
+        self.current_odom_pose = [0.0, 0.0, 0.0]
         self.forward_speed = 0.8
         self.last_odom_time = None
-        self.fov_rad = math.radians(95)
+        self.fov_rad = math.radians(95) #FOV
         self.sigma_angle = math.radians(4.0)
         self.pose_pub = self.create_publisher(PoseStamped, '/estimated_pose', 10)
         self.declare_parameter("map_file",os.path.join(get_package_share_directory('config_files'),'maps','cancha_tmr.yaml'))
@@ -49,14 +49,8 @@ class ParticleFilterNode(Node):
 
         # Timer for TF 10 Hz
         self.tf_timer = self.create_timer(0.1, self.publish_tf_continuous)
-	# --- GRAPH Neff and Average weight ---
-        # self.start_time = self.get_clock().now().nanoseconds / 1e9
-        # self.log_file = open('pf_data_log.csv', 'w')
-        # self.log_file.write('time,avg_weight,neff,max_weight,moving\n')
-        # self.get_logger().info("Archivo de log pf_data_log.csv creado.")
 #------------------------------------------------------
         # Particles
-        # self.num_particles = 700
         self.field_x, self.field_y = 6.08, 9.06
         self.particles = []
         self.weights = []
@@ -70,7 +64,7 @@ class ParticleFilterNode(Node):
         alpha3: Noise in translation caused by translation.
         alpha4: Noise in translation caused by rotation. 
         '''
-        self.alphas = [0.00002, 0.0002, 0.00001, 0.0001]
+        self.alphas = [0.0002, 0.0002, 0.001, 0.0001]
         # Initialization
         self.is_moving = False
         self.init_particles()
@@ -109,8 +103,50 @@ class ParticleFilterNode(Node):
             cos_sum = sum(math.cos(p[2]) for p in self.particles)
             self.best_theta = math.atan2(sin_sum, cos_sum)
 
+        self.tf_broadcaster.sendTransform(t)
+
+    def publish_estimated_pose(self):
+        """Publica PoseStamped de la pose estimada en pumas_map."""
+        msg = PoseStamped()
+        msg.header.frame_id = "pumas_map"
+        msg.header.stamp    = self.get_clock().now().to_msg()
+        msg.pose.position.x    = self.best_x
+        msg.pose.position.y    = self.best_y
+        msg.pose.orientation.z = float(math.sin(self.best_theta / 2.0))
+        msg.pose.orientation.w = float(math.cos(self.best_theta / 2.0))
+        self.pose_pub.publish(msg)
+
     def publish_tf_continuous(self):
+        """
+        Calcula y publica TF pumas_map → pumas_odom.
+        pumas_map → pumas_odom → pumas_base_link
+        odometría ya publica odom → base_link con la pose
+        (ox, oy, o_theta). El filtro (best_x, best_y, best_theta) 
+        en pumas_map
+        Queremos:
+            T_map_odom  ⊕  T_odom_base  =  T_map_base 
+
+            map_x     =  best_x - ox*cos(o_theta) + oy*sin(o_theta) 
+            map_y     =  best_y - ox*sin(o_theta) - oy*cos(o_theta)
+            map_theta =  best_theta - o_theta
+
+            [map_x]   = R(-o_theta) * [ox, oy] restado de [best_x, best_y]
+        """
         self.compute_best_pose()
+
+        # Pose actual que reporta la odometría (odom → base_link)
+        ox, oy, o_theta = self.current_odom_pose
+
+        # Rotación inversa: llevar el vector odom al marco map
+        cos_t = math.cos(self.best_theta - o_theta)
+        sin_t = math.sin(self.best_theta - o_theta)
+
+        # T_map_odom = T_map_base ⊖ T_odom_base
+        map_odom_x     =  self.best_x - (ox * math.cos(self.best_theta - o_theta)
+                                        - oy * math.sin(self.best_theta - o_theta))
+        map_odom_y     =  self.best_y - (ox * math.sin(self.best_theta - o_theta)
+                                        + oy * math.cos(self.best_theta - o_theta))
+        map_odom_theta =  self.best_theta - o_theta
 
         now = self.get_clock().now().to_msg()
 
@@ -119,15 +155,16 @@ class ParticleFilterNode(Node):
         t.header.frame_id = "pumas_map"
         t.child_frame_id  = "pumas_odom"
 
-        t.transform.translation.x = self.best_x
-        t.transform.translation.y = self.best_y
+        t.transform.translation.x = map_odom_x
+        t.transform.translation.y = map_odom_y
         t.transform.translation.z = 0.0
         t.transform.rotation.x = 0.0
         t.transform.rotation.y = 0.0
-        t.transform.rotation.z = float(math.sin(self.best_theta / 2.0))
-        t.transform.rotation.w = float(math.cos(self.best_theta / 2.0))
+        t.transform.rotation.z = float(math.sin(map_odom_theta / 2.0))
+        t.transform.rotation.w = float(math.cos(map_odom_theta / 2.0))
 
         self.tf_broadcaster.sendTransform(t)
+        
     def read_yaml(self,config_file):
         with open(config_file, 'r') as file:
             configs = yaml.safe_load(file)
@@ -168,8 +205,8 @@ class ParticleFilterNode(Node):
         sigma_theta = math.radians(20)
     
         for _ in range(self.num_particles):
-            x     = random.gauss(init_x,     sigma_xy)
-            y     = random.gauss(init_y,     sigma_xy)
+            x = random.gauss(init_x, sigma_xy)
+            y = random.gauss(init_y, sigma_xy)
             theta = random.gauss(init_theta, sigma_theta)
         
             # Clamping
@@ -180,19 +217,7 @@ class ParticleFilterNode(Node):
     
         self.weights       = [1.0 / self.num_particles] * self.num_particles
         self.particle_scores = [1.0 / self.num_particles] * self.num_particles
-    def publish_estimated_pose(self):
-        if not self.particles:
-            return
-        msg = PoseStamped()
-        msg.header.frame_id = "pumas_map"
-        msg.header.stamp       = self.get_clock().now().to_msg()
-        msg.pose.position.x    = self.best_x
-        msg.pose.position.y    = self.best_y
-        msg.pose.orientation.x = 0.0
-        msg.pose.orientation.y = 0.0
-        msg.pose.orientation.z = float(math.sin(self.best_theta / 2.0))
-        msg.pose.orientation.w = float(math.cos(self.best_theta / 2.0))
-        self.pose_pub.publish(msg)
+
 # -----------MOTION MODEL -------------------------
 # Based on Table 5.6 page 136 PR
     def odom_callback(self, msg):
@@ -200,6 +225,8 @@ class ParticleFilterNode(Node):
         curr_y = msg.pose.pose.position.y
         curr_theta = get_yaw_from_quaternion(msg.pose.pose.orientation)
         curr_pose = [curr_x, curr_y, curr_theta]
+        self.current_odom_pose = curr_pose
+        
         curr_time = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
 	
         if self.last_odom_pose is None:
@@ -363,11 +390,12 @@ class ParticleFilterNode(Node):
             neff = 1.0 / sq_weights
             self.get_logger().info(f"Neff : {neff:.4}")
             # ----------------------------------
-            if neff < self.num_particles * 0.5: 
-                self.resample(robot_is_moving=self.is_moving)
-                self.get_logger().info("Resampling Executed.")
+            if neff < self.num_particles * 0.5:
+            self.resample(robot_is_moving=self.is_moving)
+            self.compute_best_pose() 
             #  RESAMPLING (Selección Natural)
             #  Visualizar particulas
+            self.compute_best_pose()   
             self.publish_particles()
             self.publish_estimated_pose()
         else:
