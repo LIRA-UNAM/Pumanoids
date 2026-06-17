@@ -394,11 +394,25 @@ class PlannerNode(Node):
                     # --- CHOOSING BETWEEN GO_TO_TARGET AND BALL_FOLLOWER ---
                     # Calculate a line that goes through ball and goal
                     self.get_logger().info(f"ball position: {self.ball_position}, joelian_point: {joelian_point}, robot_position: {robot_position}")
-                    y = (((joelian_point[1] - self.ball_position[1])/(joelian_point[0]
-                        - self.ball_position[0]))*(robot_position[0]
-                        - self.ball_position[0]))+self.ball_position[1]
+                    A = joelian_point[1] - self.ball_position[1]
+                    B = self.ball_position[0] - joelian_point[0]
+                    C = -A * joelian_point[0] - B * joelian_point[1]
+                    V1 = [joelian_point[0]- self.ball_position[0], joelian_point[1] - self.ball_position[1]]
+                    V2 = [robot_position[0]- self.ball_position[0], robot_position[1]- self.ball_position[1]]
+                    M1 = math.sqrt(V1[0] * V1[0] + V1[1] * V1[1])
+                    M2 = math.sqrt(V2[0] * V2[0] + V2[1] * V2[1])
+                    theta = math.acos((V1[0] * V2[0] + V1[1] * V2[1])/(M1*M2))
+                    self.get_logger().info(f"Angle = {theta}")
+                    #distancia = abs(A*robot_position[0] + B* robot_position[1] + C)/math.sqrt(A**2 + B**2)
+                    #self.get_logger().info(f"Distancia {distancia}")
+                    #y = (((joelian_point[1] - self.ball_position[1])/(joelian_point[0]
+                    #    - self.ball_position[0]))*(robot_position[0]
+                    #    - self.ball_position[0]))+self.ball_position[1]
                     # If the robot is inside that line activate ball follwer 
-                    if abs(y-robot_position[1]) < 0.5 and robot_position[1] < self.ball_position[1]:
+                    #if abs(y-robot_position[1]) < 10.0 :
+                    #if distancia < 1.0:
+                    if abs(theta) < 1.0:
+                        self.go_to_target_enable_publisher.publish(Bool(data = False))
                         self.head_ball_follower_enable_publisher.publish(Bool(data = True))
                         self.ball_follower_enable_publisher.publish(Bool(data = True))
                     # else go to the target in joelian point.
@@ -411,6 +425,7 @@ class PlannerNode(Node):
                     # -------------------------------------------------------
                 else:
                     self.get_logger().info("Searching the ball")
+                    self.go_to_target_enable_publisher.publish(Bool(data = False))
                     self.head_ball_follower_enable_publisher.publish(Bool(data = True))
                     self.ball_follower_enable_publisher.publish(Bool(data = False))
         else:
@@ -478,6 +493,7 @@ class PlannerNode(Node):
         self.go_to_target_enable_publisher.publish(Bool(data = False)) 
         self.head_ball_follower_enable_publisher.publish(Bool(data = False))
         self.ball_follower_enable_publisher.publish(Bool(data = False))
+        self.get_logger().info(f"Las state aviable {self.last_available_state}")
         if self.last_available_state != State.IDLE or self.last_available_state != State.WAITING_CONNECTION: 
             self.counter = 0 
         else:
