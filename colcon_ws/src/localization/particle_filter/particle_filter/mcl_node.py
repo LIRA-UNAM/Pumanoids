@@ -10,6 +10,9 @@ from ament_index_python.packages import get_package_share_directory
 import math
 import random
 from tf2_ros import TransformBroadcaster
+from tf2_ros import TransformException, LookupException
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
 from geometry_msgs.msg import TransformStamped
 
 def yaw_to_quaternion(yaw):
@@ -46,6 +49,9 @@ class ParticleFilterNode(Node):
         self.best_x     = -3.0
         self.best_y     = -3.5
         self.best_theta = 0.0
+        #TF2 variables
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
 
         # Timer for TF 10 Hz
         self.tf_timer = self.create_timer(0.1, self.publish_tf_continuous)
@@ -72,6 +78,7 @@ class ParticleFilterNode(Node):
         self.get_logger().info("Particle filter")
 
         #  ROS Sub/Pub
+        self.tf_timer = self.create_timer(0.15, self.tf_callback)
         self.obs_sub = self.create_subscription(
             VisionLandmarkArray, '/vision/landmarks', 
             self.observation_callback, 
@@ -220,11 +227,23 @@ class ParticleFilterNode(Node):
 
 # -----------MOTION MODEL -------------------------
 # Based on Table 5.6 page 136 PR
-    def odom_callback(self, msg):
-        curr_x = msg.pose.pose.position.x
-        curr_y = msg.pose.pose.position.y
-        curr_theta = get_yaw_from_quaternion(msg.pose.pose.orientation)
-        curr_pose = [curr_x, curr_y, curr_theta]
+
+    def tf_callback(self):
+        try:
+            t = self.tf_buffer.lookup_transform(
+                'pumas_odom',
+                'pumas_base_link',
+                rclpy.time.Time())
+            self.curr_pose= [
+                    t.transform.translation.x,
+                    t.transform.translation.y,
+                    math.atan2(t.transform.rotation.z, t.transform.rotation.w)*2
+                    ]
+        except (LookupException):
+            self.get_logger().info('Waiting for pumas_map->pumas_base_link')
+        except TransformException as ex:
+            self.get_logger().error(f'TF2 exception: {ex}')
+        curr_pose = self.curr_pose
         self.current_odom_pose = curr_pose
         
         curr_time = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
