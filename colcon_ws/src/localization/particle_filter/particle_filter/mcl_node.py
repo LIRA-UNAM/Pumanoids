@@ -110,8 +110,6 @@ class ParticleFilterNode(Node):
             cos_sum = sum(math.cos(p[2]) for p in self.particles)
             self.best_theta = math.atan2(sin_sum, cos_sum)
 
-        self.tf_broadcaster.sendTransform(t)
-
     def publish_estimated_pose(self):
         """Publica PoseStamped de la pose estimada en pumas_map."""
         msg = PoseStamped()
@@ -139,8 +137,6 @@ class ParticleFilterNode(Node):
 
             [map_x]   = R(-o_theta) * [ox, oy] restado de [best_x, best_y]
         """
-        self.compute_best_pose()
-
         # Pose actual que reporta la odometría (odom → base_link)
         ox, oy, o_theta = self.current_odom_pose
 
@@ -410,10 +406,10 @@ class ParticleFilterNode(Node):
             self.get_logger().info(f"Neff : {neff:.4}")
             # ----------------------------------
             if neff < self.num_particles * 0.5:
-            self.resample(robot_is_moving=self.is_moving)
-            self.compute_best_pose() 
-            #  RESAMPLING (Selección Natural)
-            #  Visualizar particulas
+                self.resample(robot_is_moving=self.is_moving)
+                self.get_logger().info("Resampling Executed.")
+                #  RESAMPLING (Selección Natural)
+                #  Visualizar particulas
             self.compute_best_pose()   
             self.publish_particles()
             self.publish_estimated_pose()
@@ -422,7 +418,7 @@ class ParticleFilterNode(Node):
 
     def publish_particles(self):
         msg = PoseArray()
-        msg.header.frame_id = "map"
+        msg.header.frame_id = "pumas_map"
         msg.header.stamp = self.get_clock().now().to_msg()
 
         # Iterar sobre el enjambre real de partículas
