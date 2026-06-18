@@ -3,7 +3,7 @@ start_position:
     - "-1.0"
     - "-1.0"
     - "0.0"
-team_number: 0
+team_number: 25
 goalkeeper: false
 kickoff: true
 kick: true
