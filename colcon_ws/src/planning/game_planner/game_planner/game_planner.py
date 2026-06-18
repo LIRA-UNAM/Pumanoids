@@ -10,6 +10,7 @@ import math
 import rclpy
 import socket
 import json
+import numpy as np
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 from rclpy.node import Node
 from tf2_ros import TransformException, LookupException
@@ -18,7 +19,7 @@ from tf2_ros.transform_listener import TransformListener
 from game_planner import gamestate
 from enum import Enum
 from std_msgs.msg import Bool
-from geometry_msgs.msg import Pose2D
+from geometry_msgs.msg import Pose2D, PoseStamped
 from booster_interface.srv import RpcService
 
 # Ports to comunicate with the Game Controller under UDP packages
@@ -114,7 +115,14 @@ class PlannerNode(Node):
         self.declare_parameter('kick', True)
         self.kick_robot = self.get_parameter('kick').value
         self.get_logger().info(f'Irá a por el kick para los subestados que lo necesiten? {self.kick_robot} ')
-
+	
+        # Hysteresis + debounce for FOLLOW BALL vs JOELIAN POINT decision   
+        self.follow_ball_mode = False   
+        self.theta_enter_follow = 0.7   
+        self.theta_exit_follow = 1.3    
+        self.mode_switch_counter = 0    
+        self.mode_switch_ticks_required = 5     # ~0.5s sostenidos antes de cambiar de modo 
+        self.close_to_ball_distance = 0.3       # m: si está más cerca que esto, forzar follow ball
         # --- QoS PROFILES ---
         qos_profile_for_enabling = QoSProfile(
             reliability=ReliabilityPolicy.RELIABLE,
@@ -147,6 +155,10 @@ class PlannerNode(Node):
         self.target_position_publisher = self.create_publisher(
                 Pose2D,
                 '/go_to_target/target',
+                10)
+        self.posestamped_pub = self.create_publisher(
+                PoseStamped,
+                '/joelian_stamped',
                 10)
         
         # --- SUBSCRIBERS ---
@@ -204,11 +216,16 @@ class PlannerNode(Node):
         # Game Controller
         self.host ="0.0.0.0" # Always watching any IP
         self.move_ball = False
+        self.seeing_ball = False
         self.game_controller = None
         self.ball_position = None
         self.target_team = None
         self.mode_future = None
         self.robot_mode = None
+        #self.last_ball_positions =[(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0),] 
+        #self.last_joelian_point = [(0.0,0.0,0.0),(0.0,0.0,0.0),(0.0,0.0,0.0),(0.0,0.0,0.0),(0.0,0.0,0.0),(0.0,0.0,0.0),(0.0,0.0,0.0),(0.0,0.0,0.0),(0.0,0.0,0.0),(0.0,0.0,0.0),] 
+        self.last_ball_positions = [None] * 10
+        self.last_joelian_point = [None] * 10
         self.team_in_array = 0 # Position of our team in the array info of game controller 
         self.connection_timeout = 0.7 # <-- Adjust this to set the connection tolerance in seconds :)
         self.last_packet_time = self.get_clock().now()
@@ -386,13 +403,15 @@ class PlannerNode(Node):
                 self.error_state()
 
     def go_to_target(self, point):
-        if self.current_robot_position is None:
-            self.get_logger().info("Not pose yet")
-            return
-        else:
-            distance = math.sqrt((math.pow((self.current_robot_position[0] - point.x),2)+math.pow((self.current_robot_position[1] - point.y),2)))
-            send =(self.go_to_target_success  and distance > 0.5) 
-            if send:
+            if self.current_robot_position is None:
+                self.get_logger().info("Not pose yet")
+                return
+            else:
+                distance = math.sqrt((math.pow((self.current_robot_position[0] - point.x),2)+math.pow((self.current_robot_position[1] - point.y),2)))
+                self.get_logger().info(f"Distancia a joeliano: {distance:.2f}m")
+                
+                # Dejamos que publique siempre que esté habilitado.
+                # El nodo de control de bajo nivel manejará la tolerancia de llegada.
                 self.get_logger().info(f"going to {point}")
                 self.target_position_publisher.publish(point)
 
@@ -419,49 +438,71 @@ class PlannerNode(Node):
         self.ball_follower_enable_publisher.publish(Bool(data = False))
     
     def playing_state(self):
-        # TODO check if ball is outside of center 
-        if self.game_controller.secondary_seconds_remaining==0 or self.goalkeeper: # TODO insert here the ball outside center comparision
-#            self.get_logger().info("PLAYING_STATE follow ball or goalkeeper guard")
+        # TODO check if ball is outside of center
+        if self.game_controller.secondary_seconds_remaining == 0 or self.goalkeeper:
             if self.goalkeeper:
-                print("goal keeping") #TODO goal keeper guard enable publisher
+                self.go_to_target_enable_publisher.publish(Bool(data=False))
+                self.head_ball_follower_enable_publisher.publish(Bool(data=False))
+                self.ball_follower_enable_publisher.publish(Bool(data=False))
+                print("goal keeping")  # TODO goal keeper guard enable publisher
             else:
                 if self.current_robot_position is None:
                     self.get_logger().info("Not pumas map yet")
                     return
-                if self.carry_ball_position is not None  and self.ball_position is not None:
-                    self.get_logger().info("I've my position and the ball position")
 
-                    # Calculate distante to the joelian point
+                if self.seeing_ball and self.carry_ball_position is not None and self.ball_position is not None:
+
+                    # Calculate distance to the joelian point
                     joelian_point = [self.carry_ball_position[0], self.carry_ball_position[1]]
                     robot_position = [self.current_robot_position[0], self.current_robot_position[1]]
-                    self.get_logger().debug(f"Dist to joelian point: {math.dist(joelian_point, robot_position)}")
 
-                    # --- CHOOSING BETWEEN GO_TO_TARGET AND BALL_FOLLOWER ---
-                    # Calculate a line that goes through ball and goal
                     self.get_logger().info(f"ball position: {self.ball_position}, joelian_point: {joelian_point}, robot_position: {robot_position}")
-                    A = joelian_point[1] - self.ball_position[1]
-                    B = self.ball_position[0] - joelian_point[0]
-                    C = -A * joelian_point[0] - B * joelian_point[1]
-                    V1 = [joelian_point[0]- self.ball_position[0], joelian_point[1] - self.ball_position[1]]
-                    V2 = [robot_position[0]- self.ball_position[0], robot_position[1]- self.ball_position[1]]
+                    
+                    # CORRECCIÓN MATEMÁTICA VITAL:
+                    # V1: Vector desde el Punto Joeliano HASTA la Pelota (Vector de Ataque ideal)
+                    V1 = [self.ball_position[0] - joelian_point[0], self.ball_position[1] - joelian_point[1]]
+                    # V2: Vector desde el Robot HASTA la Pelota (Vector de Ataque real)
+                    V2 = [self.ball_position[0] - robot_position[0], self.ball_position[1] - robot_position[1]]
+                    
                     M1 = math.sqrt(V1[0] * V1[0] + V1[1] * V1[1])
                     M2 = math.sqrt(V2[0] * V2[0] + V2[1] * V2[1])
-                    theta = math.acos((V1[0] * V2[0] + V1[1] * V2[1])/(M1*M2))
-                    self.get_logger().info(f"Angle = {theta}")
-                    #distancia = abs(A*robot_position[0] + B* robot_position[1] + C)/math.sqrt(A**2 + B**2)
-                    #self.get_logger().info(f"Distancia {distancia}")
-                    #y = (((joelian_point[1] - self.ball_position[1])/(joelian_point[0]
-                    #    - self.ball_position[0]))*(robot_position[0]
-                    #    - self.ball_position[0]))+self.ball_position[1]
-                    # If the robot is inside that line activate ball follwer 
-                    #if abs(y-robot_position[1]) < 10.0 :
-                    #if distancia < 1.0:
-                    if abs(theta) < 1.0 and self.target_arrive_success:
-                        self.go_to_target_enable_publisher.publish(Bool(data = False))
-                        self.head_ball_follower_enable_publisher.publish(Bool(data = True))
-                        self.ball_follower_enable_publisher.publish(Bool(data = True))
-                    # else go to the target in joelian point.
+                    
+                    # Evitar divisiones por cero si hay un error de visión extremo
+                    if M1 == 0 or M2 == 0:
+                        wants_follow = False
+                    # --- Caso especial: muy cerca de la pelota, forzar persecución ---
+                    elif M2 < self.close_to_ball_distance:
+                        wants_follow = True
                     else:
+                        cos_theta = max(-1.0, min(1.0, (V1[0] * V2[0] + V1[1] * V2[1]) / (M1 * M2)))
+                        theta = math.acos(cos_theta)
+                        self.get_logger().info(f"Angle = {theta:.2f} rad")
+                        
+                        if self.follow_ball_mode:
+                            wants_follow = not (theta > self.theta_exit_follow)
+                        else:
+                            # Si el ángulo entre nuestro ataque real y el ideal es menor a ~40 grados, ataca.
+                            wants_follow = (theta < self.theta_enter_follow)
+
+                    # --- Debounce: exigir N ticks consecutivos antes de cambiar de modo ---
+                    if wants_follow != self.follow_ball_mode:
+                        self.mode_switch_counter += 1
+                        if self.mode_switch_counter >= self.mode_switch_ticks_required:
+                            self.follow_ball_mode = wants_follow
+                            self.mode_switch_counter = 0
+                    else:
+                        self.mode_switch_counter = 0
+
+                    if self.follow_ball_mode:
+                        self.get_logger().info("FOLLOW BALL")
+                        self.go_to_target_enable_publisher.publish(Bool(data=False))
+                        self.head_ball_follower_enable_publisher.publish(Bool(data=True))
+                        self.ball_follower_enable_publisher.publish(Bool(data=True))
+                    else:
+                        self.get_logger().info("JOELIAN POINT")
+                        self.ball_follower_enable_publisher.publish(Bool(data=False))
+                        self.head_ball_follower_enable_publisher.publish(Bool(data=True))
+                        self.go_to_target_enable_publisher.publish(Bool(data=True))
                         target = Pose2D()
                         target.x = self.carry_ball_position[0]
                         target.y = self.carry_ball_position[1]
@@ -469,19 +510,26 @@ class PlannerNode(Node):
                         self.go_to_target(target)
                     # -------------------------------------------------------
                 else:
-                    self.get_logger().info("Searching the ball")
-                    self.go_to_target_enable_publisher.publish(Bool(data = False))
-                    self.head_ball_follower_enable_publisher.publish(Bool(data = True))
-                    self.ball_follower_enable_publisher.publish(Bool(data = False))
+                    # No vemos la pelota: apagamos ambos controladores de movimiento
+                    self.follow_ball_mode = False
+                    self.go_to_target_enable_publisher.publish(Bool(data=False))
+                    self.ball_follower_enable_publisher.publish(Bool(data=False))
+                    if self.go_to_target_success:
+                        self.get_logger().info("SEARCHING BALL")
         else:
-            #TODO another way to decied wich robot do the kickoff
+            # TODO another way to decide which robot does the kickoff
             if self.game_controller.kick_of_team == self.team_number and self.kickoff_robot:
-                #TODO Miguels kick implementation  
-                self.head_ball_follower_enable_publisher.publish(Bool(data = True))
-                self.ball_follower_enable_publisher.publish(Bool(data = True))
+                # TODO Miguel's kick implementation
+                self.go_to_target_enable_publisher.publish(Bool(data=False))
+                self.head_ball_follower_enable_publisher.publish(Bool(data=True))
+                self.ball_follower_enable_publisher.publish(Bool(data=True))
             else:
-                print("waiit for ball moving or pass the time")
+                self.go_to_target_enable_publisher.publish(Bool(data=False))
+                self.head_ball_follower_enable_publisher.publish(Bool(data=False))
+                self.ball_follower_enable_publisher.publish(Bool(data=False))
+                print("wait for ball moving or pass the time")
 
+        self.seeing_ball = False
 
     def finish_state(self):
         self.get_logger().info("FINISH_STATE good half game")
@@ -560,12 +608,62 @@ class PlannerNode(Node):
         self.get_logger().error("error_state")
         self.current_state = State.IDLE
 
+    def pose2d_to_timestamped(self, msg: Pose2D):
+        stamped_msg = PoseStamped()
+        stamped_msg.header.stamp = self.get_clock().now().to_msg()
+        stamped_msg.header.frame_id = "pumas_map"
+
+        stamped_msg.pose.position.x = msg.x
+        stamped_msg.pose.position.y = msg.y
+        stamped_msg.pose.position.z = 0.0
+
+        stamped_msg.pose.orientation.x = 0.0
+        stamped_msg.pose.orientation.y = 0.0
+        stamped_msg.pose.orientation.z = math.sin(msg.theta / 2.0)
+        stamped_msg.pose.orientation.w = math.cos(msg.theta / 2.0)
+
+        self.posestamped_pub.publish(stamped_msg)
+
     # --- CALLBACKS ---
     def map_ball_callback(self, msg):
-        self.ball_position = [msg.x, msg.y]
+        self.last_ball_positions.pop(0)
+        self.last_ball_positions.append([msg.x, msg.y])
+        
+        valid = [pos for pos in self.last_ball_positions if pos is not None]
+        if not valid:
+            return
+        avg_x = sum(p[0] for p in valid) / len(valid)
+        avg_y = sum(p[1] for p in valid) / len(valid)
+        self.ball_position = [avg_x, avg_y]
+        self.seeing_ball = True
+        
+        #x_mean = 0.0
+        #y_mean = 0.0
+        #for i in self.last_ball_positions:
+        #    x_mean += i[0]
+        #    y_mean += i[1]
+        #x_mean = x_mean/10
+        #y_mean = y_mean/10
+        #self.ball_position = [x_mean, y_mean]
+        #self.seeing_ball = True
 
     def carry_ball_callback(self, msg):
-        self.carry_ball_position = (msg.x, msg.y, msg.theta)
+        self.last_joelian_point.pop(0)
+        self.last_joelian_point.append([msg.x, msg.y, msg.theta])
+
+        valid = [pos for pos in self.last_joelian_point if pos is not None]
+        if not valid:
+            return
+        avg_x = sum(p[0] for p in valid) / len(valid)
+        avg_y = sum(p[1] for p in valid) / len(valid)
+        avg_theta = sum(p[2] for p in valid) / len(valid)
+        self.carry_ball_position = [avg_x, avg_y, avg_theta]
+
+        rviz_joelian = Pose2D()
+        rviz_joelian.x = avg_x
+        rviz_joelian.y = avg_y
+        rviz_joelian.theta = avg_theta
+        self.pose2d_to_timestamped(rviz_joelian)
 
     def go_to_target_success_callback(self, msg):
         self.go_to_target_success = msg.data
