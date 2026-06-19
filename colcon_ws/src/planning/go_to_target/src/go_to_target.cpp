@@ -62,14 +62,14 @@ class GoToTarget : public rclcpp::Node
         // -- TOPICS --
         // Publishers
         movement_publisher = this->create_publisher<geometry_msgs::msg::Twist>(
-                "/cmd_vel", 2);
+                "/cmd_vel", 10);
         success_publisher = this->create_publisher<std_msgs::msg::Bool>(
                 "/go_to_target/success", 10);
 
         // Subscribers
         pose_subscriber = this->create_subscription<geometry_msgs::msg::Pose2D>(
                 "/go_to_target/target",
-                1,
+                10,
                 std::bind(&GoToTarget::target_callback, this, std::placeholders::_1));
 
         enable_subscriber = this->create_subscription<std_msgs::msg::Bool>(
@@ -163,7 +163,7 @@ class GoToTarget : public rclcpp::Node
                 //RCLCPP_INFO(this->get_logger(), "\n err_dist: %.2f, err_a: %.2f, vel: %.2f, w: %.2f", err_dist, err_a, vel, w );
                 if(!enable) state = State::idle;
 
-                RCLCPP_DEBUG(this->get_logger(), "Current state: %s", to_string(state).data());
+                //RCLCPP_INFO(this->get_logger(), "Current state: %s", to_string(state).data());
 
                 switch(state)
                 {
@@ -189,6 +189,7 @@ class GoToTarget : public rclcpp::Node
                     case State::forward:
                         //RCLCPP_INFO(this->get_logger(), "Walking forward");
                         twist_msg.linear.x = vel;
+                        RCLCPP_INFO(this->get_logger(), "vel: %0.3f", vel);
                         twist_msg.angular.z = w;//std::abs(err_a) > 0.2 ? w : 0.0;
                         state = err_dist < dist_min ? State::goal_align : State::forward;
                         break;
