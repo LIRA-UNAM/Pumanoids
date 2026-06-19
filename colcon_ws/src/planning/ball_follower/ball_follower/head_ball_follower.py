@@ -19,9 +19,9 @@ class HeadBallFollowerNode(Node):
     def callback_enable(self, msg):
         self.enable = msg.data
         if self.enable:
-            self.get_logger().info("Enable received...")
+            self.get_logger().debug("Enable received...")
         else:
-            self.get_logger().info("Disable received...")
+            self.get_logger().debug("Disable received...")
 
     # Request function for joint states
     def joint_state_request(self):
@@ -104,7 +104,7 @@ class HeadBallFollowerNode(Node):
         self.declare_parameter("body_search_turn_deg", 90.0)
         self.declare_parameter("body_search_ang_vel", 0.7)
         self.declare_parameter("body_search_turn_sign", 1.0)
-        self.declare_parameter("enable_body_search_turn", True)
+        self.declare_parameter("enable_body_search_turn", False)
 
         # -- QoS PROFILES --
         qos_profile_for_enabling = QoSProfile(
@@ -120,7 +120,7 @@ class HeadBallFollowerNode(Node):
         self.sub_enable  = self.create_subscription(Bool, "/head_ball_follower/enable", self.callback_enable, qos_profile_for_enabling)
         self.sub_ball    = self.create_subscription(VisionObject, '/vision/ball', self.callback_ball, 1)
         self.pub_pantilt = self.create_publisher(Float32MultiArray, '/hardware/head/goal_pose', 1)
-        self.pub_cmd_vel = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.pub_cmd_vel = self.create_publisher(Twist, '/cmd_vel', 2)
         
         # --- SERVICES ---
         # Jont positions client
@@ -183,7 +183,7 @@ class HeadBallFollowerNode(Node):
             elif self.State_ == SM_WAIT_FOR_FIRST_IMAGE:
                 img = self.get_single_image()
                 if img is not None:
-                    self.get_logger().info(f"Image received with size {img.width}x{img.height}")
+                    #self.get_logger().info(f"Image received with size {img.width}x{img.height}")
                     self.img_width  = img.width
                     self.img_height = img.height
                     self.img_goal_x = img.width/2
@@ -211,7 +211,7 @@ class HeadBallFollowerNode(Node):
                 else:
                     # STOP whatever mafofada the robot was doing. Then proceed
                     self._publish_cmd_vel_zero()
-                    self.get_logger().info(f"Found ball at position ({self.img_ball_x},{self.img_ball_y}) with head at ({self.last_head_pan},{self.last_head_tilt})")
+                    self.get_logger().debug(f"Found ball at position ({self.img_ball_x},{self.img_ball_y}) with head at ({self.last_head_pan},{self.last_head_tilt})")
                     self.goal_pan  = -0.65*(self.img_ball_x - self.img_goal_x) / (self.img_width  / 2) + self.last_head_pan
                     self.goal_tilt =  0.50*(self.img_ball_y - self.img_goal_y) / (self.img_height / 2) + self.last_head_tilt
                     self.goal_pan  = max(-1.0, min(1.0, self.goal_pan))
