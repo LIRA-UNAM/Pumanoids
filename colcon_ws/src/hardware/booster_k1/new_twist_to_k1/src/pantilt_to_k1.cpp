@@ -16,7 +16,7 @@ public:
     : Node("pantilt_to_k1")
     {
         subscription = this->create_subscription<std_msgs::msg::Float32MultiArray>(
-            "/hardware/head/goal_pose", 3,
+            "/hardware/head/goal_pose", 10,
             std::bind(&PantiltToK1Node::callback_pantilt_cmd, this, std::placeholders::_1));
 
         publisher = this->create_publisher<booster_msgs::msg::RpcReqMsg>("/LocoApiTopicReq", 10);
