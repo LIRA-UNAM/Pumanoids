@@ -118,10 +118,12 @@ class PlannerNode(Node):
 	
         # Hysteresis + debounce for FOLLOW BALL vs JOELIAN POINT decision   
         self.follow_ball_mode = False   
-        self.theta_enter_follow = 0.7   
-        self.theta_exit_follow = 1.3    
+        self.theta_enter_follow = 1.6   
+        self.theta_exit_follow = 2.9   
         self.mode_switch_counter = 0    
-        self.mode_switch_ticks_required = 5     # ~0.5s sostenidos antes de cambiar de modo 
+        self.mode_switch_to_joelian_counter = 0    
+        self.mode_switch_ticks_required = 3     # ~0.5s sostenidos antes de cambiar de modo 
+        self.mode_switch_to_joelian_ticks_required = 30     # ~0.5s sostenidos antes de cambiar de modo 
         self.close_to_ball_distance = 0.3       # m: si está más cerca que esto, forzar follow ball
         # --- QoS PROFILES ---
         qos_profile_for_enabling = QoSProfile(
@@ -155,7 +157,7 @@ class PlannerNode(Node):
         self.target_position_publisher = self.create_publisher(
                 Pose2D,
                 '/go_to_target/target',
-                10)
+                1)
         self.posestamped_pub = self.create_publisher(
                 PoseStamped,
                 '/joelian_stamped',
@@ -339,7 +341,7 @@ class PlannerNode(Node):
 
         #Update state from game controller messages
         if self.game_controller:
-            self.get_logger().info(f"Current state{self.current_state}")
+            self.get_logger().debug(f"Current state{self.current_state}")
             if self.current_state is not State.IDLE:
                 self.current_state = State[self.game_controller.game_state]
                 self.last_available_state = self.current_state
@@ -408,11 +410,11 @@ class PlannerNode(Node):
                 return
             else:
                 distance = math.sqrt((math.pow((self.current_robot_position[0] - point.x),2)+math.pow((self.current_robot_position[1] - point.y),2)))
-                self.get_logger().info(f"Distancia a joeliano: {distance:.2f}m")
+                #self.get_logger().info(f"Distancia a joeliano: {distance:.2f}m")
                 
                 # Dejamos que publique siempre que esté habilitado.
                 # El nodo de control de bajo nivel manejará la tolerancia de llegada.
-                self.get_logger().info(f"going to {point}")
+                #self.get_logger().info(f"going to {point}")
                 self.target_position_publisher.publish(point)
 
     def wait_state(self):
@@ -447,7 +449,7 @@ class PlannerNode(Node):
                 print("goal keeping")  # TODO goal keeper guard enable publisher
             else:
                 if self.current_robot_position is None:
-                    self.get_logger().info("Not pumas map yet")
+                    #self.get_logger().info("Not pumas map yet")
                     return
 
                 if self.seeing_ball and self.carry_ball_position is not None and self.ball_position is not None:
@@ -456,7 +458,7 @@ class PlannerNode(Node):
                     joelian_point = [self.carry_ball_position[0], self.carry_ball_position[1]]
                     robot_position = [self.current_robot_position[0], self.current_robot_position[1]]
 
-                    self.get_logger().info(f"ball position: {self.ball_position}, joelian_point: {joelian_point}, robot_position: {robot_position}")
+                    self.get_logger().debug(f"ball position: {self.ball_position}, joelian_point: {joelian_point}, robot_position: {robot_position}")
                     
                     # CORRECCIÓN MATEMÁTICA VITAL:
                     # V1: Vector desde el Punto Joeliano HASTA la Pelota (Vector de Ataque ideal)
@@ -476,7 +478,7 @@ class PlannerNode(Node):
                     else:
                         cos_theta = max(-1.0, min(1.0, (V1[0] * V2[0] + V1[1] * V2[1]) / (M1 * M2)))
                         theta = math.acos(cos_theta)
-                        self.get_logger().info(f"Angle = {theta:.2f} rad")
+                        self.get_logger().debug(f"Angle = {theta:.2f} rad")
                         
                         if self.follow_ball_mode:
                             wants_follow = not (theta > self.theta_exit_follow)
@@ -485,11 +487,41 @@ class PlannerNode(Node):
                             wants_follow = (theta < self.theta_enter_follow)
 
                     # --- Debounce: exigir N ticks consecutivos antes de cambiar de modo ---
+                    self.get_logger().info(f"TICKS joel -> ball= {self.mode_switch_counter}")
+                    self.get_logger().info(f"TICKS ball -> joel= {self.mode_switch_to_joelian_counter}")
+                    #if self.follow_ball_mode:
+                    #    self.get_logger().info("Checking ticks to joelian")
+                    #    if wants_follow != self.follow_ball_mode:
+                    #        self.mode_switch_to_joelian_counter += 1
+                    #        self.get_logger().info("Adding ticks")
+                    #        if self.mode_switch_to_joelian_counter >= self.mode_switch_to_joelian_ticks_required:
+                    #            self.get_logger().info("CHANGING TO JOELIAN")
+                    #            self.follow_ball_mode = wants_follow
+                    #            self.mode_switch_counter = 0
+                    #            self.mode_switch_to_joelian_counter = 0
+                    #    else:
+                    #        self.mode_switch_to_joelian_counter = 0
+                    #        
+                    #else:
+                    #    if wants_follow != self.follow_ball_mode:
+                    #        self.mode_switch_counter += 1
+                    #        if self.mode_switch_counter >= self.mode_switch_ticks_required:
+                    #            self.follow_ball_mode = wants_follow
+                    #            self.mode_switch_counter = 0
+                    #            self.mode_switch_to_joelian_counter = 0
+                    #    else:
+                    #        self.mode_switch_counter = 0
+
                     if wants_follow != self.follow_ball_mode:
                         self.mode_switch_counter += 1
-                        if self.mode_switch_counter >= self.mode_switch_ticks_required:
-                            self.follow_ball_mode = wants_follow
-                            self.mode_switch_counter = 0
+                        if self.follow_ball_mode:
+                            if self.mode_switch_counter >= self.mode_switch_to_joelian_ticks_required:
+                                self.follow_ball_mode = wants_follow
+                                self.mode_switch_counter = 0
+                        else:
+                            if self.mode_switch_counter >= self.mode_switch_ticks_required:
+                                self.follow_ball_mode = wants_follow
+                                self.mode_switch_counter = 0
                     else:
                         self.mode_switch_counter = 0
 
@@ -507,6 +539,8 @@ class PlannerNode(Node):
                         target.x = self.carry_ball_position[0]
                         target.y = self.carry_ball_position[1]
                         target.theta = self.carry_ball_position[2]
+                        #self.get_logger().debug(f"Robot  a: {self.current_robot_position[2]}")
+                        #self.get_logger().debug(f"Target a: {self.current_robot_position[2]}")
                         self.go_to_target(target)
                     # -------------------------------------------------------
                 else:
@@ -586,11 +620,11 @@ class PlannerNode(Node):
         self.go_to_target_enable_publisher.publish(Bool(data = False)) 
         self.head_ball_follower_enable_publisher.publish(Bool(data = False))
         self.ball_follower_enable_publisher.publish(Bool(data = False))
-        self.get_logger().info(f"Las state aviable {self.last_available_state}")
-        if self.last_available_state is not State.IDLE: 
+        self.get_logger().debug(f"Las state aviable {self.last_available_state}")
+        if self.last_available_state is not State.IDLE and self.last_available_state is not State.WAITING_CONNECTION: 
             self.counter = 0 
         else:
-            self.get_logger().info("counter + 1")
+            #self.get_logger().debug("counter + 1")
             self.counter+=1
         if self.counter>=20:
             prep_res = self.rpc_client.call_async(self.prep_req)
