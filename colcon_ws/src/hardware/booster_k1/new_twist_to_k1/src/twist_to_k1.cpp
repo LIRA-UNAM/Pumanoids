@@ -15,7 +15,7 @@ public:
     TwistToK1Node()
     : Node("twist_to_k1")
     {
-        subscription = this->create_subscription<geometry_msgs::msg::Twist>("/cmd_vel", 10, std::bind(&TwistToK1Node::callback_cmd_vel, this, std::placeholders::_1));
+        subscription = this->create_subscription<geometry_msgs::msg::Twist>("/cmd_vel", 2, std::bind(&TwistToK1Node::callback_cmd_vel, this, std::placeholders::_1));
 
         publisher = this->create_publisher<booster_msgs::msg::RpcReqMsg>("/LocoApiTopicReq", 10);
     }
