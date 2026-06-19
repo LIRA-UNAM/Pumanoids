@@ -49,6 +49,7 @@ class ParticleFilterNode(Node):
         self.best_x     = -3.0
         self.best_y     = -3.5
         self.best_theta = 0.0
+        self.curr_pose = [0.0,0.0,0.0] 
         #TF2 variables
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -84,10 +85,6 @@ class ParticleFilterNode(Node):
             self.observation_callback, 
             qos_profile_sensor_data)
 
-        self.odom_sub = self.create_subscription(
-            Odometry, '/odom_converted',
-            self.odom_callback,
-            qos_profile_sensor_data)
     def compute_best_pose(self):
         if not self.particles:
             return
@@ -242,7 +239,7 @@ class ParticleFilterNode(Node):
         curr_pose = self.curr_pose
         self.current_odom_pose = curr_pose
         
-        curr_time = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+        curr_time = t.header.stamp.sec + t.header.stamp.nanosec * 1e-9
 	
         if self.last_odom_pose is None:
             self.last_odom_pose = curr_pose
