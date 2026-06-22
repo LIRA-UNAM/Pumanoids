@@ -115,16 +115,23 @@ class PlannerNode(Node):
         self.declare_parameter('kick', True)
         self.kick_robot = self.get_parameter('kick').value
         self.get_logger().info(f'Irá a por el kick para los subestados que lo necesiten? {self.kick_robot} ')
+
+        # Hysteresis values
+        self.declare_parameter('theta_enter_follow', 0.8)
+        self.declare_parameter('theta_exit_follow', 1.5)
+        self.declare_parameter('ball_min_distance', 0.3)
 	
         # Hysteresis + debounce for FOLLOW BALL vs JOELIAN POINT decision   
         self.follow_ball_mode = False   
-        self.theta_enter_follow = 0.8   
-        self.theta_exit_follow = 1.5   
+        self.theta_enter_follow = self.get_parameter('theta_enter_follow').value 
+        self.theta_exit_follow = self.get_parameter('theta_exit_follow').value 
         self.mode_switch_counter = 0    
         self.mode_switch_to_joelian_counter = 0    
         self.mode_switch_ticks_required = 3     # ~0.5s sostenidos antes de cambiar de modo 
         self.mode_switch_to_joelian_ticks_required = 30     # ~0.5s sostenidos antes de cambiar de modo 
-        self.close_to_ball_distance = 0.3       # m: si está más cerca que esto, forzar follow ball
+        # m: si está más cerca que esto, forzar follow ball
+        self.close_to_ball_distance = self.get_parameter('ball_min_distance').value
+
         # --- QoS PROFILES ---
         qos_profile_for_enabling = QoSProfile(
             reliability=ReliabilityPolicy.RELIABLE,
@@ -224,8 +231,6 @@ class PlannerNode(Node):
         self.target_team = None
         self.mode_future = None
         self.robot_mode = None
-        #self.last_ball_positions =[(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0),] 
-        #self.last_joelian_point = [(0.0,0.0,0.0),(0.0,0.0,0.0),(0.0,0.0,0.0),(0.0,0.0,0.0),(0.0,0.0,0.0),(0.0,0.0,0.0),(0.0,0.0,0.0),(0.0,0.0,0.0),(0.0,0.0,0.0),(0.0,0.0,0.0),] 
         self.last_ball_positions = [None] * 10
         self.last_joelian_point = [None] * 10
         self.team_in_array = 0 # Position of our team in the array info of game controller 
