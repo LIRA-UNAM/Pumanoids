@@ -156,6 +156,11 @@ class PlannerNode(Node):
                 '/ball_follower/enable',
                 qos_profile_for_enabling)
 
+        self.goalkeeper_enable_publisher = self.create_publisher(
+                Bool,
+                '/goal_keeper/enable',          # Or any name of the topic 
+                qos_profile_for_enabling)
+
         self.go_to_target_enable_publisher = self.create_publisher(
                 Bool,
                 '/go_to_target/enable',
@@ -574,6 +579,11 @@ class PlannerNode(Node):
         self.seeing_ball = False
         """
     def playing_state(self):
+        if self.game_controller.secondary_seconds_remaining > 0 :
+            return
+        if self.goalkeeper == True:
+            self.goalkeeper_enable_publisher.publish(Bool(data = True))
+            return 
         self.head_ball_follower_enable_publisher.publish(Bool(data=True))
         if self.carry_ball_position is not None and self.ball_position is not None:
 
