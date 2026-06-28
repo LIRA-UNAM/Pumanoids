@@ -246,7 +246,6 @@ class PlannerNode(Node):
         self.current_state = State.WAITING_CONNECTION
         self.sub_state = State.STATE_NORMAL
         self.last_available_state = State.WAITING_CONNECTION
-        self.first_message = True
         
         # Positioning
         self.go_to_target_success = True 
@@ -308,12 +307,10 @@ class PlannerNode(Node):
 #                self.get_logger().debug(f"Received data from {addr}")
                 # Stores the data.
                 self.game_controller = gamestate.GameState.parse(data)
-                if self.first_message:
-                    if self.game_controller.teams[0].team_number == self.team_number:
-                        self.team_in_array = 0 
-                    else:
-                        self.team_in_array = 1
-                    self.first_message = False
+                if self.game_controller.teams[0].team_number == self.team_number:
+                    self.team_in_array = 0 
+                else:
+                    self.team_in_array = 1
 
                 self.player_info = self.game_controller.teams[self.team_in_array].players[self.player_number-1] # state of penalty of THIS player
                 # Update last connection timestamp.
@@ -360,7 +357,9 @@ class PlannerNode(Node):
                 self.last_available_sub_state = self.sub_state
         
         if self.game_controller and (self.player_info.penalty!=0):
-            if self.player_info.penalty == 30: #Ball manipulation
+            if self.sub_state == State.STATE_PENALTYSHOOT:
+                self.penalty_shoot()
+            elif self.player_info.penalty == 30: #Ball manipulation
                 self.idle_state()
             elif self.player_info.penalty == 31: #pushing
                 self.pushing()
@@ -393,9 +392,7 @@ class PlannerNode(Node):
                 self.error_state()
 
         else: #Estados Secundarios de tiros por faltas y así, nunca he visto uno
-            if self.sub_state == State.STATE_PENALTYSHOOT:
-                self.penalty_shoot()
-            elif self.sub_state == State.STATE_TIMEOUT:
+            if self.sub_state == State.STATE_TIMEOUT:
                 self.idle_state()
             elif self.sub_state == State.STATE_DIRECT_FREEKICK:
                 self.kick()
@@ -580,9 +577,11 @@ class PlannerNode(Node):
         """
     def playing_state(self):
         if self.game_controller.secondary_seconds_remaining > 0 :
+            self.get_logger().info("Waiting for the kickoff")
             return
         if self.goalkeeper == True:
             self.goalkeeper_enable_publisher.publish(Bool(data = True))
+            self.get_logger().info("Goal_keeping")
             return 
         self.head_ball_follower_enable_publisher.publish(Bool(data=True))
         if self.carry_ball_position is not None and self.ball_position is not None:
@@ -690,7 +689,9 @@ class PlannerNode(Node):
     def pushing(self):
         print("yikes need to get out of the mob") #TODO go back to avoid pushing other robot or try to scape the mob
 
-    
+    def throwin(self):
+        self.get_logger().info("Truely not idea of what this is ")
+
     def idle_state(self):
         self.go_to_target_enable_publisher.publish(Bool(data = False)) 
         self.head_ball_follower_enable_publisher.publish(Bool(data = False))
