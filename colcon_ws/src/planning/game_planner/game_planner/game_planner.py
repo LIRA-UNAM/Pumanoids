@@ -25,7 +25,6 @@ from booster_interface.srv import RpcService
 # Ports to comunicate with the Game Controller under UDP packages
 SOURCE_PORT = 3838 # Game Controller broadcast messages through port 3838
 DESTINATION_PORT = 3939 # This node sends messages to Game Controller through port 3939
-COACH_PORT = 3839 # To communicate with the coach
 
 # --- RETURN_MSGS ---
 PENALISE=                    0
@@ -34,39 +33,63 @@ ALIVE=                       2
 GOALKEEPER=                  3
 INTERRUPTION_READY=          4
 
+# --- PENALTY STATES ---
+class Penalty(Enum):
+
+    PENALTY_NONE =                      0
+    PENALTY_ILLEGAL_POSITIONING =       1
+    PENALTY_MOTION_IN_SET =             2
+    PENALTY_MOTION_IN_STOP =            3
+    PENALTY_LOCAL_GAME_STUCK =          4
+    PENALTY_INCAPABLE_ROBOT =           5
+    PENALTY_PICK_UP =                   6
+    PENALTY_BALL_HOLDING =              7
+    PENALTY_LEAVING_THE_FIELD =         8
+    PENALTY_PLAYING_WITH_ARMS_HANDS =   9
+    PENALTY_PUSHING =                   10
+    PENALTY_CAUTIONED =                 11
+    PENALTY_SENT_OFF =                  12
+    PENALTY_SUBSTITUTE =                13
 
 # --- STATES OF THE NODE ---
 class State(Enum):
 
     # Main states
     
-    WAITING_CONNECTION= 0 # Not receiving any signal from the Game Controller
-    STATE_INITIAL=      1 # The initial state of Game Controller
-    STATE_READY=        2 # The robots move from the side to their kickoff positions
-    STATE_SET=          3 # Game controller STATE_SET. Robots must not move in this state.
-    STATE_PLAYING=      4 # Main game state. Play or goalkeep.
-    STATE_FINISHED=     5 # The end
-
-    # Sub states
-
-    STATE_NORMAL=               6
-    STATE_PENALTYSHOOT=         7
-    STATE_OVERTIME=             8
-    STATE_TIMEOUT=              9
-    STATE_DIRECT_FREEKICK=      10
-    STATE_INDIRECT_FREEKICK=    11
-    STATE_PENALTYKICK=          12
-    STATE_CORNERKICK=           13
-    STATE_GOALKICK=             14
-    STATE_THROWIN=15
-    DROPBALL=16
-    UNKNOWN=17
+    WAITING_CONNECTION=             0 # Not receiving any signal from the Game Controller
+    STATE_INITIAL=                  1 # The initial state of Game Controller
+    STATE_READY=                    2 # The robots move from the side to their kickoff positions
+    STATE_SET=                      3 # Game controller STATE_SET. Robots must not move in this state.
+    STATE_PLAYING=                  4 # Main game state. Play or goalkeep.
+    STATE_FINISHED=                 5 # The end
+    UNKNOWN=                        6
 
     # Debug states
 
-    IDLE = 18 # IDLE
-    ERROR = 19 # Not good
+    IDLE =                          7 # IDLE
+    ERROR =                         8 # Not good
     # More comming soon
+
+# --- GAME PHASE --- 
+class Phase(Enum):
+    
+    # Sub states
+
+    GAME_PHASE_NORMAL=              0
+    GAME_PHASE_PENALTY_SHOOT_OUT=   1
+    GAME_PHASE_EXTRA_TIME=          2
+    GAME_PHASE_TIMEOUT=             3
+    
+# --- SET PLAY ---
+class Play(Enum):
+    SET_PLAY_NONE=                  0
+    SET_PLAY_DIRECT_FREE_KICK=      1
+    SET_PLAY_INDIRECT_FREE_KICK=    2
+    SET_PLAY_PENALTY_KICK=          3
+    SET_PLAY_THROW_IN=              4
+    SET_PLAY_GOAL_KICK=             5
+    SET_PLAY_CORNER_KICK=           6
+
 
 class PlannerNode(Node):
     def __init__(self):
@@ -230,7 +253,6 @@ class PlannerNode(Node):
         # Game Controller
         self.host ="0.0.0.0" # Always watching any IP
         self.move_ball = False
-        self.seeing_ball = False
         self.game_controller = None
         self.ball_position = None
         self.target_team = None
@@ -240,11 +262,11 @@ class PlannerNode(Node):
         self.last_joelian_point = [None] * 10
         self.team_in_array = 0 # Position of our team in the array info of game controller 
         self.connection_timeout = 0.7 # <-- Adjust this to set the connection tolerance in seconds :)
+        self.last_time_seeing_ball = self.get_clock().now().nanoseconds/1e9
         self.last_packet_time = self.get_clock().now()
         
         # State machine
         self.current_state = State.WAITING_CONNECTION
-        self.sub_state = State.STATE_NORMAL
         self.last_available_state = State.WAITING_CONNECTION
         
         # Positioning
@@ -307,7 +329,7 @@ class PlannerNode(Node):
 #                self.get_logger().debug(f"Received data from {addr}")
                 # Stores the data.
                 self.game_controller = gamestate.GameState.parse(data)
-                if self.game_controller.teams[0].team_number == self.team_number:
+                if self.game_controller.teams[0].teamNumber == self.team_number:
                     self.team_in_array = 0 
                 else:
                     self.team_in_array = 1
@@ -319,11 +341,24 @@ class PlannerNode(Node):
                 #Game_controller addres
                 gc_ip = addr[0]
                 #Message with number and if is or not goalkeeper
+                if self.current_robot_position is not None:
+                    position = self.current_robot_position
+                else:
+                    position = [0.0, 0.0, 0.0]
+                if self.ball_position is not None:
+                    self.ball_pos = self.ball_position
+                else:
+                    self.ball_pos = [0.0, 0.0]
+
                 return_message = gamestate.ReturnData.build(dict(
-                    version=gamestate.GAME_CONTROLLER_RESPONSE_VERSION,
-                    team=self.team_number,
-                    player=self.player_number,
-                    message=GOALKEEPER if self.goalkeeper else ALIVE
+                    version=gamestate.GAMECONTROLLER_RETURN_STRUCT_VERSION,
+                    playerNum=self.player_number,
+                    teamNum=self.team_number,
+                    fallen = False,
+                    pose = position,
+                    ballAge = (self.get_clock().now().nanoseconds/1e9) - self.last_time_seeing_ball, 
+                    ball = self.ball_pos
+
                 )) 
                 #Send message
                 self.server_socket.sendto(return_message, (gc_ip, DESTINATION_PORT))
@@ -348,30 +383,23 @@ class PlannerNode(Node):
 
         #Update state from game controller messages
         if self.game_controller:
-            self.get_logger().debug(f"Current state{self.current_state}")
+            self.get_logger().info(f"Current state{self.current_state}")
             if self.current_state is not State.IDLE:
-                self.current_state = State[self.game_controller.game_state]
+                self.current_state = State[self.game_controller.state]
+                self.current_phase = Phase[self.game_controller.gamePhase]
+                self.current_play = Play[self.game_controller.setPlay]
+                self.current_penalty = Penalty[self.game_controller.teams[self.team_in_array].players[self.player_number -1].penalty]
                 self.last_available_state = self.current_state
-
-                self.sub_state = State[self.game_controller.secondary_state]
-                self.last_available_sub_state = self.sub_state
         
-        if self.game_controller and (self.player_info.penalty!=0):
-            if self.sub_state == State.STATE_PENALTYSHOOT:
-                self.penalty_shoot()
-            elif self.player_info.penalty == 30: #Ball manipulation
-                self.idle_state()
-            elif self.player_info.penalty == 31: #pushing
-                self.pushing()
-            elif self.player_info.penalty == 32: # illegal_atk
-                self.illegal_atk()
-            elif self.player_info.penalty == 33: # illegal_def
-                self.illegal_def()
-            elif self.player_info.penalty == 34: # pickup 
-                self.idle_state()
-            elif self.player_info.penalty == 35: # Service No idea of what
-                self.idle_state()
-        elif self.game_controller and (self.game_controller.secondary_state == "STATE_NORMAL" or self.game_controller.secondary_state =="STATE_OVERTIME"): # Estados principales y primarios del juego
+        if self.game_controller and self.current_penalty != Penalty.PENALTY_NONE:
+            self.idle_state()
+        elif self.game_controller and self.current_phase == Phase.GAME_PHASE_PENALTY_SHOOT_OUT:
+            self.penalty_shoot()
+        elif self.game_controller and self.current_phase == Phase.GAME_PHASE_TIMEOUT:
+            self.idle_state()
+        elif self.game_controller and self.current_play != Play.SET_PLAY_NONE:
+            self.kick()
+        elif self.game_controller and (self.current_phase == Phase.GAME_PHASE_NORMAL or self.current_phase == Phase.GAME_PHASE_EXTRA_TIME) and self.current_play == Play.SET_PLAY_NONE: # Estados principales y primarios del juego
             if self.robot_mode is not None and self.robot_mode == 1:
                 walk_res = self.rpc_client.call_async(self.walk_req)
             if self.current_state == State.WAITING_CONNECTION:
@@ -389,26 +417,6 @@ class PlannerNode(Node):
             elif self.current_state == State.IDLE:
                 self.idle_state()
             elif self.current_state == State.ERROR:
-                self.error_state()
-
-        else: #Estados Secundarios de tiros por faltas y así, nunca he visto uno
-            if self.sub_state == State.STATE_TIMEOUT:
-                self.idle_state()
-            elif self.sub_state == State.STATE_DIRECT_FREEKICK:
-                self.kick()
-            elif self.sub_state == State.STATE_INDIRECT_FREEKICK:
-                self.kick()
-            elif self.sub_state == State.STATE_PENALTYKICK:
-                self.kick()
-            elif self.sub_state == State.STATE_CORNERKICK:
-                self.kick()
-            elif self.sub_state == State.STATE_GOALKICK:
-                self.kick()
-            elif self.sub_state == State.STATE_THROWIN:
-                self.throwin() # NO IDEA of what is this
-            elif self.sub_state == State.DROPBALL:
-                self.dropball() # NO IDEA of what is this x2 
-            elif self.sub_state == State.UNKNOWN:
                 self.error_state()
 
     def go_to_target(self, point):
@@ -444,141 +452,20 @@ class PlannerNode(Node):
 
     def set_state(self):
         self.get_logger().info("SET_STATE waiting for the referee to start the game")
-        self.go_to_target_enable_publisher.publish(Bool(data = False))
-        self.head_ball_follower_enable_publisher.publish(Bool(data = False))
-        self.ball_follower_enable_publisher.publish(Bool(data = False))
-    
-    """
-    def playing_state(self):
-        # TODO check if ball is outside of center
-        if self.game_controller.secondary_seconds_remaining == 0 or self.goalkeeper:
-            if self.goalkeeper:
-                self.go_to_target_enable_publisher.publish(Bool(data=False))
-                self.head_ball_follower_enable_publisher.publish(Bool(data=False))
-                self.ball_follower_enable_publisher.publish(Bool(data=False))
-                print("goal keeping")  # TODO goal keeper guard enable publisher
-            else:
-                if self.current_robot_position is None:
-                    #self.get_logger().info("Not pumas map yet")
-                    return
-
-                if self.seeing_ball and self.carry_ball_position is not None and self.ball_position is not None:
-
-                    # Calculate distance to the joelian point
-                    joelian_point = [self.carry_ball_position[0], self.carry_ball_position[1]]
-                    robot_position = [self.current_robot_position[0], self.current_robot_position[1]]
-
-                    self.get_logger().debug(f"ball position: {self.ball_position}, joelian_point: {joelian_point}, robot_position: {robot_position}")
-                    
-                    # CORRECCIÓN MATEMÁTICA VITAL:
-                    # V1: Vector desde el Punto Joeliano HASTA la Pelota (Vector de Ataque ideal)
-                    V1 = [self.ball_position[0] - joelian_point[0], self.ball_position[1] - joelian_point[1]]
-                    # V2: Vector desde el Robot HASTA la Pelota (Vector de Ataque real)
-                    V2 = [self.ball_position[0] - robot_position[0], self.ball_position[1] - robot_position[1]]
-                    
-                    M1 = math.sqrt(V1[0] * V1[0] + V1[1] * V1[1])
-                    M2 = math.sqrt(V2[0] * V2[0] + V2[1] * V2[1])
-                    
-                    # Evitar divisiones por cero si hay un error de visión extremo
-                    if M1 == 0 or M2 == 0:
-                        wants_follow = False
-                    # --- Caso especial: muy cerca de la pelota, forzar persecución ---
-                    elif M2 < self.close_to_ball_distance:
-                        wants_follow = True
-                    else:
-                        cos_theta = max(-1.0, min(1.0, (V1[0] * V2[0] + V1[1] * V2[1]) / (M1 * M2)))
-                        theta = math.acos(cos_theta)
-                        self.get_logger().debug(f"Angle = {theta:.2f} rad")
-                        
-                        if self.follow_ball_mode:
-                            wants_follow = not (theta > self.theta_exit_follow)
-                        else:
-                            # Si el ángulo entre nuestro ataque real y el ideal es menor a ~40 grados, ataca.
-                            wants_follow = (theta < self.theta_enter_follow)
-
-                    # --- Debounce: exigir N ticks consecutivos antes de cambiar de modo ---
-                    self.get_logger().info(f"TICKS joel -> ball= {self.mode_switch_counter}")
-                    self.get_logger().info(f"TICKS ball -> joel= {self.mode_switch_to_joelian_counter}")
-                    #if self.follow_ball_mode:
-                    #    self.get_logger().info("Checking ticks to joelian")
-                    #    if wants_follow != self.follow_ball_mode:
-                    #        self.mode_switch_to_joelian_counter += 1
-                    #        self.get_logger().info("Adding ticks")
-                    #        if self.mode_switch_to_joelian_counter >= self.mode_switch_to_joelian_ticks_required:
-                    #            self.get_logger().info("CHANGING TO JOELIAN")
-                    #            self.follow_ball_mode = wants_follow
-                    #            self.mode_switch_counter = 0
-                    #            self.mode_switch_to_joelian_counter = 0
-                    #    else:
-                    #        self.mode_switch_to_joelian_counter = 0
-                    #        
-                    #else:
-                    #    if wants_follow != self.follow_ball_mode:
-                    #        self.mode_switch_counter += 1
-                    #        if self.mode_switch_counter >= self.mode_switch_ticks_required:
-                    #            self.follow_ball_mode = wants_follow
-                    #            self.mode_switch_counter = 0
-                    #            self.mode_switch_to_joelian_counter = 0
-                    #    else:
-                    #        self.mode_switch_counter = 0
-
-                    if wants_follow != self.follow_ball_mode:
-                        self.mode_switch_counter += 1
-                        if self.follow_ball_mode:
-                            if self.mode_switch_counter >= self.mode_switch_to_joelian_ticks_required:
-                                self.follow_ball_mode = wants_follow
-                                self.mode_switch_counter = 0
-                        else:
-                            if self.mode_switch_counter >= self.mode_switch_ticks_required:
-                                self.follow_ball_mode = wants_follow
-                                self.mode_switch_counter = 0
-                    else:
-                        self.mode_switch_counter = 0
-
-                    if self.follow_ball_mode:
-                        self.get_logger().info("FOLLOW BALL")
-                        self.go_to_target_enable_publisher.publish(Bool(data=False))
-                        self.head_ball_follower_enable_publisher.publish(Bool(data=True))
-                        self.ball_follower_enable_publisher.publish(Bool(data=True))
-                    else:
-                        self.get_logger().info("JOELIAN POINT")
-                        self.ball_follower_enable_publisher.publish(Bool(data=False))
-                        self.head_ball_follower_enable_publisher.publish(Bool(data=True))
-                        self.go_to_target_enable_publisher.publish(Bool(data=True))
-                        target = Pose2D()
-                        target.x = self.carry_ball_position[0]
-                        target.y = self.carry_ball_position[1]
-                        target.theta = self.carry_ball_position[2]
-                        #self.get_logger().debug(f"Robot  a: {self.current_robot_position[2]}")
-                        #self.get_logger().debug(f"Target a: {self.current_robot_position[2]}")
-                        self.go_to_target(target)
-                    # -------------------------------------------------------
-                else:
-                    # No vemos la pelota: apagamos ambos controladores de movimiento
-                    self.follow_ball_mode = False
-                    self.go_to_target_enable_publisher.publish(Bool(data=False))
-                    self.ball_follower_enable_publisher.publish(Bool(data=False))
-                    if self.go_to_target_success:
-                        self.get_logger().info("SEARCHING BALL")
-        else:
-            # TODO another way to decide which robot does the kickoff
-            if self.game_controller.kick_of_team == self.team_number and self.kickoff_robot:
-                # TODO Miguel's kick implementation
-                self.go_to_target_enable_publisher.publish(Bool(data=False))
-                self.head_ball_follower_enable_publisher.publish(Bool(data=True))
-                self.ball_follower_enable_publisher.publish(Bool(data=True))
-            else:
-                self.go_to_target_enable_publisher.publish(Bool(data=False))
-                self.head_ball_follower_enable_publisher.publish(Bool(data=False))
-                self.ball_follower_enable_publisher.publish(Bool(data=False))
-                print("wait for ball moving or pass the time")
-
-        self.seeing_ball = False
-        """
-    def playing_state(self):
-        if self.game_controller.secondary_seconds_remaining > 0 :
+        if self.game_controller.secondaryTime > 0 and self.game_controller.kicking != self.team_number:
             self.get_logger().info("Waiting for the kickoff")
+            self.go_to_target_enable_publisher.publish(Bool(data = False))
+            self.head_ball_follower_enable_publisher.publish(Bool(data = False))
+            self.ball_follower_enable_publisher.publish(Bool(data = False))
             return
+        else:
+            self.go_to_target_enable_publisher.publish(Bool(data = False))
+            self.head_ball_follower_enable_publisher.publish(Bool(data = True))
+            self.ball_follower_enable_publisher.publish(Bool(data = True))
+
+
+    
+    def playing_state(self):
         if self.goalkeeper == True:
             self.goalkeeper_enable_publisher.publish(Bool(data = True))
             self.get_logger().info("Goal_keeping")
@@ -649,7 +536,7 @@ class PlannerNode(Node):
 
     def penalty_shoot(self):
         self.get_logger().info("PENALTYSHOOT sub state")
-        if self.game_controller.kick_of_team == self.team_number:
+        if self.game_controller.kickingTeam == self.team_number:
             self.get_logger().info("Robot going to shoot")
             if self.current_state == State.STATE_SET:
                 self.get_logger().info("Going to designed position")
@@ -705,7 +592,7 @@ class PlannerNode(Node):
         if self.counter>=20:
             prep_res = self.rpc_client.call_async(self.prep_req)
             self.get_logger().debug(f"RPC Service response: {prep_res}")
-        if self.game_controller and (self.player_info.penalty!=0):
+        if self.game_controller and (self.player_info.penalty!=Penalty.PENALTY_NONE):
             self.last_available_state = self.current_state
             self.current_state = State.IDLE
         else:
@@ -745,7 +632,7 @@ class PlannerNode(Node):
         avg_x = sum(p[0] for p in valid) / len(valid)
         avg_y = sum(p[1] for p in valid) / len(valid)
         self.ball_position = [avg_x, avg_y]
-        self.seeing_ball = True
+        self.last_time_seeing_ball = self.get_clock().now().nanoseconds/1e9
         
         #x_mean = 0.0
         #y_mean = 0.0
@@ -755,7 +642,6 @@ class PlannerNode(Node):
         #x_mean = x_mean/10
         #y_mean = y_mean/10
         #self.ball_position = [x_mean, y_mean]
-        #self.seeing_ball = True
 
     def carry_ball_callback(self, msg):
         self.last_joelian_point.pop(0)
