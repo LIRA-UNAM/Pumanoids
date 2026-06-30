@@ -22,7 +22,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'goalkeeper_guard_executable = goalkeeper.goalkeeper_guard:main'
+            'goalkeeper_guard_executable = goalkeeper.goalkeeper_guard:main',
+            'emergency_goalkeeper = goalkeeper.emergency_goalkeeper:main'
         ],
     },
 )
