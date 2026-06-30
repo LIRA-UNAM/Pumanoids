@@ -6,16 +6,16 @@ from std_msgs.msg import Bool
 
 class EmergencyGoalkeeper(Node):
 
-    def __int__(self):
+    def __init__(self):
         super().__init__("emergency_goalkeeper")
         self.get_logger().info("INITIALIZING EMERGENCY GOALKEEPER")
         
         #--------PARAMETERS-------#
         # max dist of lateral movement
         # ros2 param set /emergency_goalkeeper amplitude_y 0.6
-        self.declare_parameter('amplitude_y', 0.5)
+        self.declare_parameter('amplitude_y', 1.0)
         # time to complete one cicle
-        self.declare_parameter('period',4.0)
+        self.declare_parameter('period',6.0)
         
         self.amplitude = self.get_parameter('amplitude_y').value
         self.period = self.get_parameter('period').value
@@ -55,11 +55,10 @@ class EmergencyGoalkeeper(Node):
             return
         
         current_time = self.get_clock().now()
-        t = (curr_time - self.start_time).nanoseconds / 1e9 #sec
-
+        t = (current_time - self.start_time).nanoseconds / 1e9 #sec
         # Y speed
         omega = (2 * math.pi) / self.period
-        v_y = self.amplitude * omega * math.cos(omega * t)
+        v_y = self.amplitude * math.sin(omega * t)
 
         # pub msg
         cmd_vel_msg = Twist()
