@@ -1,5 +1,6 @@
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/transform_broadcaster.h>
+#include <std_msgs/msg/bool.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <booster_interface/msg/odometer.hpp>
 
@@ -17,6 +18,10 @@ public:
         subscription_ = this->create_subscription<booster_interface::msg::Odometer>(
             "/odometer_state", 10,
             std::bind(&OdomToTFNode::callback_odometer, this, std::placeholders::_1));
+
+        reset_odom_sub_ = this->create_subscription<std_msgs::msg::Bool>(
+            "/odometry_restart", 3,
+            std::bind(&OdomToTFNode::reset_odometry, this, std::placeholders::_1));
 
         timer_ = this->create_wall_timer(
             std::chrono::milliseconds(100),
@@ -49,6 +54,20 @@ private:
         double relative_yaw = current_a - init_a_;
         robot_a_ = std::atan2(std::sin(relative_yaw), std::cos(relative_yaw));
 
+    }
+
+    void reset_odometry(const std_msgs::msg::Bool::SharedPtr msg)
+    {
+        if (!msg->data) return;
+        if (!initial_pose_set_) return;
+
+        init_x_ = latest_x;
+        init_y_ = latest_y;
+        init_a_ = latest_a;
+
+        robot_x_ = 0.0;
+        robot_y_ = 0.0;
+        robot_a_ = 0.0;
     }
 
     void timer_callback()
@@ -89,6 +108,7 @@ private:
     }
 
     rclcpp::Subscription<booster_interface::msg::Odometer>::SharedPtr subscription_;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr reset_odom_sub_;
     rclcpp::TimerBase::SharedPtr timer_;
     std::shared_ptr<tf2_ros::TransformBroadcaster> broadcaster_;
 
@@ -96,7 +116,10 @@ private:
     double init_x_ = 0.0;
     double init_y_ = 0.0;
     double init_a_ = 0.0;
-    
+
+    double latest_x_ = 0.0;
+    double latest_y_ = 0.0;
+    double latest_a_ = 0.0;
 
     double robot_x_ = 0.0;
     double robot_y_ = 0.0;

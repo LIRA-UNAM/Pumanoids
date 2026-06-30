@@ -1,6 +1,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/transform_broadcaster.h>
 #include <booster_msgs/msg/rpc_req_msg.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <booster_interface/msg/odometer.hpp>
@@ -25,6 +26,10 @@ public:
         subscription_ = this->create_subscription<booster_interface::msg::Odometer>(
             "/odometer_state", 10,
             std::bind(&OdomToTFNode::callback_odometer, this, std::placeholders::_1));
+
+        reset_odom_sub_ = this->create_subscription<std_msgs::msg::Bool>(
+            "/odometry_restart", 3,
+            std::bind(&OdomToTFNode::reset_odometry, this, std::placeholders::_1));
 
         tf_timer_ = this->create_wall_timer(
             std::chrono::milliseconds(100),
@@ -94,6 +99,7 @@ private:
         //robot_y_ = static_cast<double>(msg->y);
         // Normalize to [-pi, pi)
         robot_a_ = std::atan2(std::sin(relative_yaw), std::cos(relative_yaw));
+        latest_a_ = robot_a_;
     }
 
 
@@ -106,8 +112,10 @@ private:
         {
             robot_x_ += (temp_robot_x_ * std::cos(robot_a_)) - (temp_robot_y_ * std::sin(robot_a_));
             robot_y_ += (temp_robot_x_ * std::sin(robot_a_)) + (temp_robot_y_ * std::cos(robot_a_));
+            latest_x_ = robot_x_;
+            latest_y_ = robot_y_;
         }
-    
+
         RCLCPP_DEBUG(this->get_logger(),"X: %0.3f , Y: %0.3f", robot_x_, robot_y_);
     }
         
@@ -130,6 +138,17 @@ private:
             }
         }
         else return 0;
+    }
+
+    void reset_odometry(const std_msgs::msg::Bool::SharedPtr msg)
+    {
+        if (!msg->data) return;
+
+        init_yaw_ = latest_a_;
+
+        robot_x_ = 0.0;
+        robot_y_ = 0.0;
+        robot_a_ = 0.0;
     }
 
     void tf_timer_callback()
@@ -172,6 +191,7 @@ private:
     rclcpp::Time now = this->get_clock()->now();
     rclcpp::Subscription<booster_interface::msg::Odometer>::SharedPtr subscription_;
     rclcpp::Subscription<booster_msgs::msg::RpcReqMsg>::SharedPtr vel_sub_;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr reset_odom_sub_;    
     rclcpp::TimerBase::SharedPtr tf_timer_;
     rclcpp::TimerBase::SharedPtr odom_timer_;
     std::shared_ptr<tf2_ros::TransformBroadcaster> broadcaster_;
@@ -179,6 +199,11 @@ private:
     // Position variables
     double temp_robot_x_ {};
     double temp_robot_y_ {};
+
+    double latest_x_ = 0.0;
+    double latest_y_ = 0.0;
+    double latest_a_ = 0.0;   
+
     double robot_x_ {};
     double robot_y_ {};
     double robot_a_ {};
