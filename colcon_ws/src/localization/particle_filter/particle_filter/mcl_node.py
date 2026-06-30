@@ -40,7 +40,7 @@ class ParticleFilterNode(Node):
         self.fov_rad = math.radians(95) #FOV
         self.sigma_angle = math.radians(4.0)
         self.pose_pub = self.create_publisher(PoseStamped, '/estimated_pose', 10)
-        self.declare_parameter("map_file",os.path.join(get_package_share_directory('config_files'),'maps','cancha_tmr.yaml'))
+        self.declare_parameter("map_file",os.path.join(get_package_share_directory('config_files'),'maps','cancha_robocup.yaml'))
         map_file = self.get_parameter('map_file').value
         # 0:ball 1:goal, 2:robot, 3:L, 4:T, 5:X
         self.map_landmarks ={}
