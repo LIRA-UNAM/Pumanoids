@@ -38,7 +38,7 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
         configs = yaml.safe_load(file)
 
     config_share = get_package_share_directory('config_files')
-    map_yaml = os.path.join(config_share, 'maps', 'cancha_tmr.yaml')
+    map_yaml = os.path.join(config_share, 'maps', 'cancha_robocup.yaml')
 
     with open(yaml_path, "r") as file:
         params = yaml.safe_load(file)
@@ -109,8 +109,8 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
             executable='static_transform_publisher',
             name='pumas_map_to_pumas_odom',
             arguments=[
-                '3', '3', '0',    # x y z
-                '3.14', '0', '0',    # yaw pitch roll
+                '3', '-3', '0',    # x y z
+                '1.6', '0', '0',    # yaw pitch roll
                 'pumas_map',
                 'pumas_odom'
             ]

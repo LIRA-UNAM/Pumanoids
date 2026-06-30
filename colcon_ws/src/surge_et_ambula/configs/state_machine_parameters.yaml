@@ -1,8 +1,8 @@
-player_number: 1 
+player_number: 2 
 start_position: 
-    - "-1.0"
-    - "-1.0"
+    - "2.0"
     - "0.0"
+    - "3.14"
 team_number: 25
 goalkeeper: false
 kickoff: true
