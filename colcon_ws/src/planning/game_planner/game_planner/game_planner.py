@@ -117,6 +117,14 @@ class PlannerNode(Node):
         self.start_position.x = self.get_parameter('start_position').value[0]
         self.start_position.y = self.get_parameter('start_position').value[1]
         self.start_position.theta = self.get_parameter('start_position').value[2]
+
+
+
+
+
+
+
+
         self.get_logger().info(f'posicion inicial(x,y): {self.start_position}')
 
         # team_number
@@ -425,15 +433,9 @@ class PlannerNode(Node):
                 self.get_logger().info("Not pose yet")
                 return
             else:
-                #distance = math.sqrt((math.pow((self.current_robot_position[0] - point.x),2)+math.pow((self.current_robot_position[1] - point.y),2)))
-                #self.get_logger().info(f"Distancia a joeliano: {distance:.2f}m")
-                
-                # Dejamos que publique siempre que esté habilitado.
-                # El nodo de control de bajo nivel manejará la tolerancia de llegada.
-                #self.get_logger().info(f"going to {point}")
-                #if self.go_to_target_success:
-                #   self.target_position_publisher.publish(point)
-                self.target_position_publisher.publish(point)
+                self.get_logger().info(f"arrived{self.go_to_target_success}")
+                if self.go_to_target_success:
+                    self.target_position_publisher.publish(point)
 
     def wait_state(self):
         self.get_logger().info("WAITING_CONNECTION waiting for Game Controller conection")
@@ -453,18 +455,10 @@ class PlannerNode(Node):
 
     def set_state(self):
         self.get_logger().info("SET_STATE waiting for the referee to start the game")
-        if self.game_controller.secondaryTime > 0 and self.game_controller.kicking != self.team_number:
-            self.get_logger().info("Waiting for the kickoff")
-            self.go_to_target_enable_publisher.publish(Bool(data = False))
-            self.head_ball_follower_enable_publisher.publish(Bool(data = False))
-            self.ball_follower_enable_publisher.publish(Bool(data = False))
-            return
-        else:
-            self.go_to_target_enable_publisher.publish(Bool(data = False))
-            self.head_ball_follower_enable_publisher.publish(Bool(data = True))
-            self.ball_follower_enable_publisher.publish(Bool(data = True))
-
-
+        self.go_to_target_enable_publisher.publish(Bool(data = False))
+        self.head_ball_follower_enable_publisher.publish(Bool(data = False))
+        self.ball_follower_enable_publisher.publish(Bool(data = False))
+        
     
     def playing_state(self):
         if self.goalkeeper == True:
@@ -532,8 +526,7 @@ class PlannerNode(Node):
         self.ball_follower_enable_publisher.publish(Bool(data = False))
         self.head_ball_follower_enable_publisher.publish(Bool(data = False))
         self.get_logger().info("THE END going with team")    
-        if self.target_arrive_success:
-            self.go_to_target(self.start_position)
+        self.go_to_target(self.start_position)
 
     def penalty_shoot(self):
         self.get_logger().info("PENALTYSHOOT sub state")
