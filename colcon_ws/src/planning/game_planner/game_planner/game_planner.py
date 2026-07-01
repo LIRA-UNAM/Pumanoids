@@ -390,7 +390,8 @@ class PlannerNode(Node):
                 self.current_play = Play[self.game_controller.setPlay]
                 self.current_penalty = Penalty[self.game_controller.teams[self.team_in_array].players[self.player_number -1].penalty]
                 self.last_available_state = self.current_state
-        
+        if self.game_controller and self.game_controller.stopped == True:
+            self.idle_state()
         if self.game_controller and self.current_penalty != Penalty.PENALTY_NONE:
             self.idle_state()
         elif self.game_controller and self.current_phase == Phase.GAME_PHASE_PENALTY_SHOOT_OUT:
@@ -592,12 +593,13 @@ class PlannerNode(Node):
         if self.counter>=20:
             prep_res = self.rpc_client.call_async(self.prep_req)
             self.get_logger().debug(f"RPC Service response: {prep_res}")
-        if self.game_controller and (self.player_info.penalty!=Penalty.PENALTY_NONE):
+        if self.game_controller and (Penalty[self.player_info.penalty]!=Penalty.PENALTY_NONE or self.game_controller.stopped or self.game_controller.secondaryTime > 0):
             self.last_available_state = self.current_state
             self.current_state = State.IDLE
         else:
+            self.get_logger().info("Out of IDLE")
             self.last_available_state = self.current_state
-            self.current_state = State[self.game_controller.game_state]
+            self.current_state = State[self.game_controller.state]
 
         self.get_logger().info(f"IDLE_STATE {self.counter}")
 
