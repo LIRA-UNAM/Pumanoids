@@ -101,10 +101,10 @@ class HeadBallFollowerNode(Node):
 
         self.declare_parameter("camera_topic", "/boostercamera/head/rgb")
         self.declare_parameter("body_search_cycles_before_turn", 1)
-        self.declare_parameter("body_search_turn_deg", 90.0)
+        self.declare_parameter("body_search_turn_deg", 30.0)
         self.declare_parameter("body_search_ang_vel", 0.7)
         self.declare_parameter("body_search_turn_sign", 1.0)
-        self.declare_parameter("enable_body_search_turn", False)
+        self.declare_parameter("enable_body_search_turn", True)
 
         # -- QoS PROFILES --
         qos_profile_for_enabling = QoSProfile(
@@ -120,7 +120,7 @@ class HeadBallFollowerNode(Node):
         self.sub_enable  = self.create_subscription(Bool, "/head_ball_follower/enable", self.callback_enable, qos_profile_for_enabling)
         self.sub_ball    = self.create_subscription(VisionObject, '/vision/ball', self.callback_ball, 1)
         self.pub_pantilt = self.create_publisher(Float32MultiArray, '/hardware/head/goal_pose', 1)
-        self.pub_cmd_vel = self.create_publisher(Twist, '/cmd_vel', 2)
+        self.pub_cmd_vel = self.create_publisher(Twist, '/cmd_vel', 10)
         
         # --- SERVICES ---
         # Jont positions client
