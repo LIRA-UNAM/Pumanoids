@@ -105,6 +105,12 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
             output = 'screen',
         ),
         Node(
+            package = 'ball_tracking',
+            executable = 'ball_tracker',
+            name = 'ball_tracker',
+            output = 'screen',
+        ),
+        Node(
             package='tf2_ros',
             executable='static_transform_publisher',
             name='pumas_map_to_pumas_odom',
