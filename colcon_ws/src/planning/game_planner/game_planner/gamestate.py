@@ -99,7 +99,7 @@ GameState = Struct(
         LARGE=2,
     ),
 
-    "stopped" / Byte,
+    "stopped" / Flag,
 
     "gamePhase" / Enum(
         Byte,
