@@ -182,10 +182,17 @@ class GoToTarget : public rclcpp::Node
 
                     case State::ball_align:
                         //RCLCPP_INFO(this->get_logger(), "Facing to the ball");
-                        twist_msg.angular.z = w;
-                        state = std::abs(err_a) < 0.2 ? State::forward : State::ball_align;
-                        break;
-
+                        if (err_dist < dist_min)
+                        {
+                            state = State::goal_align;
+                        }
+                        else 
+                        {
+                           twist_msg.angular.z = w;
+                           state = std::abs(err_a) < 0.2 ? State::forward : State::ball_align;
+                         
+                        }
+                        break; 
                     case State::forward:
                         //RCLCPP_INFO(this->get_logger(), "Walking forward");
                         twist_msg.linear.x = vel;

@@ -20,6 +20,7 @@ from game_planner import gamestate
 from enum import Enum
 from std_msgs.msg import Bool
 from geometry_msgs.msg import Pose2D, PoseStamped
+from geometry_msgs.msg import Twist
 from booster_interface.srv import RpcService
 
 # Ports to comunicate with the Game Controller under UDP packages
@@ -117,6 +118,14 @@ class PlannerNode(Node):
         self.start_position.x = self.get_parameter('start_position').value[0]
         self.start_position.y = self.get_parameter('start_position').value[1]
         self.start_position.theta = self.get_parameter('start_position').value[2]
+
+
+
+
+
+
+
+
         self.get_logger().info(f'posicion inicial(x,y): {self.start_position}')
 
         # team_number
@@ -169,6 +178,12 @@ class PlannerNode(Node):
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
         # --- PUBLISHERS ---
+
+        self.pub_cmd_vel = self.create_publisher(
+                Twist, 
+                '/cmd_vel', 
+                1)
+
         self.head_ball_follower_enable_publisher = self.create_publisher(
                 Bool,
                 '/head_ball_follower/enable',
@@ -216,7 +231,7 @@ class PlannerNode(Node):
         # map_ball localization
         self.ball_position_subscriber = self.create_subscription(
                 Pose2D,
-                '/vision/map_ball',
+                '/vision/ball_kal',
                 self.map_ball_callback,
                 10)
 
@@ -279,8 +294,12 @@ class PlannerNode(Node):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.server_socket.bind((self.host,SOURCE_PORT))
         self.server_socket.setblocking(False)
-        
-    
+
+        # --- MESSAGES -- 
+        self.zeros = Twist()
+        self.zeros.linear.x = 0.0
+        self.zeros.angular.z = 0.0
+
     # Service request
 
     def send_get_mode_request(self):
@@ -401,8 +420,6 @@ class PlannerNode(Node):
         elif self.game_controller and self.current_play != Play.SET_PLAY_NONE:
             self.kick()
         elif self.game_controller and (self.current_phase == Phase.GAME_PHASE_NORMAL or self.current_phase == Phase.GAME_PHASE_EXTRA_TIME) and self.current_play == Play.SET_PLAY_NONE: # Estados principales y primarios del juego
-            if self.robot_mode is not None and self.robot_mode == 1:
-                walk_res = self.rpc_client.call_async(self.walk_req)
             if self.current_state == State.WAITING_CONNECTION:
                 self.wait_state()
             elif self.current_state == State.STATE_INITIAL:
@@ -425,15 +442,9 @@ class PlannerNode(Node):
                 self.get_logger().info("Not pose yet")
                 return
             else:
-                #distance = math.sqrt((math.pow((self.current_robot_position[0] - point.x),2)+math.pow((self.current_robot_position[1] - point.y),2)))
-                #self.get_logger().info(f"Distancia a joeliano: {distance:.2f}m")
-                
-                # Dejamos que publique siempre que esté habilitado.
-                # El nodo de control de bajo nivel manejará la tolerancia de llegada.
-                #self.get_logger().info(f"going to {point}")
-                #if self.go_to_target_success:
-                #   self.target_position_publisher.publish(point)
-                self.target_position_publisher.publish(point)
+                self.get_logger().info(f"arrived{self.go_to_target_success}")
+                if self.go_to_target_success:
+                    self.target_position_publisher.publish(point)
 
     def wait_state(self):
         self.get_logger().info("WAITING_CONNECTION waiting for Game Controller conection")
@@ -453,18 +464,10 @@ class PlannerNode(Node):
 
     def set_state(self):
         self.get_logger().info("SET_STATE waiting for the referee to start the game")
-        if self.game_controller.secondaryTime > 0 and self.game_controller.kicking != self.team_number:
-            self.get_logger().info("Waiting for the kickoff")
-            self.go_to_target_enable_publisher.publish(Bool(data = False))
-            self.head_ball_follower_enable_publisher.publish(Bool(data = False))
-            self.ball_follower_enable_publisher.publish(Bool(data = False))
-            return
-        else:
-            self.go_to_target_enable_publisher.publish(Bool(data = False))
-            self.head_ball_follower_enable_publisher.publish(Bool(data = True))
-            self.ball_follower_enable_publisher.publish(Bool(data = True))
-
-
+        self.go_to_target_enable_publisher.publish(Bool(data = False))
+        self.head_ball_follower_enable_publisher.publish(Bool(data = False))
+        self.ball_follower_enable_publisher.publish(Bool(data = False))
+        
     
     def playing_state(self):
         if self.goalkeeper == True:
@@ -532,8 +535,7 @@ class PlannerNode(Node):
         self.ball_follower_enable_publisher.publish(Bool(data = False))
         self.head_ball_follower_enable_publisher.publish(Bool(data = False))
         self.get_logger().info("THE END going with team")    
-        if self.target_arrive_success:
-            self.go_to_target(self.start_position)
+        self.go_to_target(self.start_position)
 
     def penalty_shoot(self):
         self.get_logger().info("PENALTYSHOOT sub state")
@@ -585,14 +587,7 @@ class PlannerNode(Node):
         self.head_ball_follower_enable_publisher.publish(Bool(data = False))
         self.ball_follower_enable_publisher.publish(Bool(data = False))
         self.get_logger().debug(f"Las state aviable {self.last_available_state}")
-        if self.last_available_state is not State.IDLE and self.last_available_state is not State.WAITING_CONNECTION: 
-            self.counter = 0 
-        else:
-            #self.get_logger().debug("counter + 1")
-            self.counter+=1
-        if self.counter>=20:
-            prep_res = self.rpc_client.call_async(self.prep_req)
-            self.get_logger().debug(f"RPC Service response: {prep_res}")
+        self.pub_cmd_vel.publish(self.zeros)
         if self.game_controller and (Penalty[self.player_info.penalty]!=Penalty.PENALTY_NONE or self.game_controller.stopped or self.game_controller.secondaryTime > 0):
             self.last_available_state = self.current_state
             self.current_state = State.IDLE
@@ -601,7 +596,6 @@ class PlannerNode(Node):
             self.last_available_state = self.current_state
             self.current_state = State[self.game_controller.state]
 
-        self.get_logger().info(f"IDLE_STATE {self.counter}")
 
     def error_state(self):
         self.get_logger().error("error_state")

@@ -41,7 +41,7 @@ class GoalRobotPoseServiceNode(Node):
         #self.declare_parameter("service_name", "get_goal_robot_pose")
         self.declare_parameter("map_yaml", "")
         self.declare_parameter("attack_goal", "positive_y")
-        self.declare_parameter("ball_pose_topic", "/vision/map_ball")
+        self.declare_parameter("ball_pose_topic", "/vision/ball_kal")
 
         self.distance_from_ball = self.get_parameter("distance_from_ball_m").value
         #srv_name = self.get_parameter("service_name").value

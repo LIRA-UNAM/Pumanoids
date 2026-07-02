@@ -57,6 +57,11 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
             launch_arguments={'robot': robot_name}.items()
         ),
         Node(
+            package = 'goalkeeper',
+            executable = 'emergency_goalkeeper',
+            name = 'emergency_goalkeeper'
+            ),
+        Node(
             package='carry_ball_to_goal',
             executable='goal_robot_pose_service',
             name='goal_robot_pose_service',
@@ -102,6 +107,12 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
             package = 'particle_filter',
             executable = 'map_node',
             name = 'map_node',
+            output = 'screen',
+        ),
+        Node(
+            package = 'ball_tracking',
+            executable = 'ball_tracker',
+            name = 'ball_tracker',
             output = 'screen',
         ),
         Node(
