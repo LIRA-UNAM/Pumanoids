@@ -72,17 +72,6 @@ class ParticleFilterNode(Node):
         alpha4: Noise in translation caused by rotation. 
         '''
         self.alphas = [0.0002, 0.0002, 0.001, 0.0001]
-
-        # ---- KALMAN FUSION: predicción (movimiento) vs medición (visión) ----
-        # kf_epsilon evita divisiones entre cero cuando una varianza da 0.0
-        # min_variance evita que el filtro se vuelva "sobreconfiado" (K saturado)
-        # cuando por casualidad todas las partículas quedan idénticas.
-        self.kf_epsilon = 1e-6
-        self.min_variance_xy = 1e-4          # m^2
-        self.min_variance_theta = math.radians(1.0) ** 2  # rad^2
-        self.kf_gain = (0.0, 0.0, 0.0)       # último (Kx, Ky, Ktheta), útil para debug/logs
-        self.kf_var  = (0.0, 0.0, 0.0)       # última varianza fusionada por eje
-
         # Initialization
         self.is_moving = False
         self.init_particles()
@@ -96,100 +85,27 @@ class ParticleFilterNode(Node):
             self.observation_callback, 
             qos_profile_sensor_data)
 
-    # -----------KALMAN FUSION (predicción por movimiento vs medición por visión)-----
-    def weighted_circular_mean(self, angles, weights):
-        """Media circular ponderada de una lista de ángulos [-pi, pi]."""
-        sin_sum = sum(w * math.sin(a) for a, w in zip(angles, weights))
-        cos_sum = sum(w * math.cos(a) for a, w in zip(angles, weights))
-        return math.atan2(sin_sum, cos_sum)
-
-    def weighted_mean_and_var(self, particles, weights):
-        """
-        Calcula la media ponderada (x, y, theta) y la varianza ponderada
-        de la nube de partículas.
-
-        Se usa dos veces por ciclo:
-          - Con pesos UNIFORMES -> representa la "predicción" (solo lo que
-            dice el modelo de movimiento/odometría, sin info de visión).
-          - Con self.weights (los pesos que acaba de calcular
-            similarity_function) -> representa la "medición" (lo que ve
-            el robot ahora mismo).
-        """
-        total_w = sum(weights)
-        if total_w <= 0:
-            total_w = self.kf_epsilon
-
-        mean_x = sum(p[0] * w for p, w in zip(particles, weights)) / total_w
-        mean_y = sum(p[1] * w for p, w in zip(particles, weights)) / total_w
-        mean_theta = self.weighted_circular_mean([p[2] for p in particles], weights)
-
-        var_x = sum(w * (p[0] - mean_x) ** 2 for p, w in zip(particles, weights)) / total_w
-        var_y = sum(w * (p[1] - mean_y) ** 2 for p, w in zip(particles, weights)) / total_w
-        var_theta = sum(w * angle_diff(p[2], mean_theta) ** 2 for p, w in zip(particles, weights)) / total_w
-
-        # Piso de varianza: nunca dejar que una distribución "colapsada"
-        # (var=0) haga que el Kalman ignore por completo a la otra fuente.
-        var_x = max(var_x, self.min_variance_xy)
-        var_y = max(var_y, self.min_variance_xy)
-        var_theta = max(var_theta, self.min_variance_theta)
-
-        return mean_x, mean_y, mean_theta, var_x, var_y, var_theta
-
-    def kalman_fuse_linear(self, pred_mean, pred_var, meas_mean, meas_var):
-        """
-        Fusión Kalman clásica de dos gaussianas independientes (para x o y).
-        K cercano a 1 -> se confía en la medición (visión).
-        K cercano a 0 -> se confía en la predicción (movimiento).
-        """
-        k = pred_var / (pred_var + meas_var + self.kf_epsilon)
-        fused_mean = pred_mean + k * (meas_mean - pred_mean)
-        fused_var  = (1.0 - k) * pred_var
-        return fused_mean, fused_var, k
-
-    def kalman_fuse_angle(self, pred_mean, pred_var, meas_mean, meas_var):
-        """Igual que kalman_fuse_linear pero respetando el wrap-around de theta."""
-        innovation = angle_diff(meas_mean, pred_mean)
-        k = pred_var / (pred_var + meas_var + self.kf_epsilon)
-        fused_mean = angle_diff(pred_mean + k * innovation, 0.0)
-        fused_var  = (1.0 - k) * pred_var
-        return fused_mean, fused_var, k
-
     def compute_best_pose(self):
-        """
-        Fusión Kalman entre:
-          - "Predicción": estimación de las partículas con pesos UNIFORMES,
-            o sea, solo lo que dice el modelo de movimiento/odometría.
-          - "Medición": estimación de las partículas con self.weights,
-            es decir, lo que "ve" el robot según el modelo de observación.
-
-        El Kalman decide en automático a cuál confiar más, según qué tan
-        dispersa (incierta) esté cada una de las dos nubes ponderadas.
-        Reemplaza el umbral fijo (max_w > uniform_w * 1.5) que había antes.
-        """
         if not self.particles:
             return
-        if not self.weights or len(self.weights) != len(self.particles):
-            # Sin pesos válidos de visión todavía -> solo promedio de movimiento
-            self.weights = [1.0 / len(self.particles)] * len(self.particles)
 
-        n = len(self.particles)
-        uniform_weights = [1.0 / n] * n
+        max_w = max(self.weights)
+        uniform_w = 1.0 / len(self.particles)
 
-        # 1) Predicción -> solo movimiento (ignora el peso de visión)
-        pred_x, pred_y, pred_theta, pred_var_x, pred_var_y, pred_var_theta = \
-            self.weighted_mean_and_var(self.particles, uniform_weights)
-
-        # 2) Medición -> lo que "ve" el robot (pesos actualizados por visión)
-        meas_x, meas_y, meas_theta, meas_var_x, meas_var_y, meas_var_theta = \
-            self.weighted_mean_and_var(self.particles, self.weights)
-
-        # 3) Fusión Kalman eje por eje
-        self.best_x, var_x, kx = self.kalman_fuse_linear(pred_x, pred_var_x, meas_x, meas_var_x)
-        self.best_y, var_y, ky = self.kalman_fuse_linear(pred_y, pred_var_y, meas_y, meas_var_y)
-        self.best_theta, var_theta, kth = self.kalman_fuse_angle(pred_theta, pred_var_theta, meas_theta, meas_var_theta)
-
-        self.kf_gain = (kx, ky, kth)
-        self.kf_var  = (var_x, var_y, var_theta)
+        if max_w > uniform_w * 1.5:
+            # Hay convergencia → mejor partícula por peso
+            best_idx = self.weights.index(max_w)
+            best_particle = self.particles[best_idx]
+            self.best_x     = best_particle[0]
+            self.best_y     = best_particle[1]
+            self.best_theta = best_particle[2]
+        else:
+            # Sin convergencia aún → promedio de todas (se mueve con odometría)
+            self.best_x = sum(p[0] for p in self.particles) / len(self.particles)
+            self.best_y = sum(p[1] for p in self.particles) / len(self.particles)
+            sin_sum = sum(math.sin(p[2]) for p in self.particles)
+            cos_sum = sum(math.cos(p[2]) for p in self.particles)
+            self.best_theta = math.atan2(sin_sum, cos_sum)
 
     def publish_estimated_pose(self):
         """Publica PoseStamped de la pose estimada en pumas_map."""
@@ -263,6 +179,17 @@ class ParticleFilterNode(Node):
                 for point in landmark["points"]:
                     self.map_landmarks[landmark["id"]].append(tuple(point))
             #print(self.map_landmarks)
+
+    #def init_particles(self):
+    #    self.particles = []
+    #    self.num_particles = 800
+    #    for _ in range(self.num_particles):
+    #        x = random.uniform(-self.field_x/2, self.field_x/2)
+    #        y = random.uniform(-self.field_y/2, self.field_y/2)
+    #        theta = random.uniform(-math.pi, math.pi)
+    #        self.particles.append([x, y, theta])
+    #    self.weights = [1.0 / self.num_particles] * self.num_particles
+    #    self.particle_scores = [1.0 / self.num_particles] * self.num_particles
 
     def init_particles(self):
         self.particles = []
@@ -393,7 +320,18 @@ class ParticleFilterNode(Node):
         if not self.is_moving:
             return
         self.latest_observations = sorted(list(msg.landmarks), key=lambda l: l.angle)
-
+        #if self.particles:
+        #    p = self.particles[0]
+        #    preds = self.predict_measurements(p)
+        #    
+        #    # Imprimir en terminal ID y Ángulo (convertido a grados para leerlo fácil)
+        #    self.get_logger().info(f"--- Partícula ve {len(preds)} landmarks ---")
+        #    for pr in preds:
+        #        self.get_logger().info(f"ID: {pr['id']} | Ang: {math.degrees(pr['angle']):.2f}°")
+        #    
+        #    self.publish_particles() # Para ver la flecha en RViz
+        
+        #return 
         valid_landmarks = [lm for lm in msg.landmarks if lm.id not in [0, 2]]
         self.latest_observations = sorted(list(msg.landmarks), key=lambda l: l.angle)
 
@@ -427,6 +365,18 @@ class ParticleFilterNode(Node):
             avg_weight = sum(new_weights)/len(new_weights)
             max_weight = max(new_weights)
 
+        # if self.latest_observations:
+        #     #  CALCULAR PESOS (Update Step)
+        #     new_weights = []
+        #     for p in self.particles:
+        #         preds = self.predict_measurements(p)
+        #         # Función de similitud como la probabilidad p(y|x)
+        #         weight = self.similarity_function(preds, self.latest_observations)
+        #         new_weights.append(weight)
+
+        #     #Check average of weights
+        #     avg_weight = sum (new_weights)/len(new_weights)
+        #     max_weight = max (new_weights)
             # DETECCIÓN DE DIVERGENCIA SEVERA
             if max_weight < 1e-5:  # Pesos muy bajos
                 self.get_logger().warn(
@@ -455,17 +405,9 @@ class ParticleFilterNode(Node):
             if neff < self.num_particles * 0.5:
                 self.resample(robot_is_moving=self.is_moving)
                 self.get_logger().info("Resampling Executed.")
-
-            # self.weights (recién normalizados, ANTES del resample-reset) ya
-            # representan "lo que ve el robot" -> se usan dentro de
-            # compute_best_pose() para la fusión Kalman contra el promedio
-            # de movimiento puro.
-            self.compute_best_pose()
-            kx, ky, kth = self.kf_gain
-            self.get_logger().info(
-                f"KF gain -> x:{kx:.2f} y:{ky:.2f} theta:{kth:.2f} "
-                f"(cercano a 1 = confía en visión, cercano a 0 = confía en movimiento)"
-            )
+                #  RESAMPLING (Selección Natural)
+                #  Visualizar particulas
+            self.compute_best_pose()   
             self.publish_particles()
             self.publish_estimated_pose()
         else:
@@ -488,13 +430,17 @@ class ParticleFilterNode(Node):
             msg.poses.append(pose)
 
         self.particles_pub.publish(msg)
+        
+        # Log para saber qué tan dispersas están
+        #self.get_logger().info(f"Publicadas {len(self.particles)} partículas.")
     
     def resample(self, robot_is_moving):
         M = len(self.particles)
         
         # 1. ELITISMO: Encontrar los índices de las mejores partículas antes de destruir los pesos
+        # Ordenamos los índices de mayor a menor peso
         best_indices = sorted(range(M), key=lambda k: self.weights[k], reverse=True)
-        num_elites = int(M * 0.03)  # Conservar el 3% de las mejores partículas
+        num_elites = int(M * 0.03)  # Conservar el 3% de las mejores partículas (aprox 24 partículas)
         elites = [self.particles[idx] for idx in best_indices[:num_elites]]
         
         # 2. ALGORITMO LOW VARIANCE SAMPLER (Para llenar el resto de la población)
@@ -503,6 +449,7 @@ class ParticleFilterNode(Node):
         c = self.weights[0]
         i = 0
         
+        # Necesitamos generar M - num_elites partículas nuevas
         for m in range(1, (M - num_elites) + 1):
             U = r + (m - 1) * (1.0 / M)
             while U > c:
@@ -511,9 +458,11 @@ class ParticleFilterNode(Node):
                 
             p = self.particles[i]
             
+            # 3. JITTER INTELIGENTE: Si el robot está quieto, casi no ponemos ruido
+            # Si se está moviendo, dejamos que se esparzan un poco más para buscar alternativas
             if not robot_is_moving:
-                jitter_xy = 0.001
-                jitter_theta = 0.001
+                jitter_xy = 0.001     # Reducido a la mitad para evitar que "escapen"
+                jitter_theta = 0.001  # Reducido a la mitad
             else:
                 jitter_xy = 0.01
                 jitter_theta = 0.01
@@ -528,12 +477,58 @@ class ParticleFilterNode(Node):
 
             new_particles.append([nx, ny, nt])
             
-        # 3. INYECTAR LAS ELITES
+        # 4. INYECTAR LAS ELITES: Combinamos las sobrevivientes perfectas con las nuevas descendientes
         self.particles = elites + new_particles
         
         # Reiniciamos la memoria de pesos para la nueva generación
         self.weights = [1.0 / M] * M
         self.particle_scores = [1.0 / M] * M
+
+    # def resample(self, robot_is_moving):
+    #     #Table 4.4 pag 110 PR Algorithm Low_variance_sampler(Xt , Wt ):
+    #     new_particles = []
+    #     M = len(self.particles)
+        
+    #     # LÍNEA 3: r = rand(0, M^-1)
+    #     r = random.uniform(0, 1.0 / M)
+        
+    #     # LÍNEA 4: c = w[0] (el peso de la primer partícula)e
+    #     c = self.weights[0]
+        
+    #     # LÍNEA 5: i = 1 
+    #     i = 0
+        
+    #     # LÍNEA 6: for m = 1 to M
+    #     for m in range(1, M + 1):
+    #         # SAMPLING: Usamos lógica de Low Variance
+    #         # LÍNEA 7: U = r + (m - 1) * M^-1
+    #         U = r + (m - 1) * (1.0 / M)
+            
+    #         # LÍNEA 8-11: while U > c
+    #         while U > c:
+    #             i = (i + 1) % M
+    #             c += self.weights[i]
+                
+    #         # LÍNEA 12: add x[i] to X_new
+    #         p = self.particles[i]
+    #         if not robot_is_moving:
+    #             jitter_xy = 0.002
+    #             jitter_theta = 0.002
+    #         else:
+    #             jitter_xy = 0.0
+    #             jitter_theta = 0.0
+            
+    #         nx = p[0] + random.gauss(0, jitter_xy)
+    #         ny = p[1] + random.gauss(0, jitter_xy)
+    #         nt = angle_diff(p[2], random.gauss(0, jitter_theta))
+    #         # --- CLAMPING FINAL (No más partículas fuera de la cancha) ---
+    #         nx = max(self.FIELD_X_MIN, min(nx, self.FIELD_X_MAX))
+    #         ny = max(self.FIELD_Y_MIN, min(ny, self.FIELD_Y_MAX))
+
+    #         new_particles.append([nx, ny, nt])
+    #     self.particles = new_particles
+    #     # Reiniciamos pesos para el siguiente ciclo
+    #     self.weights = [1.0 / M] * M
 
     def predict_measurements(self, particle):
         px, py, p_theta = particle
@@ -581,32 +576,47 @@ class ParticleFilterNode(Node):
         num_observations = len(observations)
         num_predictions = len(predicted_dets)
         #------ Gaussian Similarity--------
+        # error ~ 0 ; p_weight ~ 1
         similarity = 0.0
+        # variance = sigma**2
         var = self.sigma_angle ** 2
         for err in matched_errors:
+            #Gaussian function pag. 155 PR
             lklihood = -(err**2)/(2*var)
+            #p. 152 ec 6.2 p(zt | xt , m)=KPIk=1 p(zkt | xt , m)
             similarity += lklihood
         
         avg_likelihood = similarity / num_matches
         quality_score = math.exp(avg_likelihood)
 
+        # 2. NUEVO: Ratio de éxito basado en MATCHES sobre OBSERVACIONES
+        # Esto favorece explicar lo que vemos, no penaliza lo que no vemos
         match_success = num_matches / num_observations
         
+        # 3. Peso base = calidad × éxito en explicar observaciones
         base_weight = quality_score * match_success
         
+        # 4. PENALIZACIÓN MÁS SUAVE por observaciones no explicadas
+        # Toleramos que 1-2 observaciones no tengan predicción
         obs_not_matched = num_observations - num_matches
         
-        if obs_not_matched > 2:
+        if obs_not_matched > 2:  # Tolerancia de 2 landmarks
+            # Penalización moderada (no exponencial)
             miss_penalty = 0.5 ** (obs_not_matched - 2)
             base_weight *= miss_penalty
         pred_not_observed = num_predictions - num_matches
+        # Tolerancia: Es OK predecir más landmarks de los que ves
+        # (el detector puede fallar en detectar algunos)
         if pred_not_observed > num_observations:
+            # Solo penalizar si hay DEMASIADAS predicciones extra
             excess = pred_not_observed - num_observations
-            if excess > 3:
+            if excess > 3:  # Tolerancia de 3 landmarks extra
                 false_positive_penalty = 0.3 ** (excess - 3)
                 base_weight *= false_positive_penalty
         
         return max(min(base_weight, 1.0), 1e-10)
+            # pag. 16 PR
+        # return math.exp(similarity)
 
 def main():
     rclpy.init()
@@ -616,4 +626,4 @@ def main():
     rclpy.shutdown()
 
 if __name__ == '__main__':
-    main()
+    main()   
