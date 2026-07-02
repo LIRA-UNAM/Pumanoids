@@ -72,10 +72,10 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
             package = 'go_to_target',
             executable = 'go_to_target',
             name = 'go_to_target',
-            parameters=[{
-                'v_max': params['movement']['linear_speed'],
-                'w_max': params['movement']['angular_speed']
-            }]
+            #parameters=[{
+            #    'v_max': params['movement']['linear_speed'],
+            #    'w_max': params['movement']['angular_speed']
+            #}]
             #output = 'screen'
         ),
 
@@ -88,7 +88,6 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
             parameters=
             [
                 {
-
                     "start_position": [float(i) for i in configs['start_position']],
                     "player_number":configs['player_number'], 
                     "team_number":configs['team_number'], 
@@ -103,6 +102,11 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
             executable = 'ball_tracker',
             name = 'ball_tracker',
             output = 'screen',
+        ),
+        Node(
+            package = 'goalkeeper',
+            executable = 'emergency_goalkeeper',
+            name = 'emergency_goalkeeper'
         ),
         Node(
             package = 'particle_filter',

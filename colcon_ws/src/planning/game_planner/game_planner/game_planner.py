@@ -172,6 +172,10 @@ class PlannerNode(Node):
             depth=10
         )
 
+        ball_qos = QoSProfile(depth=10,
+            reliability=ReliabilityPolicy.RELIABLE,
+            history=HistoryPolicy.KEEP_LAST)
+
         # --- TF2 ---
         self.target_frame = self.declare_parameter('pumas_map', 'pumas_base_link').get_parameter_value().string_value
         self.tf_buffer = Buffer()
@@ -233,7 +237,7 @@ class PlannerNode(Node):
                 Pose2D,
                 '/vision/ball_kal',
                 self.map_ball_callback,
-                10)
+                ball_qos)
 
         # --- SERVICES CLIENTS ---
         self.rpc_client = self.create_client(RpcService, '/booster_rpc_service')
@@ -279,6 +283,8 @@ class PlannerNode(Node):
         self.connection_timeout = 0.7 # <-- Adjust this to set the connection tolerance in seconds :)
         self.last_time_seeing_ball = self.get_clock().now().nanoseconds/1e9
         self.last_packet_time = self.get_clock().now()
+
+        self.go_to_target_executing = False
         
         # State machine
         self.current_state = State.WAITING_CONNECTION
@@ -441,10 +447,17 @@ class PlannerNode(Node):
             if self.current_robot_position is None:
                 self.get_logger().info("Not pose yet")
                 return
+            """
             else:
                 self.get_logger().info(f"arrived{self.go_to_target_success}")
                 if self.go_to_target_success:
                     self.target_position_publisher.publish(point)
+            """
+            if self.go_to_target_executing:
+                return
+            self.go_to_target_executing = True
+            self.target_position_publisher.publish(point)
+            
 
     def wait_state(self):
         self.get_logger().info("WAITING_CONNECTION waiting for Game Controller conection")
@@ -475,60 +488,66 @@ class PlannerNode(Node):
             self.get_logger().info("Goal_keeping")
             return 
         self.head_ball_follower_enable_publisher.publish(Bool(data=True))
-        if self.carry_ball_position is not None and self.ball_position is not None:
+        if self.carry_ball_position is not None:
+            if self.ball_position is not None:
 
-            joelian_point = [self.carry_ball_position[0], self.carry_ball_position[1]]
-            robot_position = [self.current_robot_position[0], self.current_robot_position[1]]
+                joelian_point = [self.carry_ball_position[0], self.carry_ball_position[1]]
+                robot_position = [self.current_robot_position[0], self.current_robot_position[1]]
 
-            # CORRECCIÓN MATEMÁTICA VITAL:
-            # V1: Vector desde el Punto Joeliano HASTA la Pelota (Vector de Ataque ideal)
-            V1 = [self.ball_position[0] - joelian_point[0], self.ball_position[1] - joelian_point[1]]
-            # V2: Vector desde el Robot HASTA la Pelota (Vector de Ataque real)
-            V2 = [self.ball_position[0] - robot_position[0], self.ball_position[1] - robot_position[1]]
+                # CORRECCIÓN MATEMÁTICA VITAL:
+                # V1: Vector desde el Punto Joeliano HASTA la Pelota (Vector de Ataque ideal)
+                V1 = [self.ball_position[0] - joelian_point[0], self.ball_position[1] - joelian_point[1]]
+                # V2: Vector desde el Robot HASTA la Pelota (Vector de Ataque real)
+                V2 = [self.ball_position[0] - robot_position[0], self.ball_position[1] - robot_position[1]]
 
-            M1 = math.sqrt(V1[0] * V1[0] + V1[1] * V1[1])
-            M2 = math.sqrt(V2[0] * V2[0] + V2[1] * V2[1])
+                M1 = math.sqrt(V1[0] * V1[0] + V1[1] * V1[1])
+                M2 = math.sqrt(V2[0] * V2[0] + V2[1] * V2[1])
 
-            # Evitar divisiones por cero si hay un error de visión extremo
-            if M1 == 0 or M2 == 0:
-                self.get_logger().info(f"Zeros")
-                wants_follow = False
-            # --- Caso especial: muy cerca de la pelota, forzar persecución ---
-            #elif M2 < self.close_to_ball_distance:
-            #    wants_follow = True
-            else:
-                cos_theta = max(-1.0, min(1.0, (V1[0] * V2[0] + V1[1] * V2[1]) / (M1 * M2)))
-                theta = math.acos(cos_theta)
-                self.get_logger().info(f"Angle = {theta:.2f} rad")
+                # Evitar divisiones por cero si hay un error de visión extremo
+                if M1 == 0 or M2 == 0:
+                    self.get_logger().info(f"Zeros")
+                    wants_follow = False
+                # --- Caso especial: muy cerca de la pelota, forzar persecución ---
+                #elif M2 < self.close_to_ball_distance:
+                #    wants_follow = True
+                else:
+                    cos_theta = max(-1.0, min(1.0, (V1[0] * V2[0] + V1[1] * V2[1]) / (M1 * M2)))
+                    theta = math.acos(cos_theta)
+                    self.get_logger().info(f"Angle = {theta:.2f} rad")
+
+                    if self.follow_ball_mode:
+                        if (theta > self.theta_exit_follow):
+                            wants_follow = False
+                        else:
+                            wants_follow = True
+                    else:
+                        # Si el ángulo entre nuestro ataque real y el ideal es menor a ~40 grados, ataca.
+                        wants_follow = (theta < self.theta_enter_follow)
+
+                self.follow_ball_mode = wants_follow
 
                 if self.follow_ball_mode:
-                    if (theta > self.theta_exit_follow):
-                        wants_follow = False
-                    else:
-                        wants_follow = True
+                    self.get_logger().info("FOLLOW BALL")
+                    self.go_to_target_enable_publisher.publish(Bool(data=False))
+                    self.head_ball_follower_enable_publisher.publish(Bool(data=True))
+                    self.ball_follower_enable_publisher.publish(Bool(data=True))
+                    self.go_to_target_executing = False
                 else:
-                    # Si el ángulo entre nuestro ataque real y el ideal es menor a ~40 grados, ataca.
-                    wants_follow = (theta < self.theta_enter_follow)
-
-            self.follow_ball_mode = wants_follow
-
-            if self.follow_ball_mode:
-                self.get_logger().info("FOLLOW BALL")
-                self.go_to_target_enable_publisher.publish(Bool(data=False))
-                self.head_ball_follower_enable_publisher.publish(Bool(data=True))
-                self.ball_follower_enable_publisher.publish(Bool(data=True))
+                    self.get_logger().info("JOELIAN POINT")
+                    self.ball_follower_enable_publisher.publish(Bool(data=False))
+                    self.head_ball_follower_enable_publisher.publish(Bool(data=True))
+                    self.go_to_target_enable_publisher.publish(Bool(data=True))
+                    target = Pose2D()
+                    target.x = self.carry_ball_position[0]
+                    target.y = self.carry_ball_position[1]
+                    target.theta = self.carry_ball_position[2]
+                    #self.get_logger().debug(f"Robot  a: {self.current_robot_position[2]}")
+                    #self.get_logger().debug(f"Target a: {self.current_robot_position[2]}")
+                    self.go_to_target(target)
             else:
-                self.get_logger().info("JOELIAN POINT")
-                self.ball_follower_enable_publisher.publish(Bool(data=False))
-                self.head_ball_follower_enable_publisher.publish(Bool(data=True))
-                self.go_to_target_enable_publisher.publish(Bool(data=True))
-                target = Pose2D()
-                target.x = self.carry_ball_position[0]
-                target.y = self.carry_ball_position[1]
-                target.theta = self.carry_ball_position[2]
-                #self.get_logger().debug(f"Robot  a: {self.current_robot_position[2]}")
-                #self.get_logger().debug(f"Target a: {self.current_robot_position[2]}")
-                self.go_to_target(target)
+                self.get_logger().info("NO BALL POSITION")
+        else:
+            self.get_logger().info("NO JOELIAN")
 
     def finish_state(self):
         self.get_logger().info("FINISH_STATE good half game")
@@ -558,17 +577,6 @@ class PlannerNode(Node):
 
     def kick(self):
         self.get_logger().info("Some of the lots of kicks")
-        byte_array = self.game_controller.secondary_state_info
-        if byte_array[0] == self.team_number and self.kick_robot:
-            #TODO go to the ball that the referee will put after the kick you have execute
-            if byte_array[1] == 1:
-                self.get_logger().info("Posicioning to the ball")
-                #TODO waiting for miguels function to kick 
-            if byte_array[1] == 2:
-                self.get_logger().info("kicking the ball")
-        else:
-            #TODO function to not hinder the robot kick or go for the bounce 
-            self.get_logger().info("going to another place")
 
     def illegal_atk(self):
         print("Sorry i attacked before time") #TODO go back to avoid pushing other robot or try to scape the mob
@@ -648,7 +656,10 @@ class PlannerNode(Node):
             return
         avg_x = sum(p[0] for p in valid) / len(valid)
         avg_y = sum(p[1] for p in valid) / len(valid)
-        avg_theta = sum(p[2] for p in valid) / len(valid)
+        #avg_theta = sum(p[2] for p in valid) / len(valid)
+        avg_theta_cos = sum(math.cos(p[2]) for p in valid) / len(valid)
+        avg_theta_sin = sum(math.sin(p[2]) for p in valid) / len(valid)
+        avg_theta = math.atan2(avg_theta_sin, avg_theta_cos)
         self.carry_ball_position = [avg_x, avg_y, avg_theta]
 
         rviz_joelian = Pose2D()
@@ -659,6 +670,7 @@ class PlannerNode(Node):
 
     def go_to_target_success_callback(self, msg):
         self.go_to_target_success = msg.data
+        self.go_to_target_executing = False
 
     # To get and store the robot absolute position
     def tf_callback(self):

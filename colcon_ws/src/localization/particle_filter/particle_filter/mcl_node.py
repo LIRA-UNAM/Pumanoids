@@ -46,9 +46,9 @@ class ParticleFilterNode(Node):
         self.map_landmarks ={}
         self.read_yaml(map_file)
         self.tf_broadcaster = TransformBroadcaster(self)
-        self.best_x     = 0.0
-        self.best_y     = 0.0
-        self.best_theta = 0.0
+        self.best_x     = 3.0
+        self.best_y     = -3.0
+        self.best_theta = 1.6
         self.curr_pose = [0.0,0.0,0.0] 
         #TF2 variables
         self.tf_buffer = Buffer()

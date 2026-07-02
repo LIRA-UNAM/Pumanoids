@@ -74,13 +74,7 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
             package='joint_states_package',
             executable='joints_service',
             name='joints_service',
-        ),
-        Node(
-            package='new_twist_to_k1',
-            executable='odom_to_tf',
-            name='odom_to_tf',
         )
-        
     ]
 
     # 5. Nodos CONDICIONALES (Se agregan a la lista solo si es el K1)
@@ -93,6 +87,33 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
                 output='screen',
             )
         )
+        nodes.append(
+            Node(
+                package='new_twist_to_k1',
+                executable='odom_to_tf',
+                name='odom_to_tf',
+                output='screen',
+            )
+        )
+
+    if robot_name == 't1':
+        nodes.append(
+            Node(
+                package='new_twist_to_t1',
+                executable='odom_to_tf',
+                name='odom_to_tf',
+                output='screen',
+            )
+        )
+        nodes.append(
+            Node(
+                package='new_twist_to_t1',
+                executable='twist_to_t1',
+                name='twist_to_t1',
+                output='screen',
+            )
+        )
+
 
     return nodes
 

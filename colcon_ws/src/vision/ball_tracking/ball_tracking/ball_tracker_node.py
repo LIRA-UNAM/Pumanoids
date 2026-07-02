@@ -41,10 +41,10 @@ class BallTrackerNode(Node):
         super().__init__('ball_tracker')
 
         # ---------------- parameters ----------------
-        self.declare_parameter('input_topic', '/vision/ball_map')
+        self.declare_parameter('input_topic', '/vision/map_ball')
         self.declare_parameter('output_topic', '/vision/ball_kal')
         self.declare_parameter('cov_topic', '/vision/ball_kalmanized_cov')
-        self.declare_parameter('publish_rate_hz', 20.0)
+        self.declare_parameter('publish_rate_hz', 10.0)
         self.declare_parameter('process_accel_std', 6.0)
         self.declare_parameter('meas_pos_std', 0.4)
         self.declare_parameter('gate_threshold', 9.21)          # chi2(2dof), 99%

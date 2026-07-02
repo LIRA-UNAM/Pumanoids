@@ -14,8 +14,8 @@ camera:
   focal_length_px: 600.0
 
 movement:
-  angular_speed: 1.0
-  linear_speed: 0.2
+  angular_speed: 1.2
+  linear_speed: 0.4
 
 head:
   height_m: 1.08
