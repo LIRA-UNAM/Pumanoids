@@ -47,10 +47,10 @@ class GoToTarget : public rclcpp::Node
         state = State::idle;
 
         // -- PARAMETERS --
-        this->declare_parameter<double>("v_max", 0.3);        // Maximum velocity
-        this->declare_parameter<double>("w_max", 1);        // Maximum rotation
-        this->declare_parameter<double>("alpha", 0.3);        // alpha constant
-        this->declare_parameter<double>("beta", 0.3);         // beta constant
+        this->declare_parameter<double>("v_max", 0.4);        // Maximum velocity
+        this->declare_parameter<double>("w_max", 0.8);        // Maximum rotation
+        this->declare_parameter<double>("alpha", 0.6);        // alpha constant
+        this->declare_parameter<double>("beta", 0.6);         // beta constant
         this->declare_parameter<double>("dist_min", 0.5);   // Minimum distance to target for the robot to stop
 
         this->get_parameter("v_max", v_max);
@@ -189,7 +189,7 @@ class GoToTarget : public rclcpp::Node
                         else 
                         {
                            twist_msg.angular.z = w;
-                           state = std::abs(err_a) < 0.2 ? State::forward : State::ball_align;
+                           state = std::abs(err_a) < 0.4 ? State::forward : State::ball_align;
                          
                         }
                         break; 
