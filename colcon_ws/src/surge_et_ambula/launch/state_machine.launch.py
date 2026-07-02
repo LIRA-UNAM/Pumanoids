@@ -99,6 +99,12 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
             ]
         ),
         Node(
+            package = 'ball_tracking',
+            executable = 'ball_tracker',
+            name = 'ball_tracker',
+            output = 'screen',
+        ),
+        Node(
             package = 'particle_filter',
             executable = 'bridge_odom',
             name = 'bridge_odom',
