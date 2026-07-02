@@ -22,8 +22,8 @@ class BallFollowerNode(Node):
         # --- PARAMETERS ---
         self.declare_parameter("camera_topic", "/boostercamera/head/rgb")
 
-        self.declare_parameter('angular_speed', 0.5)
-        self.declare_parameter('linear_speed', 0.1)
+        self.declare_parameter('angular_speed', 0.8)
+        self.declare_parameter('linear_speed', 0.3)
 
         # --- VARIABLES ---
         self.is_enabled = False     # To check enable status from game_planner
@@ -122,7 +122,6 @@ class BallFollowerNode(Node):
             qos_profile=qos_profile,
             time_to_wait=timeout_seconds
         )
-        self.first_image = True
         return msg if success else None
 
     
@@ -147,10 +146,15 @@ class BallFollowerNode(Node):
                 self.img_height = img.height
                 self.img_goal_x = img.width/2
                 self.img_goal_y = img.height/2
+                self.first_image = True
             else:
-                None
+                return
 
         if not self.is_enabled or not self.ball_detected:
+            return
+
+        if self.img_goal_x is None:
+            self.get_logger().info("NO img center")
             return
 
         # Return the ball_detected flag to false
