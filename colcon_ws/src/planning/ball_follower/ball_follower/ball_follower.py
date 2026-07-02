@@ -2,15 +2,16 @@ import rclpy
 import math
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
+from rclpy.wait_for_message import wait_for_message
 from geometry_msgs.msg import Twist
-from sensor_msgs.msg import JointState
+from sensor_msgs.msg import Image, JointState
 from std_msgs.msg import Bool
 from pumas_vision_msgs.msg import VisionObject
 from joint_states_package.srv import HeadJoints
 
 # Image center (in pixels) for every robot model
-center_x_t1 = 320
-center_x_k1 = 272
+center_x_t1 = 640
+center_x_k1 = 360
 
 class BallFollowerNode(Node):
 
@@ -19,6 +20,8 @@ class BallFollowerNode(Node):
         super().__init__("ball_follower")
 
         # --- PARAMETERS ---
+        self.declare_parameter("camera_topic", "/boostercamera/head/rgb")
+
         self.declare_parameter('angular_speed', 0.5)
         self.declare_parameter('linear_speed', 0.1)
 
@@ -30,6 +33,14 @@ class BallFollowerNode(Node):
         self.ball_detected = False  # To check if a ball has been detected by ball_detector
         self.ball_center_x = 0    # Ball position in the camera in the X axis
         self.ball_center_y = 0    # Ball position in the camera in the Y axis
+
+        self.first_image = False # To check if we got the first image
+
+        self.img_width  = None
+        self.img_height = None
+        self.img_goal_x = None
+        self.img_goal_y = None
+
 
         self.linear_speed = self.get_parameter('linear_speed').value
         self.angular_speed = self.get_parameter('angular_speed').value
@@ -100,6 +111,20 @@ class BallFollowerNode(Node):
 
         except Exception as e:
             self.get_logger().error(f'Joint service callback: {e}')
+
+    def get_single_image(self, timeout_seconds=1):
+        self.get_logger().info("Waiting for single image")
+        qos_profile = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT, history=HistoryPolicy.KEEP_LAST, depth=1)
+        success, msg = wait_for_message(
+            msg_type=Image,
+            node=self,
+            topic=self.get_parameter('camera_topic').get_parameter_value().string_value,
+            qos_profile=qos_profile,
+            time_to_wait=timeout_seconds
+        )
+        self.first_image = True
+        return msg if success else None
+
     
     # When ball_detector finds the ball, we store it's position in pixel coordinates
     def callback_ball(self, msg):
@@ -114,13 +139,24 @@ class BallFollowerNode(Node):
         
     def main_timer(self):
 
+        if not self.first_image:
+            img = self.get_single_image()
+            if img is not None:
+                self.get_logger().info(f"Image received with size {img.width}x{img.height}")
+                self.img_width  = img.width
+                self.img_height = img.height
+                self.img_goal_x = img.width/2
+                self.img_goal_y = img.height/2
+            else:
+                None
+
         if not self.is_enabled or not self.ball_detected:
             return
 
         # Return the ball_detected flag to false
         self.ball_detected = False
         # Calculate the horizontal error from center to ball position
-        error_x = (center_x_k1 - self.ball_center_x) / center_x_k1
+        error_x = (self.img_goal_x - self.ball_center_x) / self.img_goal_x
         if error_x < 0:
             error_x = -math.sqrt(-error_x)
         else:

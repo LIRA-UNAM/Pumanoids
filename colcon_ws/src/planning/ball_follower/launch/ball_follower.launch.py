@@ -78,7 +78,8 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
             name='ball_follower',
             parameters=[{
                 'linear_speed': params['movement']['linear_speed'],
-                'angular_speed': params['movement']['angular_speed']
+                'angular_speed': params['movement']['angular_speed'],
+                'camera_topic': params['camera']['image_topic']
             }]
             #output='screen'
         )
