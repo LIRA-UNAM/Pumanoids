@@ -9,6 +9,7 @@ from localization_msg.msg import VisionLandmarkArray
 from ament_index_python.packages import get_package_share_directory
 import math
 import random
+import time
 from tf2_ros import TransformBroadcaster
 from tf2_ros import TransformException, LookupException
 from tf2_ros.buffer import Buffer
@@ -55,7 +56,7 @@ class ParticleFilterNode(Node):
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
         # Timer for TF 10 Hz
-        self.tf_timer = self.create_timer(0.1, self.publish_tf_continuous)
+        self.tf_broadcast_timer = self.create_timer(0.1, self.publish_tf_continuous)
 #------------------------------------------------------
         # Particles
         self.field_x, self.field_y = 6.08, 9.06
@@ -83,6 +84,20 @@ class ParticleFilterNode(Node):
         self.kf_gain = (0.0, 0.0, 0.0)       # último (Kx, Ky, Ktheta), útil para debug/logs
         self.kf_var  = (0.0, 0.0, 0.0)       # última varianza fusionada por eje
 
+        # ---- THROTTLE: evita que se acumule cola de mensajes de visión ----
+        # Si observation_callback tarda más que el periodo entre mensajes
+        # de /vision/landmarks, un executor de un solo hilo NO se pone al
+        # día solo -- la demora crece sin límite mientras el nodo corre
+        # (justo el síntoma de "empieza bien pero se va atrasando cada vez
+        # más"). Este límite fuerza a que solo se procese un mensaje cada
+        # self.min_obs_interval segundos como máximo; los mensajes que
+        # lleguen de más rápido simplemente se descartan (se usa el más
+        # reciente disponible), así el trabajo pendiente nunca crece.
+        self.declare_parameter("max_observation_hz", 8.0)
+        max_hz = self.get_parameter("max_observation_hz").value
+        self.min_obs_interval = 1.0 / max_hz if max_hz > 0 else 0.0
+        self.last_obs_process_time = 0.0
+
         # Initialization
         self.is_moving = False
         self.init_particles()
@@ -90,7 +105,7 @@ class ParticleFilterNode(Node):
         self.get_logger().info("Particle filter")
 
         #  ROS Sub/Pub
-        self.tf_timer = self.create_timer(0.15, self.tf_callback)
+        self.motion_timer = self.create_timer(0.15, self.tf_callback)
         self.obs_sub = self.create_subscription(
             VisionLandmarkArray, '/vision/landmarks', 
             self.observation_callback, 
@@ -264,6 +279,18 @@ class ParticleFilterNode(Node):
                     self.map_landmarks[landmark["id"]].append(tuple(point))
             #print(self.map_landmarks)
 
+            # OPTIMIZACIÓN: aplanar el dict de landmarks a una sola lista
+            # [(id, x, y), ...] una sola vez aquí, en vez de que
+            # predict_measurements haga .items() + loop anidado en CADA
+            # llamada (una llamada por partícula, 800 veces por callback
+            # de observación). Reduce el overhead de Python en el punto
+            # más caliente del pipeline.
+            self.flat_landmarks = [
+                (lm_id, x, y)
+                for lm_id, points in self.map_landmarks.items()
+                for (x, y) in points
+            ]
+
     def init_particles(self):
         self.particles = []
         self.num_particles = 800
@@ -346,7 +373,19 @@ class ParticleFilterNode(Node):
                 new_particles.append(new_p)
             self.particles = new_particles
             self.publish_particles()
-        
+
+            # FIX LAG: antes, best_x/y/theta (y por lo tanto el TF
+            # pumas_map->pumas_odom y /estimated_pose) solo se actualizaban
+            # dentro de observation_callback. Si la visión publica más
+            # lento que este timer (0.15s), la pose publicada se quedaba
+            # congelada varios ciclos mientras las partículas ya se habían
+            # movido -> se veía "atrás" de la odometría real.
+            # Al llamar aquí también, best_pose avanza en cada tick de
+            # movimiento usando la última info de visión disponible
+            # (self.weights) como medición dentro de la fusión Kalman.
+            self.compute_best_pose()
+            self.publish_estimated_pose()
+
         self.last_odom_pose = curr_pose
         self.last_odom_time = curr_time
         
@@ -390,6 +429,20 @@ class ParticleFilterNode(Node):
 
 #------------OBSERVATION MODEL---------------------
     def observation_callback(self, msg):
+        # PROFILING: mide cuánto tarda todo el callback. Si esto se acerca
+        # o supera el periodo del timer de movimiento (0.15s), es evidencia
+        # de que este callback está bloqueando el executor de un solo hilo
+        # y por eso el motion model se retrasa (partículas "atrás" de la
+        # odometría real). Revisa el log "Observation callback duration".
+        t_start = time.time()
+
+        # THROTTLE: si llegó demasiado rápido después del último mensaje
+        # procesado, se descarta aquí mismo (barato, casi sin costo) en vez
+        # de dejar que se acumule trabajo pendiente para el executor.
+        if (t_start - self.last_obs_process_time) < self.min_obs_interval:
+            return
+        self.last_obs_process_time = t_start
+
         if not self.is_moving:
             return
         self.latest_observations = sorted(list(msg.landmarks), key=lambda l: l.angle)
@@ -402,6 +455,7 @@ class ParticleFilterNode(Node):
             #self.get_logger().info(f"Only {len(self.latest_observations)} landmarks — trusting odometry only.")
             self.publish_particles()
             self.publish_estimated_pose()
+            self._log_callback_duration(t_start)
             return
 
         if self.latest_observations:
@@ -468,8 +522,23 @@ class ParticleFilterNode(Node):
             )
             self.publish_particles()
             self.publish_estimated_pose()
+            self._log_callback_duration(t_start)
         else:
+            self._log_callback_duration(t_start)
             return
+
+    def _log_callback_duration(self, t_start):
+        """Loggea la duración total de observation_callback. Si esto supera
+        ~0.1-0.15s de forma consistente, el callback está compitiendo por
+        CPU con el timer de movimiento (0.15s) en el executor de un solo
+        hilo, y eso explica un atraso de las partículas vs la odometría
+        real -- en ese caso conviene optimizar predict_measurements /
+        similarity_function o pasar a un MultiThreadedExecutor con locks."""
+        duration = time.time() - t_start
+        if duration > 0.08:
+            self.get_logger().warn(f"Observation callback duration: {duration*1000:.1f} ms (alto)")
+        else:
+            self.get_logger().info(f"Observation callback duration: {duration*1000:.1f} ms")
 
     def publish_particles(self):
         msg = PoseArray()
@@ -538,17 +607,17 @@ class ParticleFilterNode(Node):
     def predict_measurements(self, particle):
         px, py, p_theta = particle
         predicted_dets = []
-        for lm_id, positions in self.map_landmarks.items():
-            for lm_x, lm_y in positions:
-                dx = lm_x - px
-                dy = lm_y - py
-                abs_angle = math.atan2(dy,dx)
-                p_angle = angle_diff(abs_angle,p_theta)
-                if abs(p_angle) <= (self.fov_rad / 2.0):
-                    predicted_dets.append({
-                    "id": lm_id,
-                    "angle": p_angle
-                })
+        half_fov = self.fov_rad / 2.0
+        # Usa la lista aplanada (precomputada en read_yaml) en vez de
+        # iterar el dict + sublistas cada vez -> menos overhead de Python
+        # por partícula, que es lo que se multiplica x800 cada callback.
+        for lm_id, lm_x, lm_y in self.flat_landmarks:
+            dx = lm_x - px
+            dy = lm_y - py
+            abs_angle = math.atan2(dy, dx)
+            p_angle = angle_diff(abs_angle, p_theta)
+            if abs(p_angle) <= half_fov:
+                predicted_dets.append({"id": lm_id, "angle": p_angle})
         predicted_dets.sort(key=lambda d: d["angle"])
         return predicted_dets
 
