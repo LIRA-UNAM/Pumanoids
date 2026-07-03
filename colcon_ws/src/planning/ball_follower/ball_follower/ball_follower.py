@@ -167,9 +167,10 @@ class BallFollowerNode(Node):
             error_x = math.sqrt(error_x)
         
         # Send the movement command. The robot rotates depending on the horizontal position of the ball, taking in consideration the position of the ball in the camera and the head (yaw) position.
+        error_angle = error_x + self.last_head_pan 
         cmd_vel_msg = Twist()
-        cmd_vel_msg.linear.x = self.linear_speed 
-        cmd_vel_msg.angular.z = self.angular_speed * (error_x + self.last_head_pan)
+        cmd_vel_msg.linear.x = self.linear_speed * math.exp(-error_angle*error_angle/0.3) 
+        cmd_vel_msg.angular.z = self.angular_speed * (error_angle)
         #self.get_logger().info(f"{error_x}  ,  {self.current_head_pan}")
         #self.get_logger().info(f"Pan position: {cmd_vel_msg.angular.z}")
         self.pub_cmd_vel.publish(cmd_vel_msg)

@@ -390,7 +390,7 @@ void BallDetectorNode::imageCallback(const sensor_msgs::msg::Image::SharedPtr ms
         }
 
         for (const auto & d : detections) {
-            if (d.class_name == "ball" && d.confidence > 0.60f) {
+            if (d.class_name == "ball" && d.confidence > 0.50f) {
                 auto [bx, by] = getBallPosition(
                         d.center_x, d.center_y, d.width, d.height, bgr.cols, bgr.rows);
 

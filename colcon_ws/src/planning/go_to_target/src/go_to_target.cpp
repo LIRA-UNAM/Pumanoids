@@ -47,7 +47,7 @@ class GoToTarget : public rclcpp::Node
         state = State::idle;
 
         // -- PARAMETERS --
-        this->declare_parameter<double>("v_max", 0.4);        // Maximum velocity
+        this->declare_parameter<double>("v_max", 0.6);        // Maximum velocity
         this->declare_parameter<double>("w_max", 0.8);        // Maximum rotation
         this->declare_parameter<double>("alpha", 0.6);        // alpha constant
         this->declare_parameter<double>("beta", 0.6);         // beta constant

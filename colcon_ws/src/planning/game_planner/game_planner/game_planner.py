@@ -188,6 +188,12 @@ class PlannerNode(Node):
                 '/cmd_vel', 
                 1)
 
+        self.reset_odom= self.create_publisher(
+                Bool,
+                '/odometry_restart',
+                qos_profile_for_enabling)
+
+
         self.head_ball_follower_enable_publisher = self.create_publisher(
                 Bool,
                 '/head_ball_follower/enable',
@@ -283,6 +289,8 @@ class PlannerNode(Node):
         self.connection_timeout = 0.7 # <-- Adjust this to set the connection tolerance in seconds :)
         self.last_time_seeing_ball = self.get_clock().now().nanoseconds/1e9
         self.last_packet_time = self.get_clock().now()
+        self.joelian_counter =0
+        self.follow_counter =0
 
         self.go_to_target_executing = False
         
@@ -490,6 +498,16 @@ class PlannerNode(Node):
         self.head_ball_follower_enable_publisher.publish(Bool(data=True))
         if self.carry_ball_position is not None:
             if self.ball_position is not None:
+               # if self.follow_ball_mode:
+                #    self.follow_counter += 1
+                 #   if self.follow_counter > 100:
+                  #      self.follow_counter =0 
+                   #     self.follow_ball_mode = False
+               # else:
+                #    self.joelian_counter +=1
+                 #   if self.joelian_counter > 100 or self.go_to_target_success:
+                  #      self.joelian_counter = 0 
+                   #     self.follow_ball_mode = True
 
                 joelian_point = [self.carry_ball_position[0], self.carry_ball_position[1]]
                 robot_position = [self.current_robot_position[0], self.current_robot_position[1]]
@@ -513,19 +531,17 @@ class PlannerNode(Node):
                 else:
                     cos_theta = max(-1.0, min(1.0, (V1[0] * V2[0] + V1[1] * V2[1]) / (M1 * M2)))
                     theta = math.acos(cos_theta)
-                    self.get_logger().info(f"Angle = {theta:.2f} rad")
+                    self.get_logger().info(f"Angle = {theta:.2f} rad M2 = {M2}")
 
                     if self.follow_ball_mode:
-                        if (theta > self.theta_exit_follow):
+                        if (theta > self.theta_exit_follow and M2 > 1.0):
                             wants_follow = False
                         else:
                             wants_follow = True
                     else:
                         # Si el ángulo entre nuestro ataque real y el ideal es menor a ~40 grados, ataca.
-                        wants_follow = (theta < self.theta_enter_follow)
-
+                        wants_follow = (theta < self.theta_enter_follow or M2 < self.close_to_ball_distance)
                 self.follow_ball_mode = wants_follow
-
                 if self.follow_ball_mode:
                     self.get_logger().info("FOLLOW BALL")
                     self.go_to_target_enable_publisher.publish(Bool(data=False))
@@ -548,6 +564,7 @@ class PlannerNode(Node):
                 self.get_logger().info("NO BALL POSITION")
         else:
             self.get_logger().info("NO JOELIAN")
+
 
     def finish_state(self):
         self.get_logger().info("FINISH_STATE good half game")
@@ -601,6 +618,8 @@ class PlannerNode(Node):
             self.current_state = State.IDLE
         else:
             self.get_logger().info("Out of IDLE")
+            self.reset_odom.publish(Bool(data=True))
+            self.go_to_target(self.start_position)
             self.last_available_state = self.current_state
             self.current_state = State[self.game_controller.state]
 

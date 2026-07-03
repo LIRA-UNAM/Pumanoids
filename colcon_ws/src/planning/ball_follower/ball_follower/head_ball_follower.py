@@ -54,7 +54,7 @@ class HeadBallFollowerNode(Node):
         error_x = -(msg.x - self.img_goal_x) / (self.img_width  / 2)
         error_y =  (msg.y - self.img_goal_y) / (self.img_height / 2)        
         self.goal_pan += 0.5 * error_x
-        self.goal_tilt += 0.5 * error_y
+        self.goal_tilt += 0.3 * error_y
         self.goal_pan  = max(-1.0, min(1.0, self.goal_pan))
         self.goal_tilt = max(-0.3, min(0.8, self.goal_tilt))
         self.new_ball_data = True
