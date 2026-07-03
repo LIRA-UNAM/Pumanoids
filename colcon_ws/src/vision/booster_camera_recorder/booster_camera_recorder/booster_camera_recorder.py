@@ -15,7 +15,7 @@ class VideoRecorderNode(Node):
         # Change the topic name to match your camera topic
         self.subscription = self.create_subscription(
             Image,
-            '/camera/color/image_raw',
+            '/boostercamera/head/rgb',
             self.image_callback,
             1  # Queue size
         )

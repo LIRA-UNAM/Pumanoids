@@ -36,7 +36,7 @@ class ParticleFilterNode(Node):
     def __init__(self):
         super().__init__('particle_filter')
         self.current_odom_pose = [0.0, 0.0, 0.0]
-        self.forward_speed = 0.5
+        self.forward_speed = 0.8
         self.last_odom_time = None
         self.fov_rad = math.radians(95) #FOV
         self.sigma_angle = math.radians(4.0)
@@ -47,8 +47,8 @@ class ParticleFilterNode(Node):
         self.map_landmarks ={}
         self.read_yaml(map_file)
         self.tf_broadcaster = TransformBroadcaster(self)
-        self.best_x     = 3.0
-        self.best_y     = -3.0
+        self.best_x     = 4.0
+        self.best_y     = -4.5
         self.best_theta = 1.6
         self.curr_pose = [0.0,0.0,0.0] 
         #TF2 variables
@@ -59,7 +59,7 @@ class ParticleFilterNode(Node):
         self.tf_broadcast_timer = self.create_timer(0.1, self.publish_tf_continuous)
 #------------------------------------------------------
         # Particles
-        self.field_x, self.field_y = 6.08, 9.06
+        self.field_x, self.field_y = 14.0, 9.0
         self.particles = []
         self.weights = []
         self.latest_observations = []
@@ -302,7 +302,7 @@ class ParticleFilterNode(Node):
     
     # Start point
         sigma_xy    = 0.5
-        sigma_theta = math.radians(20)
+        sigma_theta = math.radians(90)
     
         for _ in range(self.num_particles):
             x = random.gauss(init_x, sigma_xy)
@@ -334,10 +334,8 @@ class ParticleFilterNode(Node):
                     ]
         except (LookupException):
             self.get_logger().info('Waiting for pumas_map->pumas_base_link')
-            return
         except TransformException as ex:
             self.get_logger().error(f'TF2 exception: {ex}')
-            return 
         curr_pose = self.curr_pose
         self.current_odom_pose = curr_pose
         
@@ -687,4 +685,4 @@ def main():
     rclpy.shutdown()
 
 if __name__ == '__main__':
-    main()
+    main()   
