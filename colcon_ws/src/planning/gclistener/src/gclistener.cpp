@@ -10,7 +10,6 @@
 
 #include "gclistener/RoboCupGameControlData.hpp"
 
-
 #include "rclcpp/rclcpp.hpp"
 
 #include "std_msgs/msg/int8.hpp"
@@ -22,7 +21,6 @@ class GCListener : public rclcpp::Node
     GCListener() : Node("gc_listener")
     {
       // VARIABLES
-      constexpr int LISTEN_PORT = 3838;
 
       sock_= socket(AF_INET, SOCK_DGRAM, 0);
       if (sock_<0)
@@ -32,7 +30,7 @@ class GCListener : public rclcpp::Node
 
       sockaddr_in localAddr{};
       localAddr.sin_family = AF_INET;
-      localAddr.sin_port = htons(LISTEN_PORT);
+      localAddr.sin_port = htons(GAMECONTROLLER_DATA_PORT);
       localAddr.sin_addr.s_addr = INADDR_ANY;
 
       if(bind(sock_,(sockaddr*)&localAddr, sizeof(localAddr))<0)
@@ -76,7 +74,8 @@ class GCListener : public rclcpp::Node
     }
 
   private:
-   // OBJETC DECLARATIONS
+   // SOCKET DECLARATIONS
+   // RECIVE
    int sock_;
    int team_number;
    int robot_number;
@@ -84,6 +83,10 @@ class GCListener : public rclcpp::Node
    RoboCupGameControlData data{};
    sockaddr_in sender{};
    socklen_t sender_len = sizeof(sender);
+
+   // RETURN MSG 
+
+     RoboCupGameControlReturnData reply {};
    // TOPICS
     rclcpp::Publisher<std_msgs::msg::Int8>::SharedPtr stop_play_publisher;
     rclcpp::Publisher<std_msgs::msg::Int8>::SharedPtr game_phase_publisher;
@@ -148,6 +151,36 @@ class GCListener : public rclcpp::Node
 
       time.data = data.secondaryTime;
       secondary_time_publisher->publish(time);
+
+      sockaddr_in replyAddr = sender;
+      replyAddr.sin_port = htons(GAMECONTROLLER_RETURN_PORT);
+
+      reply.playerNum = robot_number;
+      reply.teamNum = team_number;
+      reply.fallen = 0;
+      reply.pose[0] = 0.f;
+      reply.pose[1] = 0.f;
+      reply.pose[2] = 0.f;
+      reply.ballAge = 0.f;
+      reply.ball[0] = 0.f;
+      reply.ball[1] = 0.f;
+
+      // Enviar respuesta
+      ssize_t sent = sendto(
+          sock_,
+          &reply,
+          sizeof(reply),
+          0,
+          reinterpret_cast<sockaddr*>(&replyAddr),
+          sizeof(replyAddr));
+
+      if (sent < 0)
+      {
+          RCLCPP_ERROR(
+              get_logger(),
+              "Error sending GameController return packet: %s",
+              strerror(errno));
+      }
     }
 };
 
