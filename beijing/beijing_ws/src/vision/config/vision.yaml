@@ -1,0 +1,114 @@
+camera:
+  type: d-robotics
+  intrin_wait_timeout_sec: 3.0
+  intrin:
+    fx: 208.712936
+    fy: 208.883377
+    cx: 272
+    cy: 224
+    distortion_model: 0
+    distortion_coeffs:
+      []
+  extrin:
+    -
+      - 0.0
+      - -0.5716
+      - 0.8206
+      - 0.08684
+    -
+      - -1.0
+      - 0.0
+      - 0.0
+      - 0.0349
+    -
+      - 0.0
+      - -0.8206
+      - -0.5716
+      - 0.08245
+    -
+      - 0
+      - 0
+      - 0
+      - 1
+  pitch_compensation: 0
+  yaw_compensation: 0
+  z_compensation: 0
+  # Robot-frame XY offsets applied only to ball ranging, in meters.
+  # Compensated values: x = measured_x + ball_x_compensation; y = measured_y + ball_y_compensation.
+  # Robot frame: +x forward and +y left. Use negative values for backward or rightward correction.
+  # Example: if ball x is consistently short by 0.08 m, set ball_x_compensation to 0.08.
+  ball_x_compensation: 0
+  ball_y_compensation: 0
+detection_model:
+  model_path: model/T2_0804_digua.engine
+  # On Thor, fuse resize/letterbox, BGR-to-RGB, normalization, and HWC-to-NCHW in CUDA.
+  preprocess_backend: cuda
+  decode_backend: cpu
+  confidence_threshold: 0.2
+  nms_threshold: 0.4
+  classnames: [Ball, Goalpost, Person, LCross, TCross, XCross, PenaltyPoint, Opponent, BRMarker]
+  post_process:
+    single_ball_assumption: false
+    confidence_thresholds:
+      Ball: 0.4
+      Goalpost: 0.4
+      Person: 0.4
+      LCross: 0.3
+      TCross: 0.3
+      XCross: 0.3
+      PenaltyPoint: 0.3
+      Opponent: 0.4
+      BRMarker: 0.2
+segmentation_model:
+  # TensorRT 10 segmentation is temporarily disabled on JetPack 7.2.
+  # Set enabled to true only when a compatible segmentation engine is ready.
+  enabled: false
+  model_path: model/best_seg_orin_10.3.engine
+  confidence_threshold: 0.3
+  nms_threshold: 0.9
+use_depth: false
+depth_sync:
+  # Color often arrives just before the depth image with the same camera stamp.
+  # Wait briefly for that frame instead of immediately using the previous one.
+  max_sync_diff_ms: 40.0
+  sync_wait_timeout_ms: 12.0
+head_pose:
+  # Vision must use pose sample timestamps rather than message arrival time.
+  topic: /head_pose_stamped
+  # Retained for legacy nodes; current Brain/HTWK projection rejects unstamped poses.
+  raw_fallback_topic: /head_pose
+  # Reject 3D ranging when the nearest pose sample exceeds this time difference.
+  max_sync_diff_ms: 40.0
+  # Interpolate translation and quaternion SLERP only across sufficiently close samples; never extrapolate.
+  max_interpolation_gap_ms: 40.0
+  # Briefly wait when an image arrives just before the next pose sample so interpolation has both endpoints.
+  sync_wait_timeout_ms: 12.0
+ball_pose_estimator:
+  # Size 3, 4, and 5 ball radii are 0.09, 0.095, and 0.105 m respectively.
+  ball_size: 5
+  use_depth: false
+  down_sample_leaf_size: 0.01
+  cluster_distance_threshold: 0.01
+  fitting_distance_threshold: 0.01
+  minimum_cluster_size: 150
+  filter_distance: 1.2
+  check_ball_height: true
+human_like_pose_estimator:
+  use_depth: false
+  down_sample_leaf_size: 0.01
+  fitting_distance_threshold: 0.01
+  statistic_outlier_multiplier: 0.01
+field_marker_pose_estimator:
+  refine: false
+  line_segment_area_threshold: 75
+calibration:
+  sync_max_time_diff_ms: 40
+  offset:
+    exclude_distance: 2.0
+    zero_translation: true
+    field_marker_path: ./src/vision/config/field.yaml
+  handeye:
+    calibration_time: 2026-04-11-09-47-23
+    reprojection_error: 2.5350552245663476
+misc:
+  save_data_nonstationary: true

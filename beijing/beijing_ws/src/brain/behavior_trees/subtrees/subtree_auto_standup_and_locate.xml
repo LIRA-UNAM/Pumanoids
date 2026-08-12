@@ -1,0 +1,7 @@
+<root BTCPP_format="4" >
+   <BehaviorTree ID="AutoGetUpAndLocate">
+      <Sequence name="root">
+         <CheckAndStandUp />
+      </Sequence>
+   </BehaviorTree>
+</root>
