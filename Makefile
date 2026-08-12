@@ -3,6 +3,8 @@ SHELL := /bin/bash
 
 # Define the relative paths to project within main_folder
 PUMANOIDS_PROJECT_PATH := $(CURDIR)/colcon_ws
+SIM_PROJECT_PATH := $(CURDIR)/simulation_ws
+T1_PROJECT_PATH := $(CURDIR)/t1_ws
 # Define the launch file
 
 # Default target to clean, build, start roscore, and launch both projects
@@ -10,47 +12,31 @@ all: build source
 
 # Rule to clean project's build and devel folders
 clean:
-	@echo "Cleaning Project..."
-	sleep 2
-	rm -rf $(PUMANOIDS_PROJECT_PATH)/build $(PUMANOIDS_PROJECT_PATH)/install $(PUMANOIDS_PROJECT_PATH)/log
+	@echo "Cleaning All Projects and Workspaces..."
+	@sleep 1
+	@echo "Cleaning colcon_ws..."
+	@rm -rf $(PUMANOIDS_PROJECT_PATH)/build $(PUMANOIDS_PROJECT_PATH)/install $(PUMANOIDS_PROJECT_PATH)/log
+	@sleep 1
+	@echo "Cleaning simulation_ws..."
+	@rm -rf $(SIM_PROJECT_PATH)/build $(SIM_PROJECT_PATH)/install $(SIM_PROJECT_PATH)/log
+	@sleep 1
+	@echo "Cleaning t1_ws..."
+	@rm -rf $(T1_PROJECT_PATH)/build $(T1_PROJECT_PATH)/install $(T1_PROJECT_PATH)/log
 
 # Rule to build project
 build:
-	@echo "Building Project..."
-	cd $(PUMANOIDS_PROJECT_PATH) && colcon build
-	sleep 2
-
-# Rule to launch project's node
-source:
-	@echo "Launching Project..."
-	source $(PUMANOIDS_PROJECT_PATH)/install/setup.bash
-
-pi:
-	@echo "Building Project..."
-	cd $(PUMANOIDS_PROJECT_PATH) && colcon build --packages-skip gazebo_envs
+	@echo "Building Pumanoids..."
+	@echo "cd colcon_ws && colcon build --packages-skip new_ball_detector"
+	@sleep 2
+	@cd $(PUMANOIDS_PROJECT_PATH) && colcon build --packages-skip new_ball_detector
 
 sim:
 	@echo "Launching Project..."
-	cd $(PUMANOIDS_PROJECT_PATH) && colcon build --packages-skip boosterk1_image_proc
+	cd $(SIM_PROJECT_PATH) && colcon build --packages-skip gazebo_envs
 
-g1sim:
-	@echo "Launching Project..."
-	source $(PUMANOIDS_PROJECT_PATH)/install/setup.bash
-	ros2 launch surge_et_ambula g1_sim_humble.launch.py
 
-g1:
-	@echo "Launching ..."
-	cd $(PUMANOIDS_PROJECT_PATH) && colcon build --packages-skip boosterk1_image_proc gazebo_envs dynamixel
-
-startg1:
-	@echo "Launching ..."
-	source $(PUMANOIDS_PROJECT_PATH)/install/setup.bash
-	ros2 launch surge_et_ambula g1_state_machine.launch.py
-
-k1:
-	@echo "Building for Booster K1..."
-	cd $(PUMANOIDS_PROJECT_PATH) && colcon build --packages-skip gazebo_envs dynamixel new_twist_to_t1 social_navigation
-
-t1:
+testbag:
 	@echo "Building for Booster T1..."
-	cd $(PUMANOIDS_PROJECT_PATH) && colcon build --packages-skip gazebo_envs dynamixel new_twist_to_k1 social_navigation boosterk1_image_proc
+	cd $(PUMANOIDS_PROJECT_PATH) && source install/setup.bash
+	cd $(T1_PROJECT_PATH) && source install/setup.bash
+	ros2 launch particle_filter rosbag_localization.launch.py

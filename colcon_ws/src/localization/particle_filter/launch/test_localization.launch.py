@@ -35,7 +35,13 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
         'models',
         f'yolov8_center_sys_low_{robot_name}.engine'
     )
-    
+
+    mcl_params = os.path.join(
+        get_package_share_directory('particle_filter'),
+        'config',
+        'mcl_node.yaml'
+    )
+
     # 4. Nodos BASE (los que siempre se ejecutan, sin importar el robot)
     nodes = [
         Node(
@@ -68,6 +74,7 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
             package='particle_filter',
             executable='mcl_node',
             name='mcl_node',
+            parameters=[mcl_params],
             output='screen',
         ),
         Node(
