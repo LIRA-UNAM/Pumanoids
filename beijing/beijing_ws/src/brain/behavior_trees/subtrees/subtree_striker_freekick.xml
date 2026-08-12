@@ -1,0 +1,21 @@
+<root BTCPP_format="4" >
+   <include path="./subtree_cam_find_and_track_ball.xml" />
+   <include path="./subtree_find_ball.xml" />
+   <include path="./subtree_locate.xml" />
+   <BehaviorTree ID="StrikerFreekick">
+      <ReactiveSequence>
+         <ReactiveSequence _while="gc_is_sub_state_kickoff_side" name="Move to the penalty-kick position">
+            <CamTrackBall _while="ball_location_known" />
+            <CalcKickDir />
+            <SubTree ID="FindBall" _while="!(ball_location_known || tm_ball_pos_reliable)" _autoremap="true" />
+            <GoToFreekickPosition _while="ball_location_known || tm_ball_pos_reliable" side="attack" vx_limit="0.8" vy_limit="0.4" />
+         </ReactiveSequence>
+         <ReactiveSequence _while="!gc_is_sub_state_kickoff_side" name="Move to the penalty-kick defense position">
+            <CamTrackBall _while="ball_location_known" />
+            <CalcKickDir />
+            <SubTree ID="FindBall" _while="!(ball_location_known || tm_ball_pos_reliable)" _autoremap="true" />
+            <GoToFreekickPosition _while="ball_location_known || tm_ball_pos_reliable" side="defense" />
+         </ReactiveSequence>
+      </ReactiveSequence>
+   </BehaviorTree>
+</root>
