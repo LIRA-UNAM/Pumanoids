@@ -8,8 +8,13 @@ def generate_launch_description():
         'models',
         'yolov8_center_sys_low.engine' # <-- Change this to the model you want to use
     )
+    mcl_params = os.path.join(
+        get_package_share_directory('particle_filter'),
+        'config',
+        'mcl_node.yaml'
+    )
     return LaunchDescription([
-        
+
         Node(
             package = 'particle_filter',
             executable = 'bridge_odom',
@@ -26,6 +31,7 @@ def generate_launch_description():
             package = 'particle_filter',
             executable = 'mcl_node',
             name = 'mcl_node',
+            parameters = [mcl_params],
             output = 'screen',
         )
     ])
