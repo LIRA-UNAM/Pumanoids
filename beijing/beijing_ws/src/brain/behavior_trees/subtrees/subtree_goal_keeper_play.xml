@@ -1,0 +1,48 @@
+<root BTCPP_format="4" >
+   <include path="./subtree_cam_find_and_track_ball.xml" />
+   <include path="./subtree_find_ball.xml" />
+   <include path="./subtree_locate.xml" />
+   <BehaviorTree ID="GoalKeeperPlay">
+      <ReactiveSequence >
+         <SelfLocate mode="trust_direction" />
+         <SubTree ID="Locate" _autoremap="true" _while="decision!='find'" />
+         <ReactiveSequence _while="wait_for_opponent_kickoff" name="Wait for opponent kickoff">
+            <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
+            <SetVelocity />
+         </ReactiveSequence>
+         <ReactiveSequence _while="!wait_for_opponent_kickoff" name="Our kickoff or opponent has kicked off">
+            <Sequence _while="ball_out">
+               <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
+               <GoBackInField />
+               <SubTree ID="Locate" _autoremap="true" _while="decision!='find'" />
+            </Sequence>
+            <ReactiveSequence _while="!ball_out">
+               <ReactiveSequence _while="wait_for_opponent_kickoff" name="Wait for opponent kickoff">
+                  <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
+                  <SetVelocity />
+               </ReactiveSequence>
+               <Sequence _while="!wait_for_opponent_kickoff" name="Normal play">
+                  <Sequence _while="goalie_mode=='attack'">
+                     <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
+                     <GoalieDecide decision_out="{decision}" decision_in="{decision}" chase_threshold="1.0" />
+                     <GoToGoalBlockingPosition _while="decision=='find'" theta_tolerance="0.2" />
+                     <GoToGoalBlockingPosition _while="decision == 'retreat'" theta_tolerance="0.2" />
+                     <Chase   _while="decision == 'chase'"  vx_limit="1.5"  vy_limit="0.3"  vtheta_limit="1.0"  dist="0.4" safe_dist="0.6" />
+                     <Adjust  _while="decision == 'adjust'" turn_threshold="0.2" range="0.3" vx_limit="0.3" vy_limit="0.2" vtheta_limit="1.0"  />
+                     <Sequence  _while="decision == 'kick'">
+                        <Kick speed_limit="1.2" min_msec_kick="600"/>
+                     </Sequence>
+                     <!-- RLVisionKick node removed in open-source version -->
+                  </Sequence>
+                  <ReactiveSequence _while="goalie_mode == 'guard'">
+                     <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
+                     <GoToReadyPosition _while="!ball_location_known" vx_limit="1.2" />
+                     <GoToGoalBlockingPosition _while="ball_location_known" theta_tolerance="0.2" />
+                  </ReactiveSequence>
+
+               </Sequence>
+            </ReactiveSequence>
+         </ReactiveSequence>
+      </ReactiveSequence>
+   </BehaviorTree>
+</root>

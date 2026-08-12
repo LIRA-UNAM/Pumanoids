@@ -1,0 +1,99 @@
+<!-- AI match demonstration with manual takeover; strict rule compliance is not required. -->
+
+<root BTCPP_format="4">
+    <include path="./subtrees/subtree_cam_find_and_track_ball.xml" />
+    <include path="./subtrees/subtree_striker_play.xml" />
+    <include path="./subtrees/subtree_goal_keeper_play.xml" />
+    <include path="./subtrees/subtree_striker_freekick.xml" />
+    <include path="./subtrees/subtree_goal_keeper_freekick.xml" />
+    <BehaviorTree ID="MainTree">
+        <Sequence name="root">
+            <ReactiveSequence _while="control_state==1 || assist_kick || go_manual || assist_chase" >
+               <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
+               <SimpleChase _while="assist_chase" vx_limit="1.5" vy_limit="0.1" stop_dist="0.0" stop_angle="0.3" />
+               <Sequence _while="assist_kick">
+                  <Kick speed_limit="0.9" min_msec_kick="1000"/>
+               </Sequence>
+            </ReactiveSequence>
+
+            <ReactiveSequence _while="control_state==2" name="Pickup recovery: move to the entry position, press LT+A to recalibrate, wait a few seconds, then press LT+B to resume">
+                <CamScanField  _while="!odom_calibrated"/>
+                <SubTree ID="CamFindAndTrackBall" _autoremap="true" _while="odom_calibrated" />
+                <SelfLocate mode="enter_field" />
+            </ReactiveSequence>
+
+            <ReactiveSequence _while="control_state==3 &amp;&amp; (!go_manual)" name="Strategy control: 3=LT+B, 2=LT+A, 1=LT+X">
+                
+                <ReactiveSequence _while="gc_is_under_penalty" name="Penalized or substitute">
+                    <PrintMsg msg="Penalized or substitute"/>
+                    <SetVelocity />
+                    <SelfLocate mode="enter_field" _while="!odom_calibrated" /> 
+                </ReactiveSequence>
+
+                <ReactiveSequence _while="!gc_is_under_penalty" name="Unpenalized; normal play">
+                    <PrintMsg msg="Unpenalized; normal play"/>
+                    <ReactiveSequence _while="gc_game_sub_state_type=='NONE'" name="Normal play; no free kick">
+                        <PrintMsg msg="Normal play; no free kick"/>
+
+                        <ReactiveSequence _while="gc_game_state=='INITIAL'" name="Wait at the entry position outside the field">
+                            <PrintMsg msg="Wait at the entry position outside the field"/>
+                            <CamScanField _while="!odom_calibrated"/>
+                            <SubTree ID="CamFindAndTrackBall" _autoremap="true" _while="odom_calibrated" />
+                            <SelfLocate mode="enter_field" /> 
+                        </ReactiveSequence>
+
+                        <ReactiveSequence _while="gc_game_state=='READY'" name="Move to the assigned starting position">
+                            <PrintMsg msg="Move to the assigned starting position"/>
+                            <CamScanField />
+                            <MoveToPoseOnField x="-2.0" _while="player_role == 'striker'" vtheta_limit="2.0"  vx_limit="1.2" />
+                            <MoveToPoseOnField x="-5.5" _while="player_role == 'goal_keeper'" vtheta_limit="2.0"  vx_limit="1.2" />
+                            <SelfLocate mode="trust_direction" />
+                            <WaveHand _while="we_just_scored" action="start" />
+                        </ReactiveSequence>
+
+                        <ReactiveSequence _while="gc_game_state=='SET'" name="Hold position and wait for play to start">
+                            <PrintMsg msg="Hold position and wait for play to start"/>
+                            <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
+                            <SetVelocity />
+                            <WaveHand action="stop" />
+                        </ReactiveSequence>
+
+                        <ReactiveSequence _while="gc_game_state=='PLAY'" name="Play">
+                            <PrintMsg msg="Play"/>
+                            <SubTree ID="StrikerPlay" _autoremap="true" _while="player_role == 'striker'" />
+                            <SubTree ID="GoalKeeperPlay" _autoremap="true" _while="player_role == 'goal_keeper'" />
+                        </ReactiveSequence>
+
+                        <ReactiveSequence _while="gc_game_state=='END'" name="Match ended">
+                            <PrintMsg msg="Match ended"/>
+                            <SetVelocity />
+                        </ReactiveSequence>
+
+                    </ReactiveSequence>
+
+                    <ReactiveSequence _while="gc_game_sub_state_type=='FREE_KICK' &amp;&amp; gc_game_state=='PLAY'" name="Free kick">
+                        <PrintMsg msg="Free kick"/>
+                        <ReactiveSequence _while="gc_game_sub_state=='STOP'">
+                            <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
+                            <SetVelocity />
+                        </ReactiveSequence>
+                        <ReactiveSequence _while="gc_game_sub_state=='GET_READY'">
+                            <SubTree ID="StrikerFreekick" _autoremap="true" _while="player_role == 'striker'" />
+                            <SubTree ID="GoalKeeperFreekick" _autoremap="true" _while="player_role == 'goal_keeper'"/>
+                        </ReactiveSequence>
+                        <ReactiveSequence _while="gc_game_sub_state=='EXECUTE'">
+                            <SubTree ID="StrikerPlay" _autoremap="true" _while="player_role == 'striker'" />
+                            <SubTree ID="GoalKeeperPlay" _autoremap="true" _while="player_role == 'goal_keeper'" />
+                        </ReactiveSequence>
+                        <ReactiveSequence _while="gc_game_sub_state=='SET'">
+                            <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
+                            <SetVelocity />
+                        </ReactiveSequence>
+                    </ReactiveSequence>
+
+                </ReactiveSequence>
+
+            </ReactiveSequence>
+        </Sequence>
+    </BehaviorTree>
+</root>

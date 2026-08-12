@@ -1,0 +1,265 @@
+brain_node:
+  ros__parameters:
+    game:
+      team_id: 16 # consistant with GameControl
+      player_id: 2 # 1 | 2 | 3 | 4 | 5
+      field_type: "robo_league" # adult_size | kid_size | robo_league
+      player_role: "striker" # striker | goal_keeper
+      initial_goalkeeper_id: 1 # Normal-play fallback before valid GameController data; 0 means unassigned in a penalty shootout
+      player_start_pos: "right" # right | left; used for entry-field localization
+      treat_person_as_robot: false # Debug option. Keep false during official matches.
+      number_of_players: 2
+    
+    ball_predictor: 
+      step_interval: 100. 
+      step_cnt: 50 
+      linear_steps: 5 
+      linear_rsq_threshold: 0.98 
+      acceleration: -0.4 
+      
+    robot:
+      robot_height: 1.28146 # 1.28146 for T2 ; 0.90 for k1
+      odom_factor: 1.0 # Distance scale for /odometer_state x/y; does not change axis direction
+      # The hardware x/y axes and theta zero can originate from different walk-reset and startup poses.
+      # During sustained translation, estimate their fixed angular offset from the commanded robot-frame velocity and raw odometry delta.
+      odom_theta_offset: 0.0 # Manual theta offset (rad) when automatic alignment is disabled
+      odom_theta_auto_align: false
+      odom_theta_alignment_distance: 1.0 # Raw odometry translation required before locking the angular offset (m)
+      odom_theta_alignment_min_concentration: 0.75 # Circular-mean concentration; values closer to 1 are more stable
+      vx_factor: 0.90 
+      yaw_offset: 0.0 
+      vx_limit: 2.0
+      vy_limit: 1.7
+      vtheta_limit: 1.5 
+      min_vx: 0.4 # Command dead-zone compensation for nonzero vx (m/s)
+      min_vy: 0.4 # Command dead-zone compensation for nonzero vy (m/s)
+      min_vtheta: 0.4 # Command dead-zone compensation for nonzero vtheta (rad/s)
+
+    strategy:
+      ball_confidence_threshold: 40.0 
+      ball_confidence_decay_rate: 3.0 
+      enable_stable_kick: false 
+      ball_memory_timeout: 3.0 
+      tm_ball_dist_threshold: 1.5  
+      limit_near_ball_speed: false 
+      near_ball_speed_limit: 0.6 
+      near_ball_range: 2.0 
+      search:
+        initial_spin_secs: 1.5 # Scan in place before moving to another search region
+        waypoint_scan_secs: 3.0 # Body-scan duration after reaching a region
+        waypoint_timeout_secs: 25.0 # Abandon a region when obstacle avoidance makes no progress
+        last_observation_max_age_secs: 12.0 # Maximum useful age of the last ball observation
+        vx_limit: 0.7
+        vy_limit: 0.35
+        vtheta_limit: 0.8
+        arrival_tolerance: 0.65
+      soft_kickoff: false 
+      soft_kickoff_speed: 0.3 
+      kick_range: 1.0 
+      kick_theta_range: 0.2 
+      abort_kick_when_ball_moved: true 
+      abort_kick_ball_move_threshold: 0.3 
+      abort_shoot_when_ball_moved: true  
+      limit_speed_near_border: false 
+      near_border_speed_limit: 0.5
+      near_border_dist_threshold: -1.0 
+      enable_bypass: false 
+      enable_shoot: false 
+      enable_directional_kick: false 
+      use_move_block: false
+      move_block_msecs: 2000.0 
+      shoot:
+        threat_threshold: -2.0 
+        xmin: 0.3
+        xmax: 0.6
+        ymin: -0.3
+        ymax: 0.3
+
+      power_shoot:
+        enable: false 
+        use_for_kickoff: false 
+        xmin: 1.1 
+        xmax: 1.5 
+        ymin: -0.3 
+        ymax: 0.3 
+      enable_auto_visual_kick: true
+      auto_visual_kick_enable_dist_min: 0.2
+      auto_visual_kick_enable_dist_max: 4.0
+      auto_visual_kick_enable_angle: 1.2217304763960306 # 70-degree half-angle (rad)
+      freekick:
+        execution_timeout_ms: 10000.0 # Team-wide timeout from free-kick release to completion
+        plan_select_ms: 250.0 # Wait for several tactical packets after STOP before freezing the authoritative plan
+      cooperation:
+        enable_role_switch: true 
+        ball_control_cost_threshold: 5.0 # Maximum cost for a goalkeeper to claim a dangerous ball
+        goalie_claim_max_ball_range: 1.5 # Goalkeeper claims only nearby, locally observed balls
+        goalie_claim_extra_depth: 1.0 # Claim depth beyond the own penalty area
+        goalie_claim_lateral_margin: 0.5 # Lateral claim margin beyond the penalty-area boundary
+        goalie_restore_stable_ms: 500.0 # Stable interval before restoring the original goalkeeper
+        tactical_packet_timeout_ms: 600.0 # Tactical-state timeout; address discovery uses a longer timeout
+        leader_switch_cost_margin: 0.75 # Challenger must be faster by at least this many seconds
+        leader_switch_cost_ratio: 0.90 # Challenger must also be at least 10 percent faster
+        leader_switch_confirm_ms: 350.0 # Advantage must persist to reject single-frame cost noise
+        leader_min_hold_ms: 1200.0 # Minimum hold time for a valid leader; invalid leaders release immediately
+        leader_ownerless_fallback_ms: 600.0 # Lowest-ID candidate takes over when cost snapshots disagree
+        kickoff_owner_select_ms: 700.0 # Allow cost ownership to converge after SET before freezing the kickoff owner
+        kickoff_ball_move_threshold: 0.3 # Release kickoff ownership after the ball moves this distance
+        kickoff_timeout_ms: 10000.0 # Maximum kickoff-owner hold time
+        assist_slot_switch_penalty: 4.0 # Assignment cost for ordinary slot changes
+        assist_anchor_switch_penalty: 9.0 # Higher switch cost for the fixed defensive anchor
+        assist_lane_cross_penalty: 16.0 # Cost of crossing the leader-to-ball lane
+        assist_path_cross_penalty: 9.0 # Cost when two assist paths intersect
+        assist_target_deadband: 0.2 # Ignore small ordinary assist-target changes
+        assist_anchor_deadband: 0.5 # Defensive-anchor target deadband
+        assist_anchor_hold_ms: 4000.0 # Hold the defensive anchor for at least four seconds when the ball is not dangerous
+        assist_shadow_side_hold_ms: 1500.0 # Minimum side-switch interval for shadow support
+        assist_avoid_obstacles: true # Apply local obstacle avoidance during assist movement
+        assist_yield_timeout_ms: 4800.0 # Baseline former-leader yield time, extended dynamically at 0.5 m/s
+        assist_teammate_position_clearance: 0.75 # Lower-priority assists avoid higher-priority teammate positions
+        assist_teammate_path_clearance: 0.60 # Lower-priority assists avoid higher-priority teammate paths
+        assist_waypoint_lock_ms: 1500.0 # Lock the detour side to prevent left-right oscillation
+        assist_waypoint_ttl_ms: 3000.0 # Maximum lifetime of one detour waypoint
+        assist_waypoint_no_progress_ms: 1000.0 # Flip the detour side and replan when progress stalls
+
+    obstacle_avoidance:
+      depth_sample_step: 8 # Pixel sampling stride, not a sample count; do not use 400 for 544x448 images
+      depth_confirm_frames: 2 # Require consecutive hits before using a depth obstacle
+      depth_clear_frames: 2 # Require consecutive misses before clearing a depth obstacle
+      obstacle_min_height: 0.3 
+      grid_size: 0.2 
+      max_x: 3.0 
+      max_y: 5.0 
+      exclusion_x: 0.4 
+      exclusion_y: 0.5 
+      ball_exclusion_radius: 0.4
+      ball_exclusion_height: 0.3 
+      occupancy_threshold: 200
+      collision_threshold: 0.3 
+      self_robot_radius: 0.5 # Local robot collision radius used to inflate obstacles to centerline clearance (m)
+      safe_distance: 1.0 
+      avoid_secs: 2.0 
+      enable_freekick_avoid: true 
+      enable_ball_obstacle: true # Treat a fresh ball position as a safety obstacle during READY and set-play placement
+      ball_obstacle_radius: 0.3 # Reserved radius around the ball; the local robot radius is added separately (m)
+      ball_obstacle_max_age_msecs: 500.0 # Ignore stale ball positions for obstacle avoidance
+      avoid_person: true # Always treat Person detections as safety obstacles without changing match semantics
+      freekick_start_placing_safe_distance: 0.5 
+      obstacle_memory_msecs: 500. 
+      robot_obstacle_memory_msecs: 1000.0 # Short-term memory for detected robots
+      robot_confirm_frames: 2 # Require consecutive detections before obstacle avoidance
+      robot_match_distance: 0.7 # Cross-frame robot association distance (m)
+      robot_merge_distance: 0.30 # Merge duplicate tracks that cannot be physically separate (m)
+      robot_min_confidence: 40.0 # Detection confidence required for robot tracking (0-100)
+      robot_tracking_alpha: 0.65 # New-observation weight in the position low-pass filter
+      robot_obstacle_distance: 4.0 # Maximum distance for detected robots to affect avoidance (m)
+      robot_obstacle_min_distance: 0.20 # Reject detections closer than this as self-detections (m)
+      robot_depth_fusion_distance: 0.5 # Deduplication distance between RGB robots and depth cells (m)
+      robot_depth_fusion_max_age_msecs: 250.0 # Use only fresh visual robots for depth deduplication
+      upright_robot_radius: 0.6 # Safety radius for upright robots (m)
+      fallen_robot_radius: 0.85 # Safety radius for fallen robots (m)
+      max_robot_footprint_width: 1.8 # Cap footprint width inflated by near-horizon projection (m)
+      max_robot_footprint_radius_increase: 0.15 # Maximum footprint contribution to the final safety radius (m)
+      robot_path_clearance: 0.12 # Additional visibility-graph clearance around robots (m)
+      robot_avoidance_speed: 1.20 # Hard translational speed limit during avoidance (m/s)
+      robot_avoidance_min_speed: 0.32 # Minimum non-emergency detour speed (m/s)
+      robot_avoidance_min_vy: 0.40 # Robot-frame lateral dead-zone floor during detours (m/s)
+      robot_avoidance_reverse_speed: 0.4 # Reverse-speed limit when rear perception is restricted (m/s)
+      robot_avoidance_switch_penalty: 0.8 # Cost of switching detour sides
+      avoidance_direction_lock_msecs: 1500.0 # Minimum avoidance-direction hold time
+      avoidance_direction_switch_margin: 0.2 # Switch sides only when the alternative is clearly safer (rad)
+      log_enable: true # Record planner inputs, route decisions, and final velocity commands
+      log_path: obstacle_avoidance.log # start.sh changes to the T2_5v5_Demo root first
+      log_hz: 5.0 # Maximum rate per behavior node; reason changes are recorded immediately
+      log_max_size_mb: 10.0 # Maximum size of one log file
+      log_max_files: 3 # Retain obstacle_avoidance.log.1 through .3
+      blocked_recovery_turn_rate: 0.5 # Turn slowly to refresh perception when no translation is feasible (rad/s)
+      fallen_robot_distance: 3.0 # Maximum distance for fallen-robot avoidance and VisualKick protection (m)
+      fallen_robot_angle: 0.7853981633974483 # VisualKick forward protection half-angle; default +/-45 degrees (rad)
+      enable_fallen_robot_visual_kick_exit: true # Allow fallen-robot detections to block or exit VisualKick
+      avoid_during_kick: false 
+      kick_ao_safe_dist: 1.5 
+      kick_ao_use_shoot: false 
+      avoid_during_chase: true 
+      chase_ao_safe_dist: 1.5 
+      always_turn_left: false 
+
+    RLVisionKick:
+      visual_kick_version: kV2 # kV1 | kV2; selects the VisualKick API version
+
+    locator:
+      min_marker_count: 4
+      max_residual: 0.4
+
+    enable_com: True  # Enable teammate communication; recommended for matches
+    communication:
+      team_broadcast_rate_hz: 20.0 # Teammate state rate; 20 Hz is one packet every 50 ms, valid range 0.1-20 Hz
+
+    rerunLog:
+      enable_tcp: false # Stream logs over the network
+      server_ip: "192.168.10.110:9876" # Address of the machine running Rerun Viewer
+      enable_file: true # Write logs locally
+      log_dir: "/home/booster/Workspace/rrlog" # Local directory for timestamped log files
+      max_log_file_mins: 5.0 # Rotate local logs after this duration to avoid oversized files
+      img_interval: 5 # Log one image every N frames; larger values reduce size and time precision
+      visual_hz: 20.0 # Maximum dynamic visualization rate; <=0 disables throttling
+      timeseries_hz: 10.0 # Maximum rate for continuous performance and latency values
+      debug_hz: 5.0 # Maximum rate for repeated debug text; state transitions and errors are not throttled
+
+    odomLog:
+      enable: false # Record odometry-transform diagnostics independently of Rerun throttling
+      log_dir: "" # Empty places the log beside the current .rrd file
+      hz: 20.0 # Sample the 500 Hz /odometer_state stream at this rate
+      flush_interval_ms: 1000.0 # Background flush interval and approximate maximum loss on abnormal exit
+    
+    recovery:
+      retry_max_count: 3
+      prepare_wait_ms: 1500 # Hold posture after confirming kPrepare before sending GetUp
+      prepare_confirm_timeout_ms: 5000 # Do not send GetUp until kPrepare is confirmed
+      mode_query_interval_ms: 200 # GetMode (2017) query interval
+      mode_query_timeout_ms: 1000 # Timeout for one GetMode response
+      posture_confirm_timeout_ms: 3000 # Maximum wait for strict upright/still confirmation after nominal GetUp time
+      walking_confirm_timeout_ms: 5000 # Wait for kWalking; request kSoccer on timeout only after posture confirmation
+      soccer_switch_retry_ms: 1000 # Retry interval for switching to kSoccer after recovery
+      soccer_switch_timeout_ms: 15000 # Warn after this timeout but continue retrying
+      getup_version: kV1 # kV1 | kV2
+      getup_no_movement_grace_sec: 3.0
+      localization_resume_delay_ms: 3500 # Starts at SDK kSoccer confirmation; usually covered by odometry settling below
+      post_getup_odom_settle_minimum_ms: 3500.0 # Wait past the delayed SDK support-frame jump after recovery
+      post_getup_odom_settle_window_ms: 750.0 # Require 0.75 s of continuous odometry stability after the minimum wait
+      post_getup_odom_settle_maximum_ms: 7500.0 # Bounded timeout for slow drift; an unstable IMU still blocks release
+      post_getup_odom_settle_max_xy_range_m: 0.015 # Maximum x/y range within the stability window
+      post_getup_odom_settle_max_theta_range_deg: 0.75
+      post_getup_odom_settle_max_tilt_rad: 0.30
+      post_getup_odom_settle_max_gyro_rad_per_sec: 0.35
+      heading_realign_window_ms: 9000 # Starts after odometry settles and localization is unfrozen
+      heading_realign_attempts: 18 # Maximum visual heading-realignment attempts after recovery
+      heading_realign_interval_ms: 300
+      heading_realign_confirmations: 2 # Apply only after consecutive candidate headings agree
+      heading_realign_max_delta_rad: 1.85 # Maximum correction per attempt, approximately 106 degrees
+      heading_realign_min_delta_rad: 0.20 # Ignore corrections below approximately 11.5 degrees to suppress vision jitter
+      heading_realign_consistency_rad: 0.25
+      heading_realign_max_candidate_pos_m: 2.5 # Use only candidates sufficiently close to the current position
+
+    vision:
+      image_topic: "/boostercamera/head/rgb" # Standard camera topic; normally does not need adjustment
+      depth_image_topic: "/boostercamera/head/depth" # Standard depth topic; normally does not need adjustment
+      camera_info_topic: "/boostercamera/head/rgb/camera_info" # Runtime intrinsics shared with Vision
+      head_pose_topic: "/head_pose_stamped"
+      cam_pixel_width: 544. # D-Robotics camera image width
+      cam_pixel_height: 448. # D-Robotics camera image height
+      # cam_pixel_width: 1280. # RealSense camera image width
+      # cam_pixel_height: 720. # RealSense camera image height
+      # cam_fov_x: 90.0 # RealSense horizontal field of view (degrees)
+      # cam_fov_y: 60.0 # RealSense vertical field of view (degrees)
+      cam_fov_x: 105.0 # D-Robotics horizontal field of view (degrees)
+      cam_fov_y: 94.0 # D-Robotics vertical field of view (degrees)
+
+    debug:
+      log_ball_pos: false # Write ball positions to ballpos.log for debugging
+    
+    game_control_ip: "172.168.208.2"  # Set to the GameController IP address
+
+    # for fun
+    sound:
+      enable: true 
+      sound_pack: "espeak" 

@@ -5,6 +5,7 @@ SHELL := /bin/bash
 PUMANOIDS_PROJECT_PATH := $(CURDIR)/colcon_ws
 SIM_PROJECT_PATH := $(CURDIR)/simulation_ws
 T1_PROJECT_PATH := $(CURDIR)/t1_ws
+DEMO_PATH := $(CURDIR)/beijing/beijing_ws
 # Define the launch file
 
 # Default target to clean, build, start roscore, and launch both projects
@@ -40,3 +41,10 @@ testbag:
 	cd $(PUMANOIDS_PROJECT_PATH) && source install/setup.bash
 	cd $(T1_PROJECT_PATH) && source install/setup.bash
 	ros2 launch particle_filter rosbag_localization.launch.py
+
+demo:
+	@echo "BUILDING DEMO FOR BEIJING MASTERS GAMES..."
+	@sleep 1
+	@echo "cd beijing_ws && colcon build"
+	@sleep 2
+	@cd $(DEMO_PATH) && colcon build
