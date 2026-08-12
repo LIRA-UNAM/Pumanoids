@@ -13,6 +13,7 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         (os.path.join('share', package_name, 'launch'), glob('launch/*.py')),
+        (os.path.join('share', package_name, 'config'), glob('config/*.yaml')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -32,6 +33,7 @@ setup(
         'mcl_node=particle_filter.mcl_node:main',
         'detector = particle_filter.detector_node:main',
         'bridge_odom = particle_filter.bridge_odom:main',
+        'vision_detections_bridge = particle_filter.vision_detections_bridge:main',
         ],
     },
     )

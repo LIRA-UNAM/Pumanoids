@@ -12,6 +12,8 @@
   <depend>cv_bridge</depend>
   <depend>opencv-python</depend>
   <depend>std_msgs</depend>
+  <depend>localization_msg</depend>
+  <depend>vision_interface</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
