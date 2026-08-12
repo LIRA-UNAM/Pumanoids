@@ -1,0 +1,70 @@
+# Parámetros operativos de particle_filter/mcl_node.py (ParticleFilterNode).
+# Los valores de aquí son los mismos que antes estaban hardcodeados en la
+# clase; sobreescribe lo que necesites para tunear el filtro sin tocar
+# código. Se aplica a cualquier nombre de nodo (wildcard) para que funcione
+# tanto en 'ros2 run ... mcl_node' (nombre por defecto 'particle_filter')
+# como remapeado a 'mcl_node' desde los launch files.
+/**:
+  ros__parameters:
+    # map_file: se resuelve por defecto a config_files/maps/cancha_robocup.yaml
+    max_observation_hz: 8.0
+
+    # Pose / geometría
+    forward_speed: 0.8  # no usado actualmente (ver tf_callback)
+    fov_deg: 95.0
+    sigma_angle_deg: 4.0
+    initial_x: 4.0
+    initial_y: -4.5
+    initial_theta: 1.6
+    field_x: 14.0
+    field_y: 9.0
+
+    # Timers
+    tf_broadcast_period: 0.1
+    motion_timer_period: 0.15
+
+    # Modelo de movimiento (alpha1..alpha4, ver Probabilistic Robotics tabla 5.6)
+    motion_alphas: [0.0002, 0.0002, 0.001, 0.0001]
+    motion_trans_threshold: 0.01
+    motion_rot_threshold: 0.02
+    min_dt: 0.0001
+    delta_trans_epsilon: 0.001
+    field_margin: 0.1
+
+    # Fusión Kalman (predicción de movimiento vs medición de visión)
+    kf_epsilon: 0.000001
+    min_variance_xy: 0.0001
+    min_variance_theta_deg: 1.0
+
+    # Inicialización de partículas
+    num_particles: 800
+    init_sigma_xy: 0.5
+    init_sigma_theta_deg: 90.0
+
+    # Modelo de observación / actualización de pesos
+    min_landmarks_for_correction: 3
+    divergence_weight_threshold: 0.00001
+    random_injection_fraction: 0.1
+    neff_resample_fraction: 0.5
+    weight_smoothing_alpha: 0.7
+    weight_sum_epsilon: 0.00000001
+
+    # Resample (low variance sampler + elitismo + jitter)
+    elite_fraction: 0.03
+    jitter_xy_still: 0.001
+    jitter_theta_still: 0.001
+    jitter_xy_moving: 0.01
+    jitter_theta_moving: 0.01
+
+    # Función de similitud (matching de landmarks observados vs predichos)
+    no_prediction_weight: 0.00000001
+    no_match_weight: 0.000001
+    miss_penalty_free_count: 2
+    miss_penalty_base: 0.5
+    false_positive_free_count: 3
+    false_positive_penalty_base: 0.3
+    weight_clip_min: 0.0000000001
+    weight_clip_max: 1.0
+
+    # Logging
+    callback_duration_warn_threshold: 0.08

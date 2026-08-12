@@ -21,9 +21,9 @@ class SoccerMap(Node):
         # pero se puede sobreescribir con --ros-args -p map_yaml:=/ruta/al/archivo.yaml
         default_yaml = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            'cancha_robocup.yaml'
+            'cancha_beijing.yaml'
         )
-        self.declare_parameter("map_file",os.path.join(get_package_share_directory('config_files'),'maps','cancha_robocup.yaml'))
+        self.declare_parameter("map_file",os.path.join(get_package_share_directory('config_files'),'maps','cancha_beijing.yaml'))
         yaml_path = self.get_parameter('map_file').value
 
         self.get_logger().info(f"Cargando configuracion de cancha desde: {yaml_path}")
