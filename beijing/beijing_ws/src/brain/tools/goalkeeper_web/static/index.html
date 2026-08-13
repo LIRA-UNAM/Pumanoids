@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Booster · Goalkeeper Lab</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/help.css">
+</head>
+<body>
+  <header>
+    <div><p class="eyebrow">Booster T2 · Goalkeeper Lab</p><h1>Control del portero</h1></div>
+    <div class="header-actions"><a id="helpLink" href="#help" class="help-link">Ayuda y restauración</a><div id="connection" class="pill offline">Brain sin conexión</div></div>
+  </header>
+  <main>
+    <section class="hero panel">
+      <div><span>Decisión actual</span><strong id="decision">—</strong></div>
+      <div><span>Tipo de despeje</span><strong id="kickType">—</strong></div>
+      <div><span>Predicción</span><strong id="predictionState">—</strong></div>
+      <div><span>Tiempo al cruce</span><strong id="timeToIntercept">—</strong></div>
+      <div><span>GameController</span><strong id="gameState">—</strong></div>
+      <div><span>Localización</span><strong id="localizationState">—</strong></div>
+    </section>
+
+    <details id="help" class="help panel">
+      <summary><span><strong>Ayuda y restauración</strong><small>Cómo aplicar cambios, volver al modo original y entender cada parámetro</small></span><span class="summary-action">Abrir guía</span></summary>
+      <div class="help-body">
+        <section class="help-steps">
+          <h2>Cómo realizar un cambio</h2>
+          <ol>
+            <li>Con el robot elevado, en <strong>INITIAL</strong> o con el área despejada, pulsa <strong>Recargar</strong>.</li>
+            <li>Modifica uno o varios valores. Esto sólo cambia el formulario: todavía no configura ni mueve el robot.</li>
+            <li>Pulsa <strong>Aplicar en vivo</strong> para probar. Se aplica al brain actual, pero se pierde al reiniciar.</li>
+            <li>Cuando el resultado sea seguro, pulsa <strong>Aplicar y guardar</strong>. Se aplica ahora y también en próximos arranques.</li>
+          </ol>
+          <p class="help-warning"><strong>Importante:</strong> aplicar cualquiera de las dos opciones puede cambiar el movimiento inmediatamente si el robot está en un estado activo.</p>
+        </section>
+
+        <div class="help-recipes">
+          <article>
+            <p class="recipe-number">01</p><h3>Modo original del demo</h3>
+            <p>El comportamiento conocido originalmente es <code>mode=attack</code>, <code>kick.type=default</code> y <code>prediction.enabled=false</code>.</p>
+            <button id="restoreFactory" type="button" class="warning">Cargar todos los valores originales</button>
+            <small>Este botón sólo prepara el formulario. Para completar la restauración debes pulsar <b>Aplicar y guardar</b>.</small>
+          </article>
+          <article>
+            <p class="recipe-number">02</p><h3>Cambiar la patada</h3>
+            <p>En <strong>Patada</strong>, usa <code>default</code> para Kick convencional o <code>visual</code> para RLVisionKick. Los ajustes del tipo no seleccionado se conservan, pero no se ejecutan.</p>
+            <button type="button" class="secondary go-group" data-group="Patada">Ir a Patada</button>
+          </article>
+          <article>
+            <p class="recipe-number">03</p><h3>Activar el predictor</h3>
+            <p>Activa <code>prediction.enabled</code> y mantén <code>require_localization=true</code>. Primero valida muestras y trayectoria con el robot elevado.</p>
+            <button type="button" class="secondary go-group" data-group="Predicción">Ir a Predicción</button>
+          </article>
+        </div>
+
+        <section class="movement-map">
+          <h2>Qué parte del robot afecta cada grupo</h2>
+          <div class="movement-grid">
+            <p><strong>READY y cobertura</strong><span>Posición del cuerpo frente a la portería, velocidad longitudinal/lateral y giro.</span></p>
+            <p><strong>Persecución</strong><span>Marcha hacia el balón cuando el modo attack decide reclamarlo.</span></p>
+            <p><strong>Ajuste y posesión</strong><span>Pasos cortos, rodeo y alineación antes de despejar.</span></p>
+            <p><strong>Cámara</strong><span>Movimiento de cabeza, rapidez del seguimiento y patrón de búsqueda.</span></p>
+            <p><strong>Patada</strong><span>Selección y ejecución del despeje convencional o VisualKick.</span></p>
+            <p><strong>Predicción</strong><span>Calcula y decide si existe un tiro; sus umbrales no mueven por sí solos.</span></p>
+            <p><strong>Bloqueo predictivo</strong><span>Movimiento del cuerpo al punto lateral previsto cuando la decisión es block_shot.</span></p>
+          </div>
+        </section>
+
+        <details class="parameter-appendix">
+          <summary><strong>Apéndice completo: los 93 parámetros</strong><span>Valor original, rango y efecto</span></summary>
+          <div id="parameterHelp"></div>
+        </details>
+      </div>
+    </details>
+
+    <section class="workspace">
+      <aside class="panel status-panel">
+        <h2>Trayectoria en vivo</h2>
+        <div class="field" aria-label="Representación de la portería y punto previsto">
+          <div class="goal"></div><div id="keeper" class="keeper"></div><div id="intercept" class="intercept"></div>
+        </div>
+        <dl>
+          <div><dt>Balón</dt><dd id="ballDetected">—</dd></div>
+          <div><dt>Velocidad</dt><dd id="speed">—</dd></div>
+          <div><dt>Vector</dt><dd id="velocity">—</dd></div>
+          <div><dt>R²</dt><dd id="rSquared">—</dd></div>
+          <div><dt>Residual</dt><dd id="residual">—</dd></div>
+          <div><dt>Muestras</dt><dd id="sampleCount">—</dd></div>
+          <div><dt>Punto de cruce</dt><dd id="interceptPoint">—</dd></div>
+        </dl>
+        <p class="notice">Los cambios en vivo pueden modificar el movimiento del robot. Prueba con el área despejada.</p>
+      </aside>
+
+      <section class="panel controls">
+        <div class="toolbar">
+          <div><h2>Parámetros</h2><p id="dirtyLabel">Sin cambios pendientes</p></div>
+          <div class="actions"><button id="reload" class="secondary">Recargar</button><button id="apply">Aplicar en vivo</button><button id="save">Aplicar y guardar</button></div>
+        </div>
+        <nav id="tabs"></nav>
+        <form id="parameters"></form>
+      </section>
+    </section>
+  </main>
+  <div id="toast" role="status"></div>
+  <script src="/app.js"></script>
+</body>
+</html>

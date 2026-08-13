@@ -669,6 +669,18 @@ private:
     Brain *brain;
 };
 
+class GoalkeeperBlockShot : public SyncActionNode
+{
+public:
+    GoalkeeperBlockShot(const std::string &name, const NodeConfig &config,
+                        Brain *_brain)
+        : SyncActionNode(name, config), brain(_brain) {}
+    static BT::PortsList providedPorts() { return {}; }
+    BT::NodeStatus tick() override;
+private:
+    Brain *brain;
+};
+
 class Assist : public SyncActionNode
 {
 public:

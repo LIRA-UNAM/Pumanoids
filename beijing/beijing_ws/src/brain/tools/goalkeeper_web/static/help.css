@@ -1,0 +1,50 @@
+.header-actions { display: flex; align-items: center; gap: 12px; }
+.help-link { color: var(--cyan); font-weight: 750; text-decoration: none; padding: 8px; }
+.help { margin: 0 28px 18px; scroll-margin-top: 16px; }
+.help > summary { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 19px 22px; cursor: pointer; list-style: none; }
+.help > summary::-webkit-details-marker { display: none; }
+.help > summary span:first-child { display: flex; flex-direction: column; gap: 3px; }
+.help > summary strong { font-size: 18px; }
+.help > summary small { color: var(--muted); }
+.summary-action { color: var(--cyan); font-weight: 800; }
+.help[open] .summary-action { font-size: 0; }
+.help[open] .summary-action::after { content: "Cerrar guía"; font-size: 15px; }
+.help-body { padding: 0 22px 24px; border-top: 1px solid var(--line); }
+.help-steps { padding: 24px 0; }
+.help-steps ol { margin: 15px 0; padding-left: 22px; display: grid; gap: 9px; }
+.help-warning { padding: 12px 14px; background: #2b2415; border-left: 3px solid var(--amber); color: #ffe4a6; }
+.help-recipes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.help-recipes article { padding: 18px; border: 1px solid var(--line); border-radius: 13px; background: #0c1714; display: flex; flex-direction: column; align-items: flex-start; }
+.help-recipes h3 { margin: 2px 0 8px; }
+.help-recipes article > p:not(.recipe-number) { color: var(--muted); flex: 1; }
+.help-recipes small { display: block; margin-top: 10px; color: var(--muted); }
+.recipe-number { margin: 0; color: var(--cyan); font-size: 12px; font-weight: 900; letter-spacing: .12em; }
+.warning { background: var(--amber); color: #231700; }
+.movement-map { padding: 28px 0; }
+.movement-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-top: 14px; }
+.movement-grid p { margin: 0; padding: 15px; background: #0c1714; }
+.movement-grid strong, .movement-grid span { display: block; }
+.movement-grid span { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.parameter-appendix { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.parameter-appendix > summary { padding: 17px; display: flex; justify-content: space-between; cursor: pointer; background: #14221f; }
+.parameter-appendix > summary span { color: var(--muted); }
+#parameterHelp { padding: 8px 18px 20px; }
+#parameterHelp > section > h3 { margin: 24px 0 10px; color: var(--cyan); }
+.help-table { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.help-table article { padding: 13px; background: #0c1714; border: 1px solid var(--line); border-radius: 9px; }
+.help-table article > div { display: flex; flex-direction: column; gap: 4px; }
+.help-table code, .control > code { color: var(--cyan); font-size: 11px; overflow-wrap: anywhere; }
+.help-table p { margin: 8px 0; color: var(--muted); font-size: 13px; }
+.help-table small { color: #d4dedb; }
+.control > code { display: block; margin-top: 4px; }
+.control > p { margin-top: 4px; }
+
+@media (max-width: 900px) {
+  .header-actions { align-items: flex-end; flex-direction: column; }
+  .help-recipes, .movement-grid, .help-table { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .help { margin: 0 16px 14px; }
+  .help > summary, .help-body { padding-left: 16px; padding-right: 16px; }
+  .help > summary small, .help-link, .parameter-appendix > summary span { display: none; }
+}

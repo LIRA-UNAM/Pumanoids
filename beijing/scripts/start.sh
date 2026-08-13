@@ -41,6 +41,8 @@ nohup ros2 launch brain launch.py "$@" > brain.log 2>&1 &
 # nohup ros2 launch brain launch.py "$@"  > brain.log 2>&1 &
 echo "[START GAME_CONTROLLER]"
 nohup ros2 launch game_controller launch.py > game_controller.log 2>&1 &
+echo "[START GOALKEEPER WEB PANEL]"
+bash ./scripts/start_goalkeeper_web.sh
 #echo "[START SOUND]"
 #nohup ros2 run sound_play sound_play_node > sound.log 2>&1 &
 echo "[DONE]"

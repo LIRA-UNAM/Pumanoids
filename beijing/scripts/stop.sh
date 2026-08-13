@@ -15,3 +15,5 @@ sudo pkill -f "ros2 launch game_controller launch.py" 2>/dev/null || true
 sudo pkill -9 -f '[/]game_controller_node([[:space:]]|$)' 2>/dev/null || true
 # Keep the truncated/legacy name as a fallback for older installed packages.
 sudo killall -9 game_controller 2>/dev/null || true
+echo ["STOP GOALKEEPER WEB PANEL"]
+sudo pkill -f '[g]oalkeeper_web/server.py' 2>/dev/null || true

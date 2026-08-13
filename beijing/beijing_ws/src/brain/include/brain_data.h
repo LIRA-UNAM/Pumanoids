@@ -153,6 +153,19 @@ public:
     rclcpp::Time ballBreachTime; // Estimated pass time
     Point2D ballInterceptPoint; // Best interception point
     rclcpp::Time ballInterceptTime; // Time when the ball reaches the interception point
+    double ballVelocityX = 0.0; // Predicted field-frame velocity toward the opponent goal (m/s)
+    double ballVelocityY = 0.0; // Predicted field-frame lateral velocity (m/s)
+    double ballPredictionSpeed = 0.0; // Magnitude of the fitted velocity (m/s)
+    double ballPredictionRSquared = 0.0; // Linear-fit quality used by goalkeeper prediction
+    double ballPredictionResidual = 0.0; // RMS fit residual in meters
+    double ballTimeToIntercept = 0.0; // Seconds until the predicted defensive-line crossing
+    int ballPredictionSampleCount = 0;
+    bool goalkeeperPredictionEnabled = false;
+    bool goalkeeperPredictionLocalizationReady = false;
+    bool goalkeeperPredictionRequireLocalization = true;
+    bool ballPredictionValid = false;
+    bool ballMovingTowardOwnGoal = false;
+    string goalkeeperDecision = "initializing";
 
     // Robots
     inline vector<GameObject> getRobots() const {

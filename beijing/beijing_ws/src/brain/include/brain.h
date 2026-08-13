@@ -50,6 +50,7 @@
 #include "brain_communication.h"
 #include "locator.h"
 #include "robot_client.h"
+#include "goalkeeper_ball_prediction_policy.h"
 
 
 using namespace std;
@@ -150,6 +151,9 @@ public:
 
     // Update the predicted ball trajectory.
     void updateBallPrediction();
+
+    // Publish the goalkeeper state and prediction as ROS 2 diagnostic topics.
+    void publishGoalkeeperStatus();
 
     // robot's largest dist out of border line. negative value if not out of border
     double distToBorder();
@@ -399,6 +403,9 @@ private:
     // Apply ball-specific detection processing.
     void detectProcessBalls(const vector<GameObject> &ballObjs);
 
+    // Add one accepted local ball observation to the goalkeeper predictor.
+    void recordBallPredictionObservation(const GameObject &ball);
+
     // Apply field-marking-specific detection processing.
     void detectProcessMarkings(const vector<GameObject> &markingObjs);
 
@@ -452,7 +459,14 @@ private:
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pubSpeak;
     rclcpp::Publisher<brain::msg::Kick>::SharedPtr pubKickBall;
     rclcpp::Publisher<vision_interface::msg::CalParam>::SharedPtr pubCalParam;
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr goalkeeperDecisionPublisher_;
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr goalkeeperStatusPublisher_;
     rclcpp::TimerBase::SharedPtr timer_;
+
+    std::deque<goalkeeper_prediction::Observation> goalkeeperBallObservations_;
+    std::mutex goalkeeperPredictionMutex_;
+    rclcpp::Time goalkeeperLastThreatTime_;
+    rclcpp::Time goalkeeperLastStatusPublishTime_;
 
     // ------------------------------------------------------ Diagnostic logging ------------------------------------------------------
     void logObstacleDistance();

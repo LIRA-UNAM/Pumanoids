@@ -614,6 +614,7 @@ void BrainTree::init()
     REGISTER_BUILDER(GoToFreekickPosition)
     REGISTER_BUILDER(GoToReadyPosition)
     REGISTER_BUILDER(GoToGoalBlockingPosition)
+    REGISTER_BUILDER(GoalkeeperBlockShot)
     REGISTER_BUILDER(TurnOnSpot)
     REGISTER_BUILDER(MoveToPoseOnField)
     REGISTER_BUILDER(GoBackInField)
@@ -671,6 +672,7 @@ void BrainTree::initEntry()
     // Multi-robot communication
     setEntry<bool>("is_lead", true); // True when controlling the ball; false when supporting a teammate.
     setEntry<string>("goalie_mode", "attack"); // guard, attack
+    setEntry<string>("goalie_kick_type", "default");
 
     setEntry<int>("test_choice", 0);
     setEntry<int>("control_state", 0);
@@ -726,16 +728,40 @@ NodeStatus StepOnSpot::tick()
 
 NodeStatus CamTrackBall::tick()
 {
-    constexpr double kTrackToleranceRatio = 0.30;
+    const bool goalkeeper =
+        brain->tree->getEntry<string>("player_role") == "goal_keeper";
+    const double kTrackToleranceRatio = goalkeeper
+        ? std::clamp(brain->get_parameter(
+            "goalkeeper.camera.track_tolerance_ratio").as_double(), 0.02, 0.49)
+        : 0.30;
     // Use hysteresis so a noisy detection around the center does not toggle
     // tracking on and off every tick. The entry box is intentionally smaller
     // than the exit box.
-    constexpr double kCenterToleranceRatio = 0.80 * kTrackToleranceRatio;
-    constexpr double kFilterTimeConstantSec = 0.12;
-    constexpr double kCommandIntervalSec = 0.04;
-    constexpr double kMaxPitchRate = 0.70;
-    constexpr double kMaxYawRate = 1.00;
-    constexpr double kMinCommandChange = 0.006;
+    const double centerFactor = goalkeeper
+        ? std::clamp(brain->get_parameter(
+            "goalkeeper.camera.center_tolerance_factor").as_double(), 0.1, 1.0)
+        : 0.80;
+    const double kCenterToleranceRatio = centerFactor * kTrackToleranceRatio;
+    const double kFilterTimeConstantSec = goalkeeper
+        ? std::max(0.005, brain->get_parameter(
+            "goalkeeper.camera.filter_time_constant_sec").as_double())
+        : 0.12;
+    const double kCommandIntervalSec = goalkeeper
+        ? std::max(0.01, brain->get_parameter(
+            "goalkeeper.camera.command_interval_sec").as_double())
+        : 0.04;
+    const double kMaxPitchRate = goalkeeper
+        ? std::max(0.05, brain->get_parameter(
+            "goalkeeper.camera.max_pitch_rate").as_double())
+        : 0.70;
+    const double kMaxYawRate = goalkeeper
+        ? std::max(0.05, brain->get_parameter(
+            "goalkeeper.camera.max_yaw_rate").as_double())
+        : 1.00;
+    const double kMinCommandChange = goalkeeper
+        ? std::max(0.0005, brain->get_parameter(
+            "goalkeeper.camera.min_command_change").as_double())
+        : 0.006;
 
     const double imageWidth = brain->config->camPixX;
     const double imageHeight = brain->config->camPixY;
@@ -964,8 +990,13 @@ NodeStatus CamFindBall::tick()
     }
     const bool restarted = !_scanInitialized || !std::isfinite(tickDt) ||
         tickDt <= 0.0 || tickDt > 0.3;
-    const double cycleMsecs = std::max(
-        100.0, static_cast<double>(getInput<int>("msec_cycle").value()));
+    const bool goalkeeper =
+        brain->tree->getEntry<string>("player_role") == "goal_keeper";
+    const double cycleMsecs = goalkeeper
+        ? std::max(100.0, static_cast<double>(brain->get_parameter(
+            "goalkeeper.camera.search_cycle_msec").as_int()))
+        : std::max(100.0, static_cast<double>(
+            getInput<int>("msec_cycle").value()));
     const auto evaluate = [](double phase) {
         return head_scan_policy::closedWaypointPose(kWaypoints, phase);
     };
@@ -996,10 +1027,16 @@ NodeStatus CamFindBall::tick()
         (now - _scanStartTime).nanoseconds() / 1e6;
     const Pose target = evaluate(
         _scanPhaseOffset + elapsedMsecs / cycleMsecs);
-    const double maxPitchRate = std::max(
-        0.05, std::fabs(getInput<double>("max_pitch_rate").value()));
-    const double maxYawRate = std::max(
-        0.05, std::fabs(getInput<double>("max_yaw_rate").value()));
+    const double maxPitchRate = goalkeeper
+        ? std::max(0.05, std::fabs(brain->get_parameter(
+            "goalkeeper.camera.search_max_pitch_rate").as_double()))
+        : std::max(0.05, std::fabs(
+            getInput<double>("max_pitch_rate").value()));
+    const double maxYawRate = goalkeeper
+        ? std::max(0.05, std::fabs(brain->get_parameter(
+            "goalkeeper.camera.search_max_yaw_rate").as_double()))
+        : std::max(0.05, std::fabs(
+            getInput<double>("max_yaw_rate").value()));
     const Pose command = head_scan_policy::rateLimitedPose(
         {_lastCommandPitch, _lastCommandYaw},
         target,
@@ -1123,6 +1160,16 @@ NodeStatus Chase::tick()
     getInput("vtheta_limit", vthetaLimit);
     getInput("dist", dist);
     getInput("safe_dist", safeDist);
+    if (brain->tree->getEntry<string>("player_role") == "goal_keeper") {
+        vxLimit = brain->get_parameter("goalkeeper.chase.vx_limit").as_double();
+        vyLimit = brain->get_parameter("goalkeeper.chase.vy_limit").as_double();
+        vthetaLimit = brain->get_parameter(
+            "goalkeeper.chase.vtheta_limit").as_double();
+        dist = brain->get_parameter(
+            "goalkeeper.chase.target_distance").as_double();
+        safeDist = brain->get_parameter(
+            "goalkeeper.chase.safe_distance").as_double();
+    }
 
     bool avoidObstacle = false;
     double oaSafeDist = 2.0;
@@ -1645,9 +1692,14 @@ NodeStatus GoToGoalBlockingPosition::tick() {
     // brain->log->setTimeNow();
     // brain->log->log("tree/GoToGoalBlockingPosition", rerun::TextLog("GoToGoalBlockingPosition tick"));
      
-    double distTolerance = getInput<double>("dist_tolerance").value();
-    double thetaTolerance = getInput<double>("theta_tolerance").value();
-    double distToGoalline = getInput<double>("dist_to_goalline").value();
+    double distTolerance = std::max(
+        0.01, brain->get_parameter(
+            "goalkeeper.blocking.dist_tolerance").as_double());
+    double thetaTolerance = std::max(
+        0.01, brain->get_parameter(
+            "goalkeeper.blocking.theta_tolerance").as_double());
+    double distToGoalline = brain->get_parameter(
+        "goalkeeper.blocking.dist_to_goalline").as_double();
 
     const auto fd = brain->config->fieldDimensions;
     const auto ballPos = brain->data->ball.posToField;
@@ -1701,22 +1753,103 @@ NodeStatus GoToGoalBlockingPosition::tick() {
     }
 
     auto targetPose_r = brain->data->field2robot(targetPose);
-    double vx = targetPose_r.x;
-    double vy = targetPose_r.y;
+    const double positionGain = std::max(
+        0.0, brain->get_parameter(
+            "goalkeeper.blocking.position_gain").as_double());
+    const double orientationGain = std::max(
+        0.0, brain->get_parameter(
+            "goalkeeper.blocking.orientation_gain").as_double());
+    double vx = targetPose_r.x * positionGain;
+    double vy = targetPose_r.y * positionGain;
+
+
+    double vxLimit = std::max(
+        0.0, brain->get_parameter(
+            "goalkeeper.blocking.vx_limit").as_double());
+    double vyLimit = std::max(
+        0.0, brain->get_parameter(
+            "goalkeeper.blocking.vy_limit").as_double());
+    double vthetaLimit = std::max(
+        0.0, brain->get_parameter(
+            "goalkeeper.blocking.vtheta_limit").as_double());
     double vtheta = cap(
-        safeBallYaw * 2.0,
-        brain->config->vthetaLimit,
-        -brain->config->vthetaLimit);
-
-
-    double vxLimit, vyLimit;
-    getInput("vx_limit", vxLimit);
-    getInput("vy_limit", vyLimit);
+        safeBallYaw * orientationGain,
+        vthetaLimit,
+        -vthetaLimit);
     vx = cap(vx, vxLimit, -vxLimit);     // Apply the final forward-speed limit.
     vy = cap(vy, vyLimit, -vyLimit);     // Apply the final lateral-speed limit.
      
 
     brain->client->setVelocity(vx, vy, vtheta, false, false, false);
+    return NodeStatus::SUCCESS;
+}
+
+NodeStatus GoalkeeperBlockShot::tick()
+{
+    if (!brain->get_parameter("goalkeeper.prediction.enabled").as_bool() ||
+        !brain->data->ballWillBreach) {
+        brain->client->setVelocity(0.0, 0.0, 0.0, false, false, false);
+        return NodeStatus::SUCCESS;
+    }
+
+    const auto fd = brain->config->fieldDimensions;
+    const double ownGoalX = -fd.length / 2.0;
+    const double distToGoalLine = std::clamp(
+        brain->get_parameter(
+            "goalkeeper.blocking.dist_to_goalline").as_double(),
+        0.4, std::max(0.4, fd.goalAreaLength - 0.2));
+    Pose2D targetField;
+    targetField.x = ownGoalX + distToGoalLine;
+    const double lateralLimit = std::max(
+        fd.goalWidth / 2.0,
+        fd.goalWidth / 2.0 + brain->get_parameter(
+            "goalkeeper.prediction.goal_margin").as_double());
+    targetField.y = std::clamp(
+        brain->data->ballInterceptPoint.y,
+        -lateralLimit, lateralLimit);
+
+    const Pose2D targetRobot = brain->data->field2robot(targetField);
+    const double gain = std::max(
+        0.1, brain->get_parameter(
+            "goalkeeper.prediction.block.position_gain").as_double());
+    const double vxLimit = std::max(
+        0.0, brain->get_parameter(
+            "goalkeeper.prediction.block.vx_limit").as_double());
+    const double vyLimit = std::max(
+        0.0, brain->get_parameter(
+            "goalkeeper.prediction.block.vy_limit").as_double());
+    const double vthetaLimit = std::max(
+        0.0, brain->get_parameter(
+            "goalkeeper.prediction.block.vtheta_limit").as_double());
+    const double tolerance = std::max(
+        0.02, brain->get_parameter(
+            "goalkeeper.prediction.block.target_tolerance").as_double());
+    const double reactionMargin = std::max(
+        0.0, brain->get_parameter(
+            "goalkeeper.prediction.block.reaction_margin_sec").as_double());
+
+    const double distance = std::hypot(targetRobot.x, targetRobot.y);
+    double vx = distance < tolerance ? 0.0 :
+        std::clamp(gain * targetRobot.x, -vxLimit, vxLimit);
+    double vy = distance < tolerance ? 0.0 :
+        std::clamp(gain * targetRobot.y, -vyLimit, vyLimit);
+    const double ballYaw = std::isfinite(brain->data->ball.yawToRobot)
+        ? brain->data->ball.yawToRobot : 0.0;
+    double vtheta = std::clamp(2.0 * ballYaw,
+                               -vthetaLimit, vthetaLimit);
+
+    // If the available time is shorter than the nominal lateral travel time,
+    // saturate the lateral command immediately instead of approaching softly.
+    const double availableTime = std::max(
+        0.01, brain->data->ballTimeToIntercept - reactionMargin);
+    if (std::abs(targetRobot.y) / availableTime > std::abs(vy) + 1e-6) {
+        vy = std::copysign(vyLimit, targetRobot.y);
+    }
+
+    const bool applyMinimum = brain->get_parameter(
+        "goalkeeper.prediction.block.apply_min_velocity").as_bool();
+    brain->client->setVelocity(
+        vx, vy, vtheta, applyMinimum, applyMinimum, applyMinimum);
     return NodeStatus::SUCCESS;
 }
 
@@ -2258,6 +2391,17 @@ NodeStatus Adjust::tick()
     getInput("turn_first_threshold", turnFirstThreshold);
     string position;
     getInput("position", position);
+    if (brain->tree->getEntry<string>("player_role") == "goal_keeper") {
+        turnThreshold = brain->get_parameter(
+            "goalkeeper.adjust.turn_threshold").as_double();
+        vxLimit = brain->get_parameter(
+            "goalkeeper.adjust.vx_limit").as_double();
+        vyLimit = brain->get_parameter(
+            "goalkeeper.adjust.vy_limit").as_double();
+        vthetaLimit = brain->get_parameter(
+            "goalkeeper.adjust.vtheta_limit").as_double();
+        range = brain->get_parameter("goalkeeper.adjust.range").as_double();
+    }
 
     double vx = 0, vy = 0, vtheta = 0;
     double kickDir = (position == "defense") ?
@@ -2598,15 +2742,20 @@ NodeStatus StrikerDecide::tick() {
 NodeStatus GoalieDecide::tick()
 {
     // Read and process parameters.
-    double chaseRangeThreshold;
-    getInput("chase_threshold", chaseRangeThreshold);
+    double chaseRangeThreshold = std::max(
+        0.0, brain->get_parameter("goalkeeper.chase.threshold").as_double());
     string lastDecision;
     getInput("decision_in", lastDecision);
 
     double kickDir = atan2(brain->data->ball.posToField.y, brain->data->ball.posToField.x + brain->config->fieldDimensions.length / 2);
     brain->data->kickDir = kickDir;
     double dir_rb_f = brain->data->robotBallAngleToField; // Field-frame robot-to-ball direction
-    bool angleIsGood = (dir_rb_f > -M_PI / 2 && dir_rb_f < M_PI / 2);
+    const double alignmentTolerance = std::clamp(
+        brain->get_parameter(
+            "goalkeeper.kick.alignment_tolerance").as_double(),
+        0.02, M_PI);
+    const double alignmentError = toPInPI(kickDir - dir_rb_f);
+    bool angleIsGood = std::abs(alignmentError) < alignmentTolerance;
     double ballRange = brain->data->ball.range;
     double ballYaw = brain->data->ball.yawToRobot;
     const bool goalieMayClaimBall = brain->canGoalkeeperClaimBall(
@@ -2615,17 +2764,30 @@ NodeStatus GoalieDecide::tick()
         brain->data->ball.posToField.x,
         brain->data->ball.posToField.y,
         brain->data->tmMyCost);
+    const bool requireTeamLead = brain->get_parameter(
+        "goalkeeper.claim.require_team_lead").as_bool();
 
     string newDecision;
     auto color = 0xFFFFFFFF; // for log
     bool iKnowBallPos = brain->tree->getEntry<bool>("ball_location_known");
     bool tmBallPosReliable = brain->tree->getEntry<bool>("tm_ball_pos_reliable");
-    if (!(iKnowBallPos || tmBallPosReliable))
+    const bool incomingShot =
+        brain->get_parameter("goalkeeper.prediction.enabled").as_bool() &&
+        brain->data->ballWillBreach;
+    if (incomingShot)
+    {
+        // Incoming shots have priority over possession. Chasing the current
+        // ball position can pull a goalkeeper out of the predicted goal line.
+        newDecision = "block_shot";
+        color = 0xFF8800FF;
+    }
+    else if (!(iKnowBallPos || tmBallPosReliable))
     {
         newDecision = "find";
         color = 0x0000FFFF;
     }
-    else if (!goalieMayClaimBall || !brain->data->tmImLead)
+    else if (!goalieMayClaimBall ||
+             (requireTeamLead && !brain->data->tmImLead))
     {
         newDecision = "retreat";
         color = 0xFF00FFFF;
@@ -2647,6 +2809,12 @@ NodeStatus GoalieDecide::tick()
     }
 
     setOutput("decision_out", newDecision);
+    brain->data->goalkeeperDecision = newDecision;
+    const string configuredKickType =
+        brain->get_parameter("goalkeeper.kick.type").as_string();
+    brain->tree->setEntry<string>(
+        "goalie_kick_type",
+        configuredKickType == "visual" ? "visual" : "default");
     brain->log->logToScreen("tree/Decide",
                             format("Decision: %s ballrange: %.2f ballyaw: %.2f kickDir: %.2f rbDir: %.2f angleIsGood: %d lead: %d claim: %d", newDecision.c_str(), ballRange, ballYaw, kickDir, dir_rb_f, angleIsGood, brain->data->tmImLead, goalieMayClaimBall),
                             color);
@@ -2722,13 +2890,22 @@ NodeStatus Kick::onStart()
 
     // Initialize the node.
     _startTime = brain->get_clock()->now();
-    if (brain->config->enableStableKick && brain->threatLevel() < 0.5) _state = "stablize"; // Stabilize before kicking when risk is low.
+    const bool isGoalkeeper =
+        brain->tree->getEntry<string>("player_role") == "goal_keeper";
+    const bool enableStabilize = isGoalkeeper
+        ? brain->get_parameter(
+            "goalkeeper.kick.default.enable_stabilize").as_bool()
+        : brain->config->enableStableKick;
+    if (enableStabilize && brain->threatLevel() < 0.5) _state = "stablize"; // Stabilize before kicking when risk is low.
     else _state = "kick";
      
     // Send the motion command.
     if (_state == "kick") {
         double angle = brain->data->ball.yawToRobot;
-        double speed = getInput<double>("speed_limit").value();
+        double speed = isGoalkeeper
+            ? brain->get_parameter(
+                "goalkeeper.kick.default.speed_limit").as_double()
+            : getInput<double>("speed_limit").value();
         bool softKickoff;
         double softKickoffSpeed;
         brain->get_parameter("strategy.soft_kickoff", softKickoff);
@@ -2759,13 +2936,25 @@ NodeStatus Kick::onRunning()
             brain->log->log("debug/Kick", rerun::TextLog(msg));
         }
     };
-    bool enableAbort;
-    brain->get_parameter("strategy.abort_kick_when_ball_moved", enableAbort);
+    const bool isGoalkeeper =
+        brain->tree->getEntry<string>("player_role") == "goal_keeper";
+    bool enableAbort = isGoalkeeper
+        ? brain->get_parameter(
+            "goalkeeper.kick.default.abort_when_ball_moved").as_bool()
+        : brain->get_parameter(
+            "strategy.abort_kick_when_ball_moved").as_bool();
     auto ballRange = brain->data->ball.range;
     double MOVE_RANGE_THRESHOLD = 0.3;
-    brain->get_parameter("strategy.abort_kick_ball_move_threshold", MOVE_RANGE_THRESHOLD);
+    MOVE_RANGE_THRESHOLD = isGoalkeeper
+        ? brain->get_parameter(
+            "goalkeeper.kick.default.ball_move_threshold").as_double()
+        : brain->get_parameter(
+            "strategy.abort_kick_ball_move_threshold").as_double();
     double KICK_RANGE = 1.0;
-    brain->get_parameter("strategy.kick_range", KICK_RANGE);
+    KICK_RANGE = isGoalkeeper
+        ? brain->get_parameter(
+            "goalkeeper.kick.default.exit_range").as_double()
+        : brain->get_parameter("strategy.kick_range").as_double();
 
     const double BALL_LOST_THRESHOLD = 1000;  // ms
     const double motionThreshold = std::max(0.15, MOVE_RANGE_THRESHOLD);
@@ -2834,12 +3023,18 @@ NodeStatus Kick::onRunning()
     }
 
     if (_state == "stablize") {
-        double msecs = getInput<double>("msecs_stablize").value();
+        double msecs = isGoalkeeper
+            ? brain->get_parameter(
+                "goalkeeper.kick.default.stabilize_msec").as_double()
+            : getInput<double>("msecs_stablize").value();
         if (brain->msecsSince(_startTime) > msecs) {
             _state = "kick";
             _startTime = brain->get_clock()->now();
             double angle = brain->data->ball.yawToRobot;
-            double speed = getInput<double>("speed_limit").value();
+            double speed = isGoalkeeper
+                ? brain->get_parameter(
+                    "goalkeeper.kick.default.speed_limit").as_double()
+                : getInput<double>("speed_limit").value();
             bool softKickoff;
             double softKickoffSpeed;
             brain->get_parameter("strategy.soft_kickoff", softKickoff);
@@ -2856,8 +3051,14 @@ NodeStatus Kick::onRunning()
         }
         return NodeStatus::RUNNING;
     } else if (_state == "kick") {
-        double msecs = getInput<double>("min_msec_kick").value();
-        double speed = getInput<double>("speed_limit").value();
+        double msecs = isGoalkeeper
+            ? brain->get_parameter(
+                "goalkeeper.kick.default.min_msec").as_double()
+            : getInput<double>("min_msec_kick").value();
+        double speed = isGoalkeeper
+            ? brain->get_parameter(
+                "goalkeeper.kick.default.speed_limit").as_double()
+            : getInput<double>("speed_limit").value();
         msecs = msecs + brain->data->ball.range / speed * 1000;
         if (brain->msecsSince(_startTime) > msecs) { // Complete the kick action.
             brain->client->setVelocity(0, 0, 0);
@@ -2877,7 +3078,10 @@ NodeStatus Kick::onRunning()
         // else
         if (brain->data->ballDetected) { // Correct direction while the ball remains visible.
             double angle = brain->data->ball.yawToRobot;
-            double speed = getInput<double>("speed_limit").value();
+            double speed = isGoalkeeper
+                ? brain->get_parameter(
+                    "goalkeeper.kick.default.speed_limit").as_double()
+                : getInput<double>("speed_limit").value();
             _speed += 0.08;
             speed = min(speed, _speed);
             brain->client->crabWalk(angle, speed);
@@ -2893,6 +3097,7 @@ NodeStatus Kick::onRunning()
 
 void Kick::onHalted()
 {
+    brain->client->setVelocity(0.0, 0.0, 0.0, false, false, false);
     if (_plannedKickStarted) {
         brain->cancelFreeKickKickAttempt();
         _plannedKickStarted = false;
@@ -2929,7 +3134,13 @@ NodeStatus RLVisionKick::onStart()
         return NodeStatus::SUCCESS;
     }
 
-    startDecelerate(1000.0);
+    const bool isGoalkeeper =
+        brain->tree->getEntry<string>("player_role") == "goal_keeper";
+    const double preDelayMsec = isGoalkeeper
+        ? std::max(0.0, brain->get_parameter(
+            "goalkeeper.kick.visual.pre_delay_msec").as_double())
+        : 1000.0;
+    startDecelerate(preDelayMsec);
     stepDecelerate();
 
     return NodeStatus::RUNNING;
@@ -3012,9 +3223,17 @@ NodeStatus RLVisionKick::onRunning()
     }
 
     double elapsed = brain->msecsSince(_startTime);
-    double minMsecKick = getInput<double>("min_msec_kick").value();
-    double maxMsecKick = getInput<double>("max_msec_kick").value();
-    double rangeThreshold = getInput<double>("range").value();
+    const bool isGoalkeeper =
+        brain->tree->getEntry<string>("player_role") == "goal_keeper";
+    double minMsecKick = isGoalkeeper
+        ? brain->get_parameter("goalkeeper.kick.visual.min_msec").as_double()
+        : getInput<double>("min_msec_kick").value();
+    double maxMsecKick = isGoalkeeper
+        ? brain->get_parameter("goalkeeper.kick.visual.max_msec").as_double()
+        : getInput<double>("max_msec_kick").value();
+    double rangeThreshold = isGoalkeeper
+        ? brain->get_parameter("goalkeeper.kick.visual.range").as_double()
+        : getInput<double>("range").value();
 
     bool ballTooFar = brain->data->ballDetected && brain->data->ball.range > rangeThreshold;
     bool costTooHigh = brain->data->tmMyCost > 8.0;
@@ -3046,7 +3265,11 @@ NodeStatus RLVisionKick::onRunning()
 
         finishPlannedFreeKickAttempt(plannedKickCompleted);
         recordExitTime();
-        startDecelerate(1000.0);
+        const double postDelayMsec = isGoalkeeper
+            ? std::max(0.0, brain->get_parameter(
+                "goalkeeper.kick.visual.post_delay_msec").as_double())
+            : 1000.0;
+        startDecelerate(postDelayMsec);
         _pendingRobocupWalk = true;
         stepDecelerate();
         return NodeStatus::RUNNING;
@@ -5081,12 +5304,31 @@ NodeStatus GoToReadyPosition::tick()
     double vxLimit, vyLimit;
     getInput("vx_limit", vxLimit);
     getInput("vy_limit", vyLimit);
-    if (brain->distToBorder() > - 1.0) { // near border
-        vxLimit = 0.6;
-        vyLimit = 0.4;
-    }
     double vthetaLimit = 1.5;
     bool avoidObstacle = true;
+
+    if (role == "goal_keeper") {
+        distTolerance = std::max(0.02, brain->get_parameter(
+            "goalkeeper.ready.dist_tolerance").as_double());
+        thetaTolerance = std::max(0.02, brain->get_parameter(
+            "goalkeeper.ready.theta_tolerance").as_double());
+        longRangeThreshold = std::max(0.1, brain->get_parameter(
+            "goalkeeper.ready.long_range_threshold").as_double());
+        turnThreshold = std::max(0.02, brain->get_parameter(
+            "goalkeeper.ready.turn_threshold").as_double());
+        vxLimit = std::max(0.0, brain->get_parameter(
+            "goalkeeper.ready.vx_limit").as_double());
+        vyLimit = std::max(0.0, brain->get_parameter(
+            "goalkeeper.ready.vy_limit").as_double());
+        vthetaLimit = std::max(0.0, brain->get_parameter(
+            "goalkeeper.ready.vtheta_limit").as_double());
+        avoidObstacle = brain->get_parameter(
+            "goalkeeper.ready.avoid_obstacles").as_bool();
+    }
+    if (brain->distToBorder() > -1.0) { // near border
+        vxLimit = std::min(vxLimit, 0.6);
+        vyLimit = std::min(vyLimit, 0.4);
+    }
 
     if (role == "striker") {
         const double ownGoalX = -fd.length / 2.0;
@@ -5121,7 +5363,8 @@ NodeStatus GoToReadyPosition::tick()
         // Match the normal blocking line (1 m from the goal line) while
         // remaining inside the goal area during READY.
         tx = -fd.length / 2.0 + std::clamp(
-            0.5 * fd.goalAreaLength,
+            brain->get_parameter(
+                "goalkeeper.ready.dist_to_goalline").as_double(),
             0.4,
             std::max(0.4, fd.goalAreaLength - 0.2));
         ty = 0;

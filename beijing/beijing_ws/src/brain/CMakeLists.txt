@@ -105,6 +105,9 @@ install(DIRECTORY config
 install(DIRECTORY behavior_trees
   DESTINATION share/${PROJECT_NAME})
 
+install(DIRECTORY tools
+  DESTINATION share/${PROJECT_NAME})
+
 if(BUILD_TESTING)
   add_executable(assist_strategy_policy_test
     test/assist_strategy_policy_test.cpp)
@@ -137,6 +140,20 @@ if(BUILD_TESTING)
   target_compile_features(ball_search_policy_test PRIVATE cxx_std_17)
   add_test(NAME ball_search_policy_test
     COMMAND ball_search_policy_test)
+
+  add_executable(goalkeeper_ball_prediction_policy_test
+    test/goalkeeper_ball_prediction_policy_test.cpp)
+  target_include_directories(goalkeeper_ball_prediction_policy_test PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include)
+  target_compile_features(goalkeeper_ball_prediction_policy_test PRIVATE cxx_std_17)
+  add_test(NAME goalkeeper_ball_prediction_policy_test
+    COMMAND goalkeeper_ball_prediction_policy_test)
+
+  find_package(Python3 COMPONENTS Interpreter REQUIRED)
+  add_test(NAME goalkeeper_web_test
+    COMMAND ${Python3_EXECUTABLE}
+      ${CMAKE_CURRENT_SOURCE_DIR}/test/goalkeeper_web_test.py
+      --server-dir ${CMAKE_CURRENT_SOURCE_DIR}/tools/goalkeeper_web)
 
   add_executable(head_scan_policy_test
     test/head_scan_policy_test.cpp)

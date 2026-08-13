@@ -124,8 +124,10 @@ int RobotClient::requestGetUp(booster::robot::b1::GetUpVersion version)
 int RobotClient::RLVisionKick(bool start)
 {
     std::string verLower;
-    verLower.reserve(brain->config->RLVisionKickVisualKickVersion.size());
-    for (unsigned char c : brain->config->RLVisionKickVisualKickVersion) {
+    const std::string configuredVersion = brain->get_parameter(
+        "RLVisionKick.visual_kick_version").as_string();
+    verLower.reserve(configuredVersion.size());
+    for (unsigned char c : configuredVersion) {
         verLower.push_back(static_cast<char>(std::tolower(c)));
     }
     booster::robot::b1::VisualKickVersion vk = booster::robot::b1::VisualKickVersion::kV2;
