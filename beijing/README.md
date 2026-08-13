@@ -1,5 +1,7 @@
 # Demo Beijing — rama `test_goalkeeper`
 
+> Manual integral del Booster T2: [Documentation/BoosterT2](../Documentation/BoosterT2/README.md).
+
 Esta rama se creó desde `beijing_demo` para probar el portero configurable en
 el Booster T2. Mantiene el demo de Beijing y agrega:
 
