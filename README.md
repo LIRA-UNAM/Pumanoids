@@ -18,6 +18,9 @@
 > - [Inicio rápido y compilación](./beijing/README.md)
 > - [Guía completa del portero](./Documentation/Goalkeeper/README.md)
 > - [Inventario técnico y criterios de aceptación](./Documentation/Goalkeeper/IMPLEMENTATION.md)
+> - [Configuración actual del robot y red](./beijing/README.md#configuración-actual-del-robot-y-la-red)
+> - [Manual completo de GUI y predicción](./Documentation/Goalkeeper/PORTERO_GUI_PREDICCION.md)
+> - [Manifiesto detallado de implementación](./Documentation/Goalkeeper/IMPLEMENTACION_PORTERO_MANIFIESTO.md)
 
 <div align="center">
     <h4>

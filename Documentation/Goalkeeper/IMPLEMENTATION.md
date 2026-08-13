@@ -32,6 +32,22 @@
 - restauración sólo carga el formulario y exige una aplicación explícita;
 - validación de tipos, límites y relaciones antes de enviar parámetros.
 
+## Configuración de despliegue actual
+
+| Parámetro | Valor |
+|---|---:|
+| `game.team_id` | `5` |
+| `game.player_id` | `1` |
+| `game.player_role` | `goal_keeper` |
+| `game_control_ip` | `10.0.16.150` |
+| `game_controller.ip_white_list` | `10.0.16.150` |
+| `rerunLog.server_ip` | `10.0.16.110:9876` |
+| `rerunLog.enable_tcp` | `false` |
+
+Cuando cambie la IP del GameController se deben actualizar tanto
+`game_control_ip` como `ip_white_list`. Rerun sólo utilizará `server_ip` cuando
+`enable_tcp=true`.
+
 ## Validación local realizada
 
 - API HTTP: esquema, perfil original, archivos estáticos, aplicación,

@@ -19,6 +19,34 @@ demo ubicado en `beijing/`. El panel web controla parámetros reales del nodo
 Aplicar cualquiera de las dos opciones sí puede cambiar inmediatamente el
 movimiento si el GameController permite actuar.
 
+## Identidad y red configuradas
+
+El portero está configurado como equipo `5`, jugador `1`, rol `goal_keeper`.
+El GameController esperado es `10.0.16.150` y el visor Rerun esperado es
+`10.0.16.110:9876`.
+
+Archivos relevantes:
+
+- `beijing/beijing_ws/src/brain/config/config.yaml`: `team_id`, `player_id`,
+  `player_role`, `game_control_ip` y `rerunLog.server_ip`;
+- `beijing/beijing_ws/src/game_controller/launch/launch.py`:
+  `ip_white_list` del receptor UDP.
+
+`game_control_ip` y `ip_white_list` deben apuntar al mismo GameController. La
+lista blanca queda activada por defecto; si la IP no coincide, el nodo puede
+estar ejecutándose correctamente pero ignorará los paquetes recibidos.
+
+Para diagnosticar:
+
+```bash
+ros2 node list | grep game_controller
+ros2 topic list | grep game
+ros2 topic echo /brain/goalkeeper/status
+```
+
+El estado publicado por el portero incluye el estado de juego que recibió el
+brain, lo que permite diferenciar un problema de red de uno del árbol.
+
 ## Volver al comportamiento original
 
 El archivo `factory_defaults.json` conserva un perfil protegido de 93 valores.
@@ -92,6 +120,17 @@ field/goalkeeper/predicted_ball_trajectory
 field/goalkeeper/intercept_point
 ```
 
+Para transmitir estas entidades a la computadora configurada:
+
+```yaml
+rerunLog:
+  enable_tcp: true
+  server_ip: "10.0.16.110:9876"
+```
+
+Con `enable_tcp=false`, el brain no transmite por red aunque `server_ip` esté
+correctamente establecido; el registro local continúa según `enable_file`.
+
 El panel incluye un apéndice generado desde el esquema con los 93 parámetros,
 valor original, rango, descripción y parte del robot afectada.
 
@@ -105,3 +144,8 @@ bash scripts/prepare_goalkeeper_build.sh
 
 Consultar también [IMPLEMENTATION.md](./IMPLEMENTATION.md) antes de transferir
 la rama al robot.
+
+Documentación extendida conservada del desarrollo inicial:
+
+- [Manual completo de GUI, patadas y predictor](./PORTERO_GUI_PREDICCION.md)
+- [Manifiesto detallado de implementación](./IMPLEMENTACION_PORTERO_MANIFIESTO.md)
