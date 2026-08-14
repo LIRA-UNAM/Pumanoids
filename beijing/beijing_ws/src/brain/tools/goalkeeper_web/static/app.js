@@ -216,6 +216,7 @@ function statusView(status) {
   $("timeToIntercept").textContent = status.threatens_goal ? `${format(status.time_to_intercept)} s` : "—";
   $("gameState").textContent = status.game_state || "?";
   $("localizationState").textContent = status.localization_ready ? "lista" : status.localization_required ? "no calibrada" : "no requerida";
+  $("predictionReason").textContent = reasonLabel(status.prediction_reason);
   $("ballDetected").textContent = status.ball_detected ? "detectado" : "no detectado";
   $("speed").textContent = `${format(status.speed)} m/s`;
   $("velocity").textContent = `(${format(status.velocity_x)}, ${format(status.velocity_y)})`;
@@ -223,15 +224,58 @@ function statusView(status) {
   $("residual").textContent = `${format(status.residual, 3)} m`;
   $("sampleCount").textContent = Number.isFinite(Number(status.sample_count)) ? String(status.sample_count) : "—";
   $("interceptPoint").textContent = status.threatens_goal ? `(${format(status.intercept_x)}, ${format(status.intercept_y)}) m` : "—";
+  $("ballConfidence").textContent = `${format(status.ball_confidence, 1)} %`;
+  $("robotPose").textContent = `(${format(status.robot_x)}, ${format(status.robot_y)}, ${format(status.robot_theta)})`;
   const marker = $("intercept");
   marker.classList.toggle("active", Boolean(status.threatens_goal));
   const normalized = Math.max(-1.5, Math.min(1.5, Number(status.intercept_y) || 0));
   marker.style.left = `${50 + normalized / 3 * 76}%`;
 }
 
+const REASONS = {
+  initializing: "inicializando", disabled: "predictor desactivado",
+  localization_required: "localización requerida",
+  insufficient_samples: "faltan muestras",
+  insufficient_span: "intervalo de muestras insuficiente",
+  invalid_observation: "observación inválida",
+  speed_below_minimum: "velocidad menor al umbral",
+  r_squared_below_minimum: "R² menor al umbral",
+  residual_above_maximum: "residual demasiado alto",
+  not_toward_own_goal: "el balón no va hacia nuestra portería",
+  already_past_block_line: "el balón ya cruzó la línea de bloqueo",
+  stops_before_block_line: "se detendría antes de la línea",
+  time_outside_window: "tiempo de llegada fuera de ventana",
+  outside_goal: "trayectoria fuera de la portería",
+  threat_detected: "TIRO DETECTADO"
+};
+
+function reasonLabel(reason) { return REASONS[reason] || reason || "—"; }
+
+async function updateTelemetry() {
+  try {
+    const result = await api("/api/telemetry?limit=40");
+    $("logPath").textContent = `Registro: ${result.log_file}`;
+    const rows = $("telemetryRows");
+    rows.innerHTML = "";
+    [...result.events].reverse().forEach(event => {
+      const row = document.createElement("tr");
+      const stamp = event.received_at_iso ? new Date(event.received_at_iso).toLocaleTimeString() : "—";
+      [stamp, event.decision || "—", reasonLabel(event.prediction_reason),
+       event.sample_count ?? "—", format(event.speed), format(event.r_squared, 3),
+       format(event.residual, 3)].forEach(value => {
+        const cell = document.createElement("td");
+        cell.textContent = value;
+        row.appendChild(cell);
+      });
+      rows.appendChild(row);
+    });
+  } catch {}
+}
+
 async function poll() {
   try { statusView(await api("/api/status")); }
   catch { statusView({connected: false}); }
+  await updateTelemetry();
   setTimeout(poll, 250);
 }
 

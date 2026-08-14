@@ -27,6 +27,7 @@ int main()
     assert(shot.movingTowardOwnGoal);
     assert(shot.willReachBlockLine);
     assert(shot.threatensGoal);
+    assert(shot.reason == "threat_detected");
     assert(std::abs(shot.velocityX + 2.0) < 1e-6);
     assert(std::abs(shot.velocityY - 0.2) < 1e-6);
 
@@ -39,6 +40,7 @@ int main()
     assert(away.valid);
     assert(!away.movingTowardOwnGoal);
     assert(!away.threatensGoal);
+    assert(away.reason == "not_toward_own_goal");
 
     std::vector<Observation> wide;
     for (int i = 0; i < 7; ++i) {
@@ -49,12 +51,14 @@ int main()
     assert(missesGoal.valid);
     assert(missesGoal.willReachBlockLine);
     assert(!missesGoal.threatensGoal);
+    assert(missesGoal.reason == "outside_goal");
 
     config.deceleration = 4.0;
     const auto stopsEarly = goalkeeper_prediction::predict(incoming, config);
     assert(stopsEarly.valid);
     assert(!stopsEarly.willReachBlockLine);
     assert(!stopsEarly.threatensGoal);
+    assert(stopsEarly.reason == "stops_before_block_line");
 
     config.deceleration = 0.0;
     config.recencyWeight = 4.0;
@@ -71,6 +75,8 @@ int main()
     noisy[3].x += 1.0;
     const auto rejected = goalkeeper_prediction::predict(noisy, config);
     assert(!rejected.valid);
+    assert(rejected.reason == "r_squared_below_minimum" ||
+           rejected.reason == "residual_above_maximum");
 
     std::cout << "goalkeeper_ball_prediction_policy_test passed\n";
     return 0;

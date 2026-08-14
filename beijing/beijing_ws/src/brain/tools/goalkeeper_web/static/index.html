@@ -20,6 +20,7 @@
       <div><span>Tiempo al cruce</span><strong id="timeToIntercept">—</strong></div>
       <div><span>GameController</span><strong id="gameState">—</strong></div>
       <div><span>Localización</span><strong id="localizationState">—</strong></div>
+      <div><span>Diagnóstico</span><strong id="predictionReason">—</strong></div>
     </section>
 
     <details id="help" class="help panel">
@@ -89,7 +90,11 @@
           <div><dt>Residual</dt><dd id="residual">—</dd></div>
           <div><dt>Muestras</dt><dd id="sampleCount">—</dd></div>
           <div><dt>Punto de cruce</dt><dd id="interceptPoint">—</dd></div>
+          <div><dt>Confianza del balón</dt><dd id="ballConfidence">—</dd></div>
+          <div><dt>Pose del robot</dt><dd id="robotPose">—</dd></div>
         </dl>
+        <a class="secondary log-download" href="/api/log/download">Descargar log JSONL</a>
+        <p id="logPath" class="notice">Esperando ruta del registro.</p>
         <p class="notice">Los cambios en vivo pueden modificar el movimiento del robot. Prueba con el área despejada.</p>
       </aside>
 
@@ -101,6 +106,13 @@
         <nav id="tabs"></nav>
         <form id="parameters"></form>
       </section>
+    </section>
+    <section class="panel telemetry-panel">
+      <div class="toolbar"><div><h2>Eventos recientes</h2><p>Historial del predictor para diagnóstico.</p></div></div>
+      <div class="telemetry-scroll">
+        <table><thead><tr><th>Hora</th><th>Decisión</th><th>Razón</th><th>Muestras</th><th>Velocidad</th><th>R²</th><th>Residual</th></tr></thead>
+        <tbody id="telemetryRows"></tbody></table>
+      </div>
     </section>
   </main>
   <div id="toast" role="status"></div>

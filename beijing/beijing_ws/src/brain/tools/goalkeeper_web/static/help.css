@@ -39,6 +39,12 @@
 .control > code { display: block; margin-top: 4px; }
 .control > p { margin-top: 4px; }
 
+.telemetry-panel { margin: 0 28px 40px; padding: 22px; }
+.telemetry-scroll { overflow: auto; max-height: 24rem; margin-top: 14px; }
+.telemetry-panel table { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.telemetry-panel th, .telemetry-panel td { padding: .55rem; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.log-download { display: inline-block; margin-top: .75rem; padding: 9px 12px; border-radius: 9px; background: #243632; color: var(--text); text-decoration: none; font-weight: 800; }
+
 @media (max-width: 900px) {
   .header-actions { align-items: flex-end; flex-direction: column; }
   .help-recipes, .movement-grid, .help-table { grid-template-columns: 1fr; }

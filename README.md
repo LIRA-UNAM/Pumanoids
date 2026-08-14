@@ -21,6 +21,11 @@
 > - [Configuración actual del robot y red](./beijing/README.md#configuración-actual-del-robot-y-la-red)
 > - [Manual completo de GUI y predicción](./Documentation/Goalkeeper/PORTERO_GUI_PREDICCION.md)
 > - [Manifiesto detallado de implementación](./Documentation/Goalkeeper/IMPLEMENTACION_PORTERO_MANIFIESTO.md)
+>
+> Prueba local sin GameController: `beijing/scripts/start_goalkeeper_lab.sh
+> left`. Requiere confirmación `ARMAR`, localiza, coloca al portero y abre la
+> GUI en el puerto 8088. La telemetría se guarda en
+> `beijing/goalkeeper_logs/*.jsonl` para diagnóstico posterior.
 
 <div align="center">
     <h4>

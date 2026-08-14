@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+from collections import deque
+from datetime import datetime, timezone
 import json
 import math
 import os
@@ -192,13 +194,18 @@ class ParameterTransport:
 
 
 class GoalkeeperBridge(Node):
-    def __init__(self, target_node: str):
+    def __init__(self, target_node: str, log_dir: pathlib.Path):
         super().__init__("goalkeeper_web_bridge")
         self.target_node = target_node
         self.client = AsyncParameterClient(self, target_node)
         self.parameter_lock = threading.RLock()
         self.status_lock = threading.Lock()
         self.status: dict[str, Any] = {"connected": False, "decision": "sin datos"}
+        self.telemetry = deque(maxlen=2000)
+        log_dir.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.log_path = log_dir / f"goalkeeper_telemetry_{stamp}.jsonl"
+        self.log_file = self.log_path.open("a", encoding="utf-8", buffering=1)
         qos = QoSProfile(history=HistoryPolicy.KEEP_LAST, depth=1,
                          reliability=ReliabilityPolicy.RELIABLE,
                          durability=DurabilityPolicy.TRANSIENT_LOCAL)
@@ -211,8 +218,11 @@ class GoalkeeperBridge(Node):
             decoded = {"raw": msg.data}
         decoded["connected"] = True
         decoded["received_at"] = time.time()
+        decoded["received_at_iso"] = datetime.now(timezone.utc).isoformat()
         with self.status_lock:
             self.status = decoded
+            self.telemetry.append(dict(decoded))
+            self.log_file.write(json.dumps(decoded, ensure_ascii=False) + "\n")
 
     def snapshot(self) -> dict[str, Any]:
         with self.status_lock:
@@ -221,7 +231,12 @@ class GoalkeeperBridge(Node):
             result["connected"] = False
         return result
 
+    def telemetry_snapshot(self, limit: int = 200) -> list[dict[str, Any]]:
+        with self.status_lock:
+            return list(self.telemetry)[-max(1, min(limit, 2000)):]
+
     def close(self) -> None:
+        self.log_file.close()
         self.destroy_node()
         rclpy.shutdown()
 
@@ -390,6 +405,27 @@ class ApiHandler(SimpleHTTPRequestHandler):
                 return self._json(200, {"values": self.bridge.read_values()})
             if self.path == "/api/status":
                 return self._json(200, self.bridge.snapshot())
+            if self.path.startswith("/api/telemetry"):
+                try:
+                    limit = int(self.path.partition("limit=")[2] or "200")
+                except ValueError:
+                    limit = 200
+                return self._json(200, {
+                    "events": self.bridge.telemetry_snapshot(limit),
+                    "log_file": str(self.bridge.log_path),
+                })
+            if self.path == "/api/log/download":
+                path = self.bridge.log_path
+                data = path.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/x-ndjson")
+                self.send_header(
+                    "Content-Disposition", f'attachment; filename="{path.name}"')
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                self.wfile.write(data)
+                return
         except Exception as exc:
             return self._json(503, {"error": str(exc)})
         return super().do_GET()
@@ -431,13 +467,17 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=8088)
     parser.add_argument("--node", default="/brain_node")
     parser.add_argument("--config", action="append", default=[])
+    parser.add_argument(
+        "--log-dir", default="goalkeeper_logs",
+        help="Directorio para telemetria JSONL persistente")
     args = parser.parse_args()
 
     if rclpy is None:
         raise RuntimeError(
             "rclpy no está disponible; ejecute después de source install/setup.bash")
     rclpy.init()
-    bridge = GoalkeeperBridge(args.node)
+    bridge = GoalkeeperBridge(
+        args.node, pathlib.Path(args.log_dir).expanduser().resolve())
     spin_thread = threading.Thread(target=rclpy.spin, args=(bridge,), daemon=True)
     spin_thread.start()
 
@@ -447,6 +487,7 @@ def main() -> None:
         pathlib.Path(item).expanduser().resolve() for item in args.config))
     server = ThreadingHTTPServer((args.host, args.port), ApiHandler)
     print(f"Goalkeeper web panel: http://{args.host}:{args.port}")
+    print(f"Goalkeeper telemetry log: {bridge.log_path}")
     try:
         server.serve_forever()
     finally:

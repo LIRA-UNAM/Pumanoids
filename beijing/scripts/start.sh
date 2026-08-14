@@ -37,10 +37,23 @@ nohup ros2 launch vision launch.py save_data:=true > vision.log 2>&1 &
 # nohup ros2 run ros2_sync_package sync_node > sync_node.log 2>&1 &
 # nohup sh src/vision_segmentation/run.sh > vision_segmentation.log 2>&1 &
 echo "[START BRAIN]"
-nohup ros2 launch brain launch.py "$@" > brain.log 2>&1 &
+BRAIN_ARGS=()
+START_GAME_CONTROLLER=true
+for arg in "$@"; do
+  if [ "${arg}" = "no_game_controller:=true" ]; then
+    START_GAME_CONTROLLER=false
+  else
+    BRAIN_ARGS+=("${arg}")
+  fi
+done
+nohup ros2 launch brain launch.py "${BRAIN_ARGS[@]}" > brain.log 2>&1 &
 # nohup ros2 launch brain launch.py "$@"  > brain.log 2>&1 &
 echo "[START GAME_CONTROLLER]"
-nohup ros2 launch game_controller launch.py > game_controller.log 2>&1 &
+if [ "${START_GAME_CONTROLLER}" = true ]; then
+  nohup ros2 launch game_controller launch.py > game_controller.log 2>&1 &
+else
+  echo "[SKIP GAME_CONTROLLER: laboratory mode]"
+fi
 echo "[START GOALKEEPER WEB PANEL]"
 bash ./scripts/start_goalkeeper_web.sh
 #echo "[START SOUND]"

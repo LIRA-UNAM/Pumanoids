@@ -4855,6 +4855,8 @@ void Brain::updateBallPrediction()
         data->ballPredictionSpeed = 0.0;
         data->ballTimeToIntercept = 0.0;
         data->ballPredictionSampleCount = 0;
+        data->ballPredictionReason = !enabled
+            ? "disabled" : "localization_required";
         return;
     }
 
@@ -4924,6 +4926,7 @@ void Brain::updateBallPrediction()
 
     const auto prediction = goalkeeper_prediction::predict(
         observations, predictionConfig);
+    data->ballPredictionReason = prediction.reason;
 
     data->ballPredictionValid = prediction.valid;
     data->ballMovingTowardOwnGoal = prediction.movingTowardOwnGoal;
@@ -5024,11 +5027,17 @@ void Brain::publishGoalkeeperStatus()
                    ? "true" : "false")
            << ",\"prediction_valid\":"
            << (data->ballPredictionValid ? "true" : "false")
+           << ",\"prediction_reason\":\""
+           << data->ballPredictionReason << "\""
            << ",\"threatens_goal\":"
            << (data->ballWillBreach ? "true" : "false")
            << ",\"ball_detected\":"
            << (data->ballDetected ? "true" : "false")
            << ",\"ball_range\":" << data->ball.range
+           << ",\"ball_confidence\":" << data->ball.confidence
+           << ",\"robot_x\":" << data->robotPoseToField.x
+           << ",\"robot_y\":" << data->robotPoseToField.y
+           << ",\"robot_theta\":" << data->robotPoseToField.theta
            << ",\"velocity_x\":" << data->ballVelocityX
            << ",\"velocity_y\":" << data->ballVelocityY
            << ",\"speed\":" << data->ballPredictionSpeed

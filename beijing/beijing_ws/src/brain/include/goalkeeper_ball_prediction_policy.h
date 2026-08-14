@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstddef>
 #include <limits>
+#include <string>
 #include <vector>
 
 namespace goalkeeper_prediction {
@@ -40,6 +41,7 @@ struct Result
     bool movingTowardOwnGoal = false;
     bool willReachBlockLine = false;
     bool threatensGoal = false;
+    std::string reason = "insufficient_samples";
     double velocityX = 0.0;
     double velocityY = 0.0;
     double speed = 0.0;
@@ -164,6 +166,7 @@ inline Result predict(const std::vector<Observation> &observations,
     const double lastTime = observations.back().timeSec;
     if (!std::isfinite(firstTime) || !std::isfinite(lastTime) ||
         lastTime - firstTime < config.minSpanSec) {
+        result.reason = "insufficient_span";
         return result;
     }
 
@@ -176,6 +179,7 @@ inline Result predict(const std::vector<Observation> &observations,
     for (const auto &observation : observations) {
         if (!std::isfinite(observation.timeSec) ||
             !std::isfinite(observation.x) || !std::isfinite(observation.y)) {
+            result.reason = "invalid_observation";
             return result;
         }
         time.push_back(observation.timeSec - lastTime);
@@ -200,24 +204,42 @@ inline Result predict(const std::vector<Observation> &observations,
     result.residualRms = std::sqrt(
         (fitX.residualSquared + fitY.residualSquared) / weightSum);
 
-    result.valid = result.speed >= config.minSpeed &&
-        fitX.rSquared >= config.minRSquared &&
-        result.residualRms <= config.maxResidual;
-    if (!result.valid) return result;
+    if (result.speed < config.minSpeed) {
+        result.reason = "speed_below_minimum";
+        return result;
+    }
+    if (fitX.rSquared < config.minRSquared) {
+        result.reason = "r_squared_below_minimum";
+        return result;
+    }
+    if (result.residualRms > config.maxResidual) {
+        result.reason = "residual_above_maximum";
+        return result;
+    }
+    result.valid = true;
 
     result.movingTowardOwnGoal =
         result.velocityX <= -std::abs(config.minTowardGoalSpeed);
-    if (!result.movingTowardOwnGoal) return result;
+    if (!result.movingTowardOwnGoal) {
+        result.reason = "not_toward_own_goal";
+        return result;
+    }
 
     const Observation &latest = observations.back();
     const double unitX = result.velocityX / result.speed;
     const double unitY = result.velocityY / result.speed;
-    if (unitX >= -1e-9 || latest.x <= config.blockLineX) return result;
+    if (unitX >= -1e-9 || latest.x <= config.blockLineX) {
+        result.reason = "already_past_block_line";
+        return result;
+    }
 
     const double travelToLine = (config.blockLineX - latest.x) / unitX;
     result.timeToBlock = detail::timeForDistance(
         result.speed, std::max(0.0, config.deceleration), travelToLine);
-    if (!std::isfinite(result.timeToBlock)) return result;
+    if (!std::isfinite(result.timeToBlock)) {
+        result.reason = "stops_before_block_line";
+        return result;
+    }
 
     result.willReachBlockLine = true;
     result.interceptX = config.blockLineX;
@@ -227,6 +249,15 @@ inline Result predict(const std::vector<Observation> &observations,
         result.timeToBlock <= config.maxTimeToBlock &&
         std::abs(result.interceptY) <=
             config.goalHalfWidth + std::max(0.0, config.goalMargin);
+    if (result.timeToBlock < config.minTimeToBlock ||
+        result.timeToBlock > config.maxTimeToBlock) {
+        result.reason = "time_outside_window";
+    } else if (std::abs(result.interceptY) >
+               config.goalHalfWidth + std::max(0.0, config.goalMargin)) {
+        result.reason = "outside_goal";
+    } else {
+        result.reason = "threat_detected";
+    }
 
     const double stepSec = std::max(0.01, config.stepSec);
     for (std::size_t i = 1; i <= config.stepCount; ++i) {

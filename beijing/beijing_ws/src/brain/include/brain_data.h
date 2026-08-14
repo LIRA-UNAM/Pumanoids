@@ -165,6 +165,7 @@ public:
     bool goalkeeperPredictionRequireLocalization = true;
     bool ballPredictionValid = false;
     bool ballMovingTowardOwnGoal = false;
+    string ballPredictionReason = "initializing";
     string goalkeeperDecision = "initializing";
 
     // Robots

@@ -18,6 +18,7 @@ from typing import Any
 class FakeBridge:
     def __init__(self, schema: dict[str, dict[str, Any]]):
         self.values = {name: spec["default"] for name, spec in schema.items()}
+        self.log_path = pathlib.Path("fake_goalkeeper_telemetry.jsonl")
 
     def snapshot(self) -> dict[str, Any]:
         return {
@@ -30,6 +31,13 @@ class FakeBridge:
 
     def read_values(self) -> dict[str, Any]:
         return dict(self.values)
+
+    def telemetry_snapshot(self, limit: int = 200) -> list[dict[str, Any]]:
+        return [{
+            "decision": "block_shot",
+            "prediction_reason": "threat_detected",
+            "sample_count": 7,
+        }][-limit:]
 
     def apply_values(self, values: dict[str, Any]) -> list[str]:
         self.values.update(values)
@@ -85,6 +93,9 @@ def main() -> None:
             assert factory["values"]["goalkeeper.mode"] == "attack"
             assert factory["values"]["goalkeeper.kick.type"] == "default"
             assert factory["values"]["goalkeeper.prediction.enabled"] is False
+            status, telemetry = request(base, "/api/telemetry?limit=10")
+            assert status == 200
+            assert telemetry["events"][0]["prediction_reason"] == "threat_detected"
             connection = http.client.HTTPConnection(*base, timeout=3)
             connection.request("GET", "/")
             page = connection.getresponse()
