@@ -57,6 +57,10 @@
 .field-2d.threat { box-shadow: inset 0 0 0 4px #ff4e49, 0 0 24px #ff4e4966; }
 .field-2d .hidden { display: none; }
 #predictionState.critical { color: var(--red); }
+#reactionStage.critical { color: var(--red); font-weight: 850; }
+.status-panel > h3 { margin: 22px 0 6px; color: var(--cyan); font-size: 15px; }
+.status-panel > h3 + .notice { margin-top: 8px; }
+.reaction-diagnostics { margin-top: 10px; }
 
 @media (max-width: 900px) {
   .header-actions { align-items: flex-end; flex-direction: column; }

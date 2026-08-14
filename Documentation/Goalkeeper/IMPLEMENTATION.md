@@ -10,8 +10,8 @@
 
 ## Implementación
 
-- `brain.cpp`: parámetros, historial de observaciones, predictor, topics y
-  entidades Rerun.
+- `brain.cpp`: parámetros, historial de observaciones, predictor, topics,
+  entidades Rerun y correlación decisión-comando-odometría.
 - `brain_tree.cpp`: decisiones dinámicas, selector de patada y acción
   `GoalkeeperBlockShot`.
 - `goalkeeper_ball_prediction_policy.h`: regresión ponderada, controles de
@@ -71,6 +71,8 @@ Booster; por eso debe ejecutarse el preflight en el robot.
 5. Sin localización calibrada, el predictor no ordena movimiento con el perfil
    seguro.
 6. La prueba en suelo valida el sentido lateral antes de elevar velocidades.
+7. La GUI distingue espera de Brain (`waiting_command`) de espera física
+   (`waiting_motion`) y registra los tiempos resultantes en JSONL.
 
 ## Reversión
 

@@ -127,6 +127,21 @@ de marcha. `reaction_margin_sec` no retrasa la detección: reserva tiempo y hace
 que el comando lateral llegue antes al límite cuando el cruce es inminente.
 `activation_hold_msec` evita perder el bloqueo por una detección intermitente.
 
+La demora general del portero se mide aparte del predictor. La sección
+**Cadena de reacción** correlaciona:
+
+```text
+última medición del balón -> cambio de decisión -> comando de velocidad
+-> desplazamiento confirmado por odometría
+```
+
+`Decisión -> comando` identifica espera dentro de Brain/árbol;
+`Comando -> movimiento` mide el arranque físico de la marcha del T2, usando
+como confirmación 15 mm de traslación o 0.02 rad de giro. También se muestran
+el comando solicitado, el realmente enviado después de límites/protecciones,
+la velocidad de odometría, liderazgo, coste y permiso para reclamar el balón.
+Estas métricas funcionan con `prediction.enabled=false`.
+
 La rama de ataque es reactiva: `block_shot` puede interrumpir `chase`, `adjust`
 o `kick`. Al terminar la amenaza, `post_block_claim_msec` mantiene durante un
 intervalo corto el derecho del portero a reclamar un balón cercano; el flujo
@@ -146,6 +161,17 @@ cambio de parámetros aplicado desde la GUI en un archivo JSON Lines. Cada líne
 incluye fecha UTC, decisión, razón de aceptación
 o rechazo del predictor, detección y confianza del balón, pose del robot,
 velocidad estimada, R², residual, muestras y punto/tiempo de intercepción.
+Además registra edades de percepción/decisión, etapa de reacción, comandos
+solicitados/enviados, velocidad de odometría, permiso de reclamación y las
+latencias decisión-comando-movimiento.
+
+Etapas de reacción:
+
+- `waiting_command`: el árbol cambió de decisión pero aún no emitió marcha;
+- `waiting_motion`: el comando salió y se espera desplazamiento físico;
+- `moving`: odometría confirmó la respuesta;
+- `command_stopped_before_motion`: el comando terminó sin movimiento medible;
+- `stopped`: hubo movimiento y posteriormente terminó.
 
 La GUI muestra los últimos 40 eventos y permite descargar el registro. En el
 robot los archivos se guardan en:

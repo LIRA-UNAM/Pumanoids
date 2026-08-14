@@ -5,11 +5,13 @@
 Esta rama se creó desde `beijing_demo` para probar el portero configurable en
 el Booster T2. Mantiene el demo de Beijing y agrega:
 
-- panel web en `http://IP_DEL_ROBOT:8088` con 93 parámetros;
+- panel web en `http://IP_DEL_ROBOT:8088` con 94 parámetros;
 - aplicación temporal o persistente de parámetros ROS 2;
 - restauración del perfil original protegido;
 - selector entre Kick convencional y VisualKick;
 - predictor de trayectoria y comportamiento `block_shot`;
+- medición de latencia decisión → comando → movimiento físico, aun con el
+  predictor desactivado;
 - estado por topics ROS y trayectoria/punto de cruce en Rerun.
 
 El comportamiento seguro/original queda seleccionado inicialmente:

@@ -20,6 +20,28 @@ function format(value, digits = 2) {
   return Number.isFinite(Number(value)) ? Number(value).toFixed(digits) : "—";
 }
 
+function formatMs(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric >= 0 ? `${numeric.toFixed(0)} ms` : "—";
+}
+
+function motionVector(x, y, theta) {
+  return `(${format(x)}, ${format(y)}, ${format(theta)})`;
+}
+
+const REACTION_STAGES = {
+  idle: "sin decisión de movimiento",
+  waiting_command: "decidió · esperando comando",
+  waiting_motion: "comando enviado · esperando movimiento",
+  moving: "movimiento confirmado",
+  stopped: "movimiento finalizado",
+  command_stopped_before_motion: "ALERTA · comando terminó sin movimiento"
+};
+
+function reactionStageLabel(stage) {
+  return REACTION_STAGES[stage] || stage || "—";
+}
+
 function displayValue(value, spec) {
   if (spec.type === "boolean") return value ? "Activado" : "Desactivado";
   return `${value}${spec.unit ? ` ${spec.unit}` : ""}`;
@@ -237,6 +259,29 @@ function statusView(status) {
   $("localizationState").textContent = status.localization_ready ? "lista" : status.localization_required ? "no calibrada" : "no requerida";
   $("predictionReason").textContent = reasonLabel(status.prediction_reason);
   $("ballDetected").textContent = status.ball_detected ? "detectado" : "no detectado";
+  $("reactionStage").textContent = reactionStageLabel(status.reaction_stage);
+  $("reactionStage").classList.toggle("critical", status.reaction_stage === "command_stopped_before_motion");
+  $("ballMeasurementAge").textContent = formatMs(status.ball_measurement_age_msec);
+  $("decisionAge").textContent = formatMs(status.decision_age_msec);
+  $("decisionInputAge").textContent = formatMs(status.decision_input_age_msec);
+  $("decisionToCommand").textContent = formatMs(status.decision_to_command_msec);
+  $("commandToMotion").textContent = formatMs(status.command_to_motion_msec);
+  $("decisionToMotion").textContent = formatMs(status.decision_to_motion_msec);
+  $("commandRequested").textContent = motionVector(status.command_requested_x, status.command_requested_y, status.command_requested_theta);
+  $("commandSent").textContent = motionVector(status.command_sent_x, status.command_sent_y, status.command_sent_theta);
+  $("commandAge").textContent = formatMs(status.command_age_msec);
+  $("odomVelocity").textContent = motionVector(status.odom_velocity_x, status.odom_velocity_y, status.odom_velocity_theta);
+  $("odomSpeed").textContent = Number.isFinite(Number(status.odom_speed)) ? `${format(status.odom_speed)} m/s` : "—";
+  $("ballKnown").textContent = typeof status.ball_location_known === "boolean"
+    ? status.ball_location_known ? status.ball_detected ? "visible ahora" : "posición recordada" : "desconocida"
+    : "—";
+  $("claimState").textContent = typeof status.goalkeeper_may_claim === "boolean"
+    ? status.goalkeeper_may_claim ? `sí (≤ ${format(status.claim_max_ball_range)} m)` : `no (umbral ${format(status.claim_max_ball_range)} m)`
+    : "—";
+  $("claimCost").textContent = Number.isFinite(Number(status.claim_cost))
+    ? `${format(status.claim_cost)} / ${format(status.claim_max_cost)}` : "—";
+  $("teamLead").textContent = typeof status.team_lead === "boolean" ? status.team_lead ? "sí" : "no" : "—";
+  $("goalkeeperMode").textContent = status.goalkeeper_mode || "—";
   const fitted = Boolean(status.fit_computed);
   $("speed").textContent = fitted ? `${format(status.speed)} m/s` : "—";
   $("velocity").textContent = fitted ? `(${format(status.velocity_x)}, ${format(status.velocity_y)})` : "—";
@@ -323,9 +368,12 @@ async function updateTelemetry() {
     [...result.events].reverse().forEach(event => {
       const row = document.createElement("tr");
       const stamp = event.received_at_iso ? new Date(event.received_at_iso).toLocaleTimeString() : "—";
-      [stamp, event.decision || "—", reasonLabel(event.prediction_reason),
-       event.sample_count ?? "—", format(event.speed), format(event.r_squared, 3),
-       format(event.residual, 3)].forEach(value => {
+      [stamp, event.decision || "—", reactionStageLabel(event.reaction_stage),
+       formatMs(event.decision_to_command_msec), formatMs(event.command_to_motion_msec),
+       motionVector(event.command_sent_x, event.command_sent_y, event.command_sent_theta),
+       Number.isFinite(Number(event.odom_speed)) ? `${format(event.odom_speed)} m/s` : "—",
+       event.goalkeeper_may_claim ? "sí" : "no",
+       reasonLabel(event.prediction_reason), event.sample_count ?? "—"].forEach(value => {
         const cell = document.createElement("td");
         cell.textContent = value;
         row.appendChild(cell);

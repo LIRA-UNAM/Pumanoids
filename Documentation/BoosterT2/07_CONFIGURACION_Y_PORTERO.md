@@ -374,7 +374,7 @@ mayores que máximas y tiempo mínimo de bloqueo no mayor que máximo.
 
 ### Restaurar el comportamiento original
 
-`tools/goalkeeper_web/factory_defaults.json` conserva el perfil protegido de 93
+`tools/goalkeeper_web/factory_defaults.json` conserva el perfil protegido de 94
 parámetros. No se sobrescribe al guardar ajustes locales.
 
 1. abra **Ayuda y restauración**;
@@ -401,7 +401,10 @@ ros2 topic echo /brain/goalkeeper/status
 ```
 
 El status JSON incluye decisión, kick, flags del predictor, localización,
-calidad, muestras, velocidad, cruce y estado GameController. Se publica con QoS
+calidad, muestras, velocidad, cruce y estado GameController. La sección
+**Cadena de reacción** añade comandos solicitado/enviado, velocidad física por
+odometría, permiso de reclamación y latencias decisión-comando-movimiento; no
+depende de que el predictor esté activo. Se publica con QoS
 reliable/transient-local, por lo que un visor nuevo recibe el estado reciente.
 
 Rerun:

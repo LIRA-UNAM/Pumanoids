@@ -89,6 +89,28 @@
           <g id="robotMarker" class="robot-marker"><circle r="10"/><line x1="0" y1="0" x2="20" y2="0"/></g>
           <circle id="interceptMarker" class="intercept-marker" r="9" />
         </svg>
+        <h3>Cadena de reacción (independiente del predictor)</h3>
+        <p class="notice">Mide cuándo cambia la decisión, cuándo Brain envía movimiento y cuándo la odometría confirma que el T2 comenzó a desplazarse.</p>
+        <dl class="reaction-diagnostics">
+          <div><dt>Etapa actual</dt><dd id="reactionStage">—</dd></div>
+          <div><dt>Edad de medición del balón</dt><dd id="ballMeasurementAge">—</dd></div>
+          <div><dt>Edad de la decisión</dt><dd id="decisionAge">—</dd></div>
+          <div><dt>Dato usado al decidir</dt><dd id="decisionInputAge">—</dd></div>
+          <div><dt>Decisión → comando</dt><dd id="decisionToCommand">—</dd></div>
+          <div><dt>Comando → movimiento</dt><dd id="commandToMotion">—</dd></div>
+          <div><dt>Decisión → movimiento</dt><dd id="decisionToMotion">—</dd></div>
+          <div><dt>Comando solicitado</dt><dd id="commandRequested">—</dd></div>
+          <div><dt>Comando enviado</dt><dd id="commandSent">—</dd></div>
+          <div><dt>Edad del comando</dt><dd id="commandAge">—</dd></div>
+          <div><dt>Velocidad por odometría</dt><dd id="odomVelocity">—</dd></div>
+          <div><dt>Rapidez física</dt><dd id="odomSpeed">—</dd></div>
+          <div><dt>Memoria del balón</dt><dd id="ballKnown">—</dd></div>
+          <div><dt>Puede reclamar balón</dt><dd id="claimState">—</dd></div>
+          <div><dt>Coste de reclamación</dt><dd id="claimCost">—</dd></div>
+          <div><dt>Líder del equipo</dt><dd id="teamLead">—</dd></div>
+          <div><dt>Modo del portero</dt><dd id="goalkeeperMode">—</dd></div>
+        </dl>
+        <h3>Predictor de trayectoria</h3>
         <dl>
           <div><dt>Balón</dt><dd id="ballDetected">—</dd></div>
           <div><dt>Velocidad</dt><dd id="speed">—</dd></div>
@@ -121,9 +143,9 @@
       </section>
     </section>
     <section class="panel telemetry-panel">
-      <div class="toolbar"><div><h2>Eventos recientes</h2><p>Historial del predictor para diagnóstico.</p></div></div>
+      <div class="toolbar"><div><h2>Eventos recientes</h2><p>Historial de decisiones, comandos, movimiento físico y predictor.</p></div></div>
       <div class="telemetry-scroll">
-        <table><thead><tr><th>Hora</th><th>Decisión</th><th>Razón</th><th>Muestras</th><th>Velocidad</th><th>R²</th><th>Residual</th></tr></thead>
+        <table><thead><tr><th>Hora</th><th>Decisión</th><th>Etapa</th><th>Decisión→cmd</th><th>Cmd→mov.</th><th>Cmd enviado</th><th>Odom</th><th>Puede reclamar</th><th>Razón predictor</th><th>Muestras</th></tr></thead>
         <tbody id="telemetryRows"></tbody></table>
       </div>
     </section>

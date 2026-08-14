@@ -152,6 +152,11 @@ public:
     // Update the predicted ball trajectory.
     void updateBallPrediction();
 
+    // Correlate behavior decisions, outgoing velocity commands, and odometry
+    // so goalkeeper reaction latency can be diagnosed independently of the
+    // ball predictor.
+    void updateGoalkeeperReactionDiagnostics();
+
     // Publish the goalkeeper state and prediction as ROS 2 diagnostic topics.
     void publishGoalkeeperStatus();
 
@@ -467,6 +472,31 @@ private:
     std::mutex goalkeeperPredictionMutex_;
     rclcpp::Time goalkeeperLastThreatTime_;
     rclcpp::Time goalkeeperLastStatusPublishTime_;
+
+    // Goalkeeper reaction pipeline diagnostics. A response starts when the
+    // behavior-tree decision changes, records the first non-zero command, and
+    // finishes after odometry confirms a small physical displacement.
+    std::string goalkeeperReactionDecision_ = "initializing";
+    std::string goalkeeperReactionStage_ = "idle";
+    rclcpp::Time goalkeeperReactionDecisionAt_;
+    rclcpp::Time goalkeeperReactionCommandAt_;
+    rclcpp::Time goalkeeperReactionMotionAt_;
+    double goalkeeperReactionDecisionInputAgeMs_ = -1.0;
+    double goalkeeperReactionCommandDelayMs_ = -1.0;
+    double goalkeeperReactionMotionDelayMs_ = -1.0;
+    double goalkeeperReactionTotalDelayMs_ = -1.0;
+    Pose2D goalkeeperReactionCommandStartOdomPose_ = {};
+    bool goalkeeperReactionCommandStartPoseValid_ = false;
+
+    // Smoothed odometry velocity for live diagnostics. The displacement gate
+    // above, rather than this noisy derivative, confirms motion onset.
+    Pose2D goalkeeperPreviousOdomPose_ = {};
+    rclcpp::Time goalkeeperPreviousOdomTime_;
+    bool goalkeeperPreviousOdomValid_ = false;
+    double goalkeeperOdomVx_ = 0.0;
+    double goalkeeperOdomVy_ = 0.0;
+    double goalkeeperOdomVtheta_ = 0.0;
+    double goalkeeperOdomSpeed_ = 0.0;
 
     // ------------------------------------------------------ Diagnostic logging ------------------------------------------------------
     void logObstacleDistance();

@@ -43,6 +43,7 @@ workspace, cualquier análisis del código actual será engañoso.
 | No localiza | líneas, marcas, pose de cabeza, field type | Menos de 4 marcas, residual >0.4, mala extrínseca, mapa incorrecto, timestamps. |
 | Rerun vacío | `.rrd`, flags, conexión 9876 | logging desactivado, Viewer incompatible, firewall/ruta, panel sin entidades. |
 | Portero no bloquea lateral | status del predictor y decisión | predictor off, localización requerida, velocidad/dirección/calidad inválida, cruce fuera del gol. |
+| Portero sale tarde o no inicia marcha | `reaction_stage`, comando enviado, odometría, permiso de reclamación | umbral de reclamación 1.5 m, no es líder, coste/zona inválidos, árbol no envió comando o arranque físico tardío. |
 | Patada visual no inicia | kick type, estado SDK, protección | `default` activo, VisualKick no disponible, robot caído/obstáculo, rango/timing. |
 
 ## GameController
@@ -97,6 +98,25 @@ original. Para el portero de esta rama:
 ros2 topic echo /brain/goalkeeper/decision
 ros2 topic echo /brain/goalkeeper/status
 ```
+
+Para separar el retardo sin depender del predictor, observe en el status:
+
+```text
+ball_measurement_age_msec
+decision_input_age_msec
+reaction_stage
+decision_to_command_msec
+command_to_motion_msec
+decision_to_motion_msec
+command_requested_*
+command_sent_*
+odom_velocity_* / odom_speed
+goalkeeper_may_claim / team_lead / claim_cost
+```
+
+`waiting_command` apunta a lógica/árbol; `waiting_motion` apunta a la cadena de
+locomoción o al arranque físico. `command_stopped_before_motion` significa que
+Brain dejó de ordenar marcha sin que la odometría confirmara 15 mm o 0.02 rad.
 
 Para el árbol general, añada logging de transición de BehaviorTree.CPP o
 publique explícitamente el blackboard si necesita telemetría; no confunda el

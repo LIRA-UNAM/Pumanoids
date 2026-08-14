@@ -1288,6 +1288,7 @@ void Brain::tick()
     if (goalkeeperMode != "guard") goalkeeperMode = "attack";
     tree->setEntry<string>("goalie_mode", goalkeeperMode);
     tree->tick();
+    updateGoalkeeperReactionDiagnostics();
     publishGoalkeeperStatus();
     refreshTeamCommunicationSnapshot();
 }
@@ -5027,6 +5028,86 @@ void Brain::updateBallPrediction()
     }
 }
 
+void Brain::updateGoalkeeperReactionDiagnostics()
+{
+    const auto now = get_clock()->now();
+    const auto elapsedMs = [](const rclcpp::Time &from,
+                              const rclcpp::Time &to) -> double {
+        if (from.nanoseconds() <= 0 || to.nanoseconds() <= 0 ||
+            from.get_clock_type() != to.get_clock_type()) return -1.0;
+        return std::max(0.0, (to - from).seconds() * 1000.0);
+    };
+
+    const std::string decision = data->goalkeeperDecision;
+    if (decision != goalkeeperReactionDecision_) {
+        goalkeeperReactionDecision_ = decision;
+        goalkeeperReactionDecisionAt_ = now;
+        goalkeeperReactionCommandAt_ = rclcpp::Time(0, 0, now.get_clock_type());
+        goalkeeperReactionMotionAt_ = rclcpp::Time(0, 0, now.get_clock_type());
+        goalkeeperReactionCommandDelayMs_ = -1.0;
+        goalkeeperReactionMotionDelayMs_ = -1.0;
+        goalkeeperReactionTotalDelayMs_ = -1.0;
+        goalkeeperReactionCommandStartPoseValid_ = false;
+        goalkeeperReactionStage_ = "waiting_command";
+
+        goalkeeperReactionDecisionInputAgeMs_ =
+            data->ballDetected && data->ball.timePoint.nanoseconds() > 0 &&
+                    data->ball.timePoint.get_clock_type() == now.get_clock_type()
+                ? elapsedMs(data->ball.timePoint, now)
+                : -1.0;
+    }
+
+    const auto velocity = client->lastVelocityCommand();
+    const double sentMotionMagnitude = std::max(
+        std::hypot(velocity.sentX, velocity.sentY),
+        std::abs(velocity.sentTheta) * 0.25);
+    const bool commandIsNewForDecision =
+        velocity.time.nanoseconds() > 0 &&
+        goalkeeperReactionDecisionAt_.nanoseconds() > 0 &&
+        velocity.time.get_clock_type() ==
+            goalkeeperReactionDecisionAt_.get_clock_type() &&
+        velocity.time.nanoseconds() >=
+            goalkeeperReactionDecisionAt_.nanoseconds();
+
+    if (goalkeeperReactionStage_ == "waiting_command" &&
+        commandIsNewForDecision && sentMotionMagnitude >= 0.05) {
+        goalkeeperReactionCommandAt_ = velocity.time;
+        goalkeeperReactionCommandDelayMs_ = elapsedMs(
+            goalkeeperReactionDecisionAt_, goalkeeperReactionCommandAt_);
+        goalkeeperReactionCommandStartOdomPose_ = data->robotPoseToOdom;
+        goalkeeperReactionCommandStartPoseValid_ = true;
+        goalkeeperReactionStage_ = "waiting_motion";
+    }
+
+    if (goalkeeperReactionStage_ == "waiting_motion" &&
+        goalkeeperReactionCommandStartPoseValid_) {
+        const double displacement = std::hypot(
+            data->robotPoseToOdom.x -
+                goalkeeperReactionCommandStartOdomPose_.x,
+            data->robotPoseToOdom.y -
+                goalkeeperReactionCommandStartOdomPose_.y);
+        const double rotation = std::abs(toPInPI(
+            data->robotPoseToOdom.theta -
+            goalkeeperReactionCommandStartOdomPose_.theta));
+        // A 15 mm or 0.02 rad gate is large enough to reject normal odometer
+        // noise but small enough to reveal T2 gait-start latency.
+        if (displacement >= 0.015 || rotation >= 0.02) {
+            goalkeeperReactionMotionAt_ = now;
+            goalkeeperReactionMotionDelayMs_ = elapsedMs(
+                goalkeeperReactionCommandAt_, goalkeeperReactionMotionAt_);
+            goalkeeperReactionTotalDelayMs_ = elapsedMs(
+                goalkeeperReactionDecisionAt_, goalkeeperReactionMotionAt_);
+            goalkeeperReactionStage_ = "moving";
+        } else if (commandIsNewForDecision && sentMotionMagnitude < 0.05 &&
+                   elapsedMs(goalkeeperReactionCommandAt_, now) > 500.0) {
+            goalkeeperReactionStage_ = "command_stopped_before_motion";
+        }
+    } else if (goalkeeperReactionStage_ == "moving" &&
+               commandIsNewForDecision && sentMotionMagnitude < 0.05) {
+        goalkeeperReactionStage_ = "stopped";
+    }
+}
+
 void Brain::publishGoalkeeperStatus()
 {
     if (!goalkeeperStatusPublisher_ || !goalkeeperDecisionPublisher_) return;
@@ -5040,10 +5121,47 @@ void Brain::publishGoalkeeperStatus()
     goalkeeperDecisionPublisher_->publish(decisionMessage);
 
     const string kickType = get_parameter("goalkeeper.kick.type").as_string();
+    const auto elapsedMs = [](const rclcpp::Time &from,
+                              const rclcpp::Time &to) -> double {
+        if (from.nanoseconds() <= 0 || to.nanoseconds() <= 0 ||
+            from.get_clock_type() != to.get_clock_type()) return -1.0;
+        return std::max(0.0, (to - from).seconds() * 1000.0);
+    };
+    const auto velocity = client->lastVelocityCommand();
+    const double ballMeasurementAgeMs =
+        data->ball.timePoint.nanoseconds() > 0 &&
+                data->ball.timePoint.get_clock_type() == now.get_clock_type()
+            ? elapsedMs(data->ball.timePoint, now)
+            : -1.0;
+    const double decisionAgeMs = elapsedMs(
+        goalkeeperReactionDecisionAt_, now);
+    const double commandAgeMs = elapsedMs(velocity.time, now);
+    const bool reactionPending =
+        goalkeeperReactionStage_ == "waiting_command" ||
+        goalkeeperReactionStage_ == "waiting_motion";
+    const bool goalkeeperMayClaim = canGoalkeeperClaimBall(
+        data->ballDetected,
+        data->ball.range,
+        data->ball.posToField.x,
+        data->ball.posToField.y,
+        data->tmMyCost);
     std::ostringstream status;
     status << std::fixed << std::setprecision(3)
            << "{\"decision\":\"" << data->goalkeeperDecision
-           << "\",\"kick_type\":\"" << kickType
+           << "\",\"decision_age_msec\":" << decisionAgeMs
+           << ",\"decision_input_age_msec\":"
+           << goalkeeperReactionDecisionInputAgeMs_
+           << ",\"reaction_stage\":\""
+           << goalkeeperReactionStage_
+           << "\",\"reaction_pending\":"
+           << (reactionPending ? "true" : "false")
+           << ",\"decision_to_command_msec\":"
+           << goalkeeperReactionCommandDelayMs_
+           << ",\"command_to_motion_msec\":"
+           << goalkeeperReactionMotionDelayMs_
+           << ",\"decision_to_motion_msec\":"
+           << goalkeeperReactionTotalDelayMs_
+           << ",\"kick_type\":\"" << kickType
            << "\",\"prediction_enabled\":"
            << (data->goalkeeperPredictionEnabled ? "true" : "false")
            << ",\"localization_ready\":"
@@ -5062,6 +5180,16 @@ void Brain::publishGoalkeeperStatus()
            << (data->ballWillBreach ? "true" : "false")
            << ",\"ball_detected\":"
            << (data->ballDetected ? "true" : "false")
+           << ",\"ball_location_known\":"
+           << (tree->getEntry<bool>("ball_location_known")
+                   ? "true" : "false")
+           << ",\"team_ball_reliable\":"
+           << (tree->getEntry<bool>("tm_ball_pos_reliable")
+                   ? "true" : "false")
+           << ",\"ball_out\":"
+           << (tree->getEntry<bool>("ball_out") ? "true" : "false")
+           << ",\"ball_measurement_age_msec\":"
+           << ballMeasurementAgeMs
            << ",\"ball_range\":" << data->ball.range
            << ",\"ball_confidence\":" << data->ball.confidence
            << ",\"ball_x\":" << data->ball.posToField.x
@@ -5069,6 +5197,30 @@ void Brain::publishGoalkeeperStatus()
            << ",\"robot_x\":" << data->robotPoseToField.x
            << ",\"robot_y\":" << data->robotPoseToField.y
            << ",\"robot_theta\":" << data->robotPoseToField.theta
+           << ",\"command_requested_x\":" << velocity.requestedX
+           << ",\"command_requested_y\":" << velocity.requestedY
+           << ",\"command_requested_theta\":"
+           << velocity.requestedTheta
+           << ",\"command_sent_x\":" << velocity.sentX
+           << ",\"command_sent_y\":" << velocity.sentY
+           << ",\"command_sent_theta\":" << velocity.sentTheta
+           << ",\"command_age_msec\":" << commandAgeMs
+           << ",\"odom_velocity_x\":" << goalkeeperOdomVx_
+           << ",\"odom_velocity_y\":" << goalkeeperOdomVy_
+           << ",\"odom_velocity_theta\":" << goalkeeperOdomVtheta_
+           << ",\"odom_speed\":" << goalkeeperOdomSpeed_
+           << ",\"goalkeeper_may_claim\":"
+           << (goalkeeperMayClaim ? "true" : "false")
+           << ",\"team_lead\":"
+           << (data->tmImLead ? "true" : "false")
+           << ",\"claim_max_ball_range\":"
+           << get_parameter(
+                  "goalkeeper.claim.max_ball_range").as_double()
+           << ",\"claim_cost\":" << data->tmMyCost
+           << ",\"claim_max_cost\":"
+           << get_parameter("goalkeeper.claim.max_cost").as_double()
+           << ",\"goalkeeper_mode\":\""
+           << get_parameter("goalkeeper.mode").as_string() << "\""
            << ",\"velocity_x\":" << data->ballVelocityX
            << ",\"velocity_y\":" << data->ballVelocityY
            << ",\"speed\":" << data->ballPredictionSpeed
@@ -5935,6 +6087,42 @@ void Brain::odometerCallback(const booster_interface::msg::Odometer &msg)
         msg.x * odomDistanceScale,
         msg.y * odomDistanceScale,
         msg.theta};
+
+    // Estimate actual robot motion from odometry. The T2 odometer can arrive
+    // much faster than the web status rate, so use a short low-pass filter to
+    // expose a readable velocity while preserving walk-start timing.
+    if (goalkeeperPreviousOdomValid_ &&
+        goalkeeperPreviousOdomTime_.nanoseconds() > 0 &&
+        goalkeeperPreviousOdomTime_.get_clock_type() ==
+            callbackTime.get_clock_type()) {
+        const double dt = (callbackTime - goalkeeperPreviousOdomTime_).seconds();
+        if (dt > 1e-4 && dt <= 0.5) {
+            const double rawVx =
+                (rawOdomPose.x - goalkeeperPreviousOdomPose_.x) / dt;
+            const double rawVy =
+                (rawOdomPose.y - goalkeeperPreviousOdomPose_.y) / dt;
+            const double rawVtheta = toPInPI(
+                rawOdomPose.theta - goalkeeperPreviousOdomPose_.theta) / dt;
+            constexpr double filterTimeConstantSec = 0.08;
+            const double alpha = std::clamp(
+                1.0 - std::exp(-dt / filterTimeConstantSec), 0.0, 1.0);
+            goalkeeperOdomVx_ += alpha * (rawVx - goalkeeperOdomVx_);
+            goalkeeperOdomVy_ += alpha * (rawVy - goalkeeperOdomVy_);
+            goalkeeperOdomVtheta_ +=
+                alpha * (rawVtheta - goalkeeperOdomVtheta_);
+            goalkeeperOdomSpeed_ = std::hypot(
+                goalkeeperOdomVx_, goalkeeperOdomVy_);
+        } else {
+            goalkeeperOdomVx_ = 0.0;
+            goalkeeperOdomVy_ = 0.0;
+            goalkeeperOdomVtheta_ = 0.0;
+            goalkeeperOdomSpeed_ = 0.0;
+        }
+    }
+    goalkeeperPreviousOdomPose_ = rawOdomPose;
+    goalkeeperPreviousOdomTime_ = callbackTime;
+    goalkeeperPreviousOdomValid_ = true;
+
     const Pose2D fieldPoseBeforeAlignment = data->robotPoseToField;
     const bool alignmentLockedNow = updateOdomThetaAlignment(
         rawOdomPose, velocity, callbackTime, callbackSteadyTime);

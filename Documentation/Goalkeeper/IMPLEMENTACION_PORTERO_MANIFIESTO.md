@@ -23,7 +23,7 @@ locales terminadas y compilación/aceptación física pendientes en el Booster.
 | Predicción | Ajuste ponderado, velocidad, calidad, fricción y cruce | Terminado |
 | Seguridad | Predictor apagado y localización requerida por defecto | Terminado |
 | Árbol | Decisión prioritaria `block_shot` e intercepción | Terminado |
-| Observabilidad | GUI, dos topics ROS y dos entidades Rerun | Terminado |
+| Observabilidad | GUI, dos topics ROS, JSONL de reacción y dos entidades Rerun | Terminado |
 | Inicio/parada | Integrado en scripts del demo Beijing | Terminado |
 | Documentación | README, operación, parámetros, red y aceptación | Terminado |
 
@@ -75,6 +75,8 @@ Después abrir `http://IP_DEL_ROBOT:8088`.
 5. Un balón que se aleja no activa `block_shot`.
 6. Sin `odom_calibrated`, el predictor no ordena movimiento.
 7. La prueba en suelo confirma el sentido lateral antes de subir velocidad.
+8. La GUI registra decisión → comando → movimiento y permite diferenciar
+   retardo de Brain de retardo físico del T2 con el predictor apagado.
 
 ## Reversión
 

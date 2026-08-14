@@ -154,6 +154,17 @@ ros2 topic echo /brain/goalkeeper/status
 
 El estado JSON incluye decisión, patada, predictor, muestras, detección,
 velocidad, R², residual, intercepción, GameController y localización.
+También publica diagnóstico independiente del predictor: edad de la medición
+del balón, edad/cambio de decisión, comando solicitado y enviado, velocidad de
+odometría, permiso para reclamar, liderazgo, coste y tiempos
+`decision_to_command_msec`, `command_to_motion_msec` y
+`decision_to_motion_msec`.
+
+En **Cadena de reacción**, `waiting_command` significa que Brain decidió pero
+todavía no produjo movimiento; `waiting_motion` que la marcha ya recibió un
+comando pero la odometría aún no confirma desplazamiento. Una alerta
+`command_stopped_before_motion` identifica una orden que desapareció después
+de 500 ms sin alcanzar 15 mm ni 0.02 rad.
 
 Rerun registra:
 
