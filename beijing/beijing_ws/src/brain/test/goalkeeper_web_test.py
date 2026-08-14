@@ -39,6 +39,9 @@ class FakeBridge:
             "sample_count": 7,
         }][-limit:]
 
+    def record_event(self, event_type: str, payload: dict[str, Any]) -> None:
+        self.last_event = {"event_type": event_type, **payload}
+
     def apply_values(self, values: dict[str, Any]) -> list[str]:
         self.values.update(values)
         return list(values)
@@ -110,6 +113,7 @@ def main() -> None:
                 "persist": True,
             })
             assert status == 200 and result["ok"]
+            assert goalkeeper_server.ApiHandler.bridge.last_event["event_type"] == "parameter_apply"
             saved = config_path.read_text(encoding="utf-8")
             assert 'type: "visual"' in saved
             assert "enabled: true" in saved

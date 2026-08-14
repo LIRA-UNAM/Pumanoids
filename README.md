@@ -22,10 +22,8 @@
 > - [Manual completo de GUI y predicción](./Documentation/Goalkeeper/PORTERO_GUI_PREDICCION.md)
 > - [Manifiesto detallado de implementación](./Documentation/Goalkeeper/IMPLEMENTACION_PORTERO_MANIFIESTO.md)
 >
-> Prueba local sin GameController: `beijing/scripts/start_goalkeeper_lab.sh
-> left`. Requiere confirmación `ARMAR`, localiza, coloca al portero y abre la
-> GUI en el puerto 8088. La telemetría se guarda en
-> `beijing/goalkeeper_logs/*.jsonl` para diagnóstico posterior.
+> La GUI se inicia junto al demo normal con GameController y guarda telemetría
+> en `beijing/goalkeeper_logs/*.jsonl` para diagnóstico posterior.
 
 <div align="center">
     <h4>

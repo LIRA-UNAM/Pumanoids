@@ -108,8 +108,9 @@ Prueba inicial recomendada:
 
 ## Observabilidad
 
-El servidor web conserva cada mensaje de estado del portero (10 Hz) en un
-archivo JSON Lines. Cada línea incluye fecha UTC, decisión, razón de aceptación
+El servidor web conserva cada mensaje de estado del portero (10 Hz) y cada
+cambio de parámetros aplicado desde la GUI en un archivo JSON Lines. Cada línea
+incluye fecha UTC, decisión, razón de aceptación
 o rechazo del predictor, detección y confianza del balón, pose del robot,
 velocidad estimada, R², residual, muestras y punto/tiempo de intercepción.
 
@@ -159,35 +160,9 @@ bash scripts/prepare_goalkeeper_build.sh
 ./scripts/start.sh role:=goal_keeper
 ```
 
-### Laboratorio sin GameController
-
-`goalkeeper_lab.xml` permite localizar, ir a la posición READY del portero y
-ejecutar el comportamiento completo sin estados de GameController ni
-comunicación entre robots. Es un modo deliberadamente separado del árbol de
-partido; no altera `game.xml`.
-
-Con el robot de pie, campo despejado y paro de emergencia disponible:
-
-```bash
-cd ~/Pumanoids/beijing
-./scripts/start_goalkeeper_lab.sh left
-```
-
-Usar `right` si corresponde al otro lado. El script no inicia nada hasta que el
-operador escribe `ARMAR`. Después inicia visión, Brain con
-`tree:=goalkeeper_lab`, la GUI y los logs, pero omite GameController. El árbol
-mueve la cabeza para localizar; cuando `odom_calibrated` es verdadero ordena
-`GoToReadyPosition` y luego entra en `GoalKeeperPlay`.
-
-Para detener:
-
-```bash
-cd ~/Pumanoids/beijing
-./scripts/stop.sh
-```
-
-La página queda disponible por la misma red local en
-`http://IP_DEL_ROBOT:8088`. No es necesario cambiar a la red de GameController.
+El arranque operativo conserva el flujo original de GameController. La web y
+el registro se levantan automáticamente desde `start.sh`; no existe un modo
+alternativo que omita los estados de partido.
 
 Consultar también [IMPLEMENTATION.md](./IMPLEMENTATION.md) antes de transferir
 la rama al robot.

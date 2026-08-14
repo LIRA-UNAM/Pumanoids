@@ -217,12 +217,24 @@ class GoalkeeperBridge(Node):
         except json.JSONDecodeError:
             decoded = {"raw": msg.data}
         decoded["connected"] = True
+        decoded["event_type"] = "status"
         decoded["received_at"] = time.time()
         decoded["received_at_iso"] = datetime.now(timezone.utc).isoformat()
         with self.status_lock:
             self.status = decoded
             self.telemetry.append(dict(decoded))
             self.log_file.write(json.dumps(decoded, ensure_ascii=False) + "\n")
+
+    def record_event(self, event_type: str, payload: dict[str, Any]) -> None:
+        event = {
+            "event_type": event_type,
+            "received_at": time.time(),
+            "received_at_iso": datetime.now(timezone.utc).isoformat(),
+            **payload,
+        }
+        with self.status_lock:
+            self.telemetry.append(dict(event))
+            self.log_file.write(json.dumps(event, ensure_ascii=False) + "\n")
 
     def snapshot(self) -> dict[str, Any]:
         with self.status_lock:
@@ -451,6 +463,11 @@ class ApiHandler(SimpleHTTPRequestHandler):
                 for path in self.config_paths:
                     atomic_yaml_write(path, complete)
                     saved.append(str(path))
+            self.bridge.record_event("parameter_apply", {
+                "values": {name: values[name] for name in applied},
+                "persist": bool(body.get("persist", False)),
+                "saved": saved,
+            })
             self._json(200, {"ok": True, "applied": applied, "saved": saved})
         except (ValueError, RuntimeError) as exc:
             self._json(400, {"error": str(exc)})

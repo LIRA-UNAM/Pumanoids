@@ -4,7 +4,11 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 DEMO_ROOT="$(pwd)"
 SOURCE_ROOT="${DEMO_ROOT}/beijing_ws"
+# ROS setup scripts may read optional variables such as COLCON_TRACE. Temporarily
+# disable nounset so the web panel can start from strict shell scripts.
+set +u
 source "${DEMO_ROOT}/install/setup.bash"
+set -u
 
 PORT="${GOALKEEPER_WEB_PORT:-8088}"
 SOURCE_CONFIG="${SOURCE_ROOT}/src/brain/config/config_local.yaml"
