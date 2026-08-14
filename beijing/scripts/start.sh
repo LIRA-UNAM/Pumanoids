@@ -16,7 +16,7 @@ sudo rm -f /var/lib/systemd/timers/stamp-apt-daily.timer
 sudo pkill -9 update_manager
 sudo pkill -9 python3
 systemctl --user disable robocup_game_assist.service
-systemctl stop booster-rtc-speech.service
+sudo systemctl stop booster-rtc-speech.service
 sudo systemctl disable --now booster-agent-manager.service
 
 echo "[START ROBOCUP NODES]"
