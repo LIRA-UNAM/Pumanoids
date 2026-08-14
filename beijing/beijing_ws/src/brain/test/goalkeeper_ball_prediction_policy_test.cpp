@@ -28,6 +28,9 @@ int main()
     assert(shot.willReachBlockLine);
     assert(shot.threatensGoal);
     assert(shot.reason == "threat_detected");
+    assert(shot.fitComputed);
+    assert(std::abs(shot.sampleSpanSec - 0.6) < 1e-9);
+    assert(shot.rSquaredX > 0.999);
     assert(std::abs(shot.velocityX + 2.0) < 1e-6);
     assert(std::abs(shot.velocityY - 0.2) < 1e-6);
 
@@ -77,6 +80,19 @@ int main()
     assert(!rejected.valid);
     assert(rejected.reason == "r_squared_below_minimum" ||
            rejected.reason == "residual_above_maximum");
+
+    Config fastConfig = config;
+    fastConfig.minSamples = 5;
+    fastConfig.minSpanSec = 0.25;
+    std::vector<Observation> shortSpan(incoming.begin(), incoming.begin() + 5);
+    for (std::size_t i = 0; i < shortSpan.size(); ++i) {
+        shortSpan[i].timeSec = 0.02 * static_cast<double>(i);
+    }
+    const auto partial = goalkeeper_prediction::predict(shortSpan, fastConfig);
+    assert(!partial.valid);
+    assert(partial.fitComputed);
+    assert(partial.reason == "insufficient_span");
+    assert(partial.speed > 0.0);
 
     std::cout << "goalkeeper_ball_prediction_policy_test passed\n";
     return 0;

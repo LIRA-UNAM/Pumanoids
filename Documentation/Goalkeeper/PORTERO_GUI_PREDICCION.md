@@ -7,7 +7,7 @@ no depende de Internet.
 ## Resultado
 
 - Panel web en `http://IP_DEL_ROBOT:8088`.
-- 93 parámetros agrupados: READY/cobertura, persecución, ajuste/posesión,
+- 94 parámetros agrupados: READY/cobertura, persecución, ajuste/posesión,
   cámara, patadas, predictor y bloqueo predictivo.
 - Aplicación inmediata mediante parámetros ROS 2.
 - Persistencia en
@@ -82,7 +82,7 @@ muestras mínimas que máximas o un tiempo mínimo de bloqueo superior al máxim
 
 ## Restaurar el comportamiento original
 
-El perfil `factory_defaults.json` conserva los 93 valores conocidos y no se
+El perfil `factory_defaults.json` conserva los 94 valores conocidos y no se
 modifica al guardar ajustes locales.
 
 1. Abrir **Ayuda y restauración**.

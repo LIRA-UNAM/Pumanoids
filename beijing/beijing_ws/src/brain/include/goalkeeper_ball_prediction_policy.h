@@ -37,6 +37,7 @@ struct Config
 
 struct Result
 {
+    bool fitComputed = false;
     bool valid = false;
     bool movingTowardOwnGoal = false;
     bool willReachBlockLine = false;
@@ -46,7 +47,10 @@ struct Result
     double velocityY = 0.0;
     double speed = 0.0;
     double rSquared = 0.0;
+    double rSquaredX = 0.0;
+    double rSquaredY = 0.0;
     double residualRms = std::numeric_limits<double>::infinity();
+    double sampleSpanSec = 0.0;
     double timeToBlock = std::numeric_limits<double>::infinity();
     double interceptX = 0.0;
     double interceptY = 0.0;
@@ -158,17 +162,17 @@ inline Result predict(const std::vector<Observation> &observations,
                       const Config &config)
 {
     Result result;
-    if (observations.size() < std::max<std::size_t>(2, config.minSamples)) {
+    if (observations.size() < 2) {
         return result;
     }
 
     const double firstTime = observations.front().timeSec;
     const double lastTime = observations.back().timeSec;
-    if (!std::isfinite(firstTime) || !std::isfinite(lastTime) ||
-        lastTime - firstTime < config.minSpanSec) {
-        result.reason = "insufficient_span";
+    if (!std::isfinite(firstTime) || !std::isfinite(lastTime)) {
+        result.reason = "invalid_observation";
         return result;
     }
+    result.sampleSpanSec = std::max(0.0, lastTime - firstTime);
 
     std::vector<double> time;
     std::vector<double> x;
@@ -194,6 +198,9 @@ inline Result predict(const std::vector<Observation> &observations,
     result.velocityX = fitX.slope;
     result.velocityY = fitY.slope;
     result.speed = std::hypot(result.velocityX, result.velocityY);
+    result.rSquaredX = fitX.rSquared;
+    result.rSquaredY = fitY.rSquared;
+    result.fitComputed = true;
     // A shot toward the own goal must have a changing x coordinate. Use the
     // x fit for the acceptance gate and report the weaker fit for diagnosis.
     result.rSquared = std::min(fitX.rSquared, fitY.rSquared);
@@ -203,6 +210,15 @@ inline Result predict(const std::vector<Observation> &observations,
             (1.0 + std::max(1.0, config.recencyWeight)) / 2.0;
     result.residualRms = std::sqrt(
         (fitX.residualSquared + fitY.residualSquared) / weightSum);
+
+    if (observations.size() < config.minSamples) {
+        result.reason = "insufficient_samples";
+        return result;
+    }
+    if (result.sampleSpanSec < config.minSpanSec) {
+        result.reason = "insufficient_span";
+        return result;
+    }
 
     if (result.speed < config.minSpeed) {
         result.reason = "speed_below_minimum";

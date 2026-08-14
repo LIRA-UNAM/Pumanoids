@@ -20,7 +20,7 @@
   Kick/VisualKick.
 - `subtree_goal_keeper_play_original.xml`: copia del árbol anterior.
 - `tools/goalkeeper_web/`: servidor ROS/HTTP y GUI.
-- `factory_defaults.json`: perfil de recuperación protegido con 93 parámetros.
+- `factory_defaults.json`: perfil de recuperación protegido con 94 parámetros.
 - `config_local.yaml`: ajustes persistentes realizados desde la GUI.
 - `start.sh`/`stop.sh`: ciclo de vida del panel integrado al demo.
 
@@ -52,7 +52,7 @@ Cuando cambie la IP del GameController se deben actualizar tanto
 
 - API HTTP: esquema, perfil original, archivos estáticos, aplicación,
   persistencia y rechazo de combinaciones inválidas;
-- correspondencia de los 93 parámetros entre GUI, perfil y C++;
+- correspondencia de los 94 parámetros entre GUI, perfil y C++;
 - XML y JavaScript válidos;
 - scripts Bash válidos;
 - prueba aislada del predictor preparada para C++17.

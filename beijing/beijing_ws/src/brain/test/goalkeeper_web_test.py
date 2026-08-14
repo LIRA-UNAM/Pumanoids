@@ -89,13 +89,15 @@ def main() -> None:
         base = ("127.0.0.1", httpd.server_port)
         try:
             status, schema = request(base, "/api/schema")
-            assert status == 200 and len(schema["parameters"]) >= 90
+            assert status == 200 and len(schema["parameters"]) == 94
+            assert "goalkeeper.prediction.post_block_claim_msec" in schema["parameters"]
             status, factory = request(base, "/api/factory-defaults")
             assert status == 200
             assert len(factory["values"]) == len(schema["parameters"])
             assert factory["values"]["goalkeeper.mode"] == "attack"
             assert factory["values"]["goalkeeper.kick.type"] == "default"
             assert factory["values"]["goalkeeper.prediction.enabled"] is False
+            assert factory["values"]["goalkeeper.prediction.min_span_msec"] == 100.0
             status, telemetry = request(base, "/api/telemetry?limit=10")
             assert status == 200
             assert telemetry["events"][0]["prediction_reason"] == "threat_detected"

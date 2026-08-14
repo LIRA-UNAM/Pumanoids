@@ -70,7 +70,7 @@
         </section>
 
         <details class="parameter-appendix">
-          <summary><strong>Apéndice completo: los 93 parámetros</strong><span>Valor original, rango y efecto</span></summary>
+          <summary><strong>Apéndice completo: los 94 parámetros</strong><span>Valor original, rango y efecto</span></summary>
           <div id="parameterHelp"></div>
         </details>
       </div>
@@ -79,9 +79,16 @@
     <section class="workspace">
       <aside class="panel status-panel">
         <h2>Trayectoria en vivo</h2>
-        <div class="field" aria-label="Representación de la portería y punto previsto">
-          <div class="goal"></div><div id="keeper" class="keeper"></div><div id="intercept" class="intercept"></div>
-        </div>
+        <svg id="field2d" class="field field-2d" viewBox="0 0 800 500" role="img" aria-label="Campo, robot, balón y trayectoria prevista">
+          <rect id="fieldBounds" class="pitch" />
+          <path id="goalShape" class="goal-shape" />
+          <line id="blockLine" class="block-line" />
+          <polyline id="observationTrail" class="observation-trail" />
+          <polyline id="trajectoryLine" class="trajectory-line" />
+          <circle id="ballMarker" class="ball-marker" r="8" />
+          <g id="robotMarker" class="robot-marker"><circle r="10"/><line x1="0" y1="0" x2="20" y2="0"/></g>
+          <circle id="interceptMarker" class="intercept-marker" r="9" />
+        </svg>
         <dl>
           <div><dt>Balón</dt><dd id="ballDetected">—</dd></div>
           <div><dt>Velocidad</dt><dd id="speed">—</dd></div>
@@ -89,9 +96,15 @@
           <div><dt>R²</dt><dd id="rSquared">—</dd></div>
           <div><dt>Residual</dt><dd id="residual">—</dd></div>
           <div><dt>Muestras</dt><dd id="sampleCount">—</dd></div>
+          <div><dt>Intervalo observado</dt><dd id="sampleSpan">—</dd></div>
+          <div><dt>Edad de observación</dt><dd id="observationAge">—</dd></div>
+          <div><dt>Latencia estimada</dt><dd id="detectionLatency">—</dd></div>
+          <div><dt>R² longitudinal X</dt><dd id="rSquaredX">—</dd></div>
+          <div><dt>R² lateral Y</dt><dd id="rSquaredY">—</dd></div>
           <div><dt>Punto de cruce</dt><dd id="interceptPoint">—</dd></div>
           <div><dt>Confianza del balón</dt><dd id="ballConfidence">—</dd></div>
           <div><dt>Pose del robot</dt><dd id="robotPose">—</dd></div>
+          <div><dt>Despeje post-bloqueo</dt><dd id="postBlockClearance">—</dd></div>
         </dl>
         <a class="secondary log-download" href="/api/log/download">Descargar log JSONL</a>
         <p id="logPath" class="notice">Esperando ruta del registro.</p>
@@ -101,7 +114,7 @@
       <section class="panel controls">
         <div class="toolbar">
           <div><h2>Parámetros</h2><p id="dirtyLabel">Sin cambios pendientes</p></div>
-          <div class="actions"><button id="reload" class="secondary">Recargar</button><button id="apply">Aplicar en vivo</button><button id="save">Aplicar y guardar</button></div>
+          <div class="actions"><button id="fastProfile" class="secondary">Perfil predictor rápido</button><button id="reload" class="secondary">Recargar</button><button id="apply">Aplicar en vivo</button><button id="save">Aplicar y guardar</button></div>
         </div>
         <nav id="tabs"></nav>
         <form id="parameters"></form>

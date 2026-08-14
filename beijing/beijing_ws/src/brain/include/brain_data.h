@@ -147,6 +147,7 @@ public:
     double robotBallAngleToField = 0.0; // Field-frame angle from the x-axis to the robot-to-ball vector, in (-PI, PI]
     bool lose_ball = false;       // Visual ball-loss state used to exit visual kick
     vector<array<double, 2>> predictedBallPos; // Predicted field-frame ball positions in meters as {x, y}
+    vector<array<double, 2>> ballPredictionObservations; // Recent measured field-frame positions
     rclcpp::Time ballPosPredictTime; // Timestamp of the last ball-position prediction
     bool ballWillBreach = false; // Whether the ball will pass the robot
     Point2D ballBreachPoint; // Ball position when it passes the robot
@@ -157,14 +158,20 @@ public:
     double ballVelocityY = 0.0; // Predicted field-frame lateral velocity (m/s)
     double ballPredictionSpeed = 0.0; // Magnitude of the fitted velocity (m/s)
     double ballPredictionRSquared = 0.0; // Linear-fit quality used by goalkeeper prediction
+    double ballPredictionRSquaredX = 0.0; // Longitudinal fit quality used by the acceptance gate
+    double ballPredictionRSquaredY = 0.0; // Lateral fit quality, diagnostic only
     double ballPredictionResidual = 0.0; // RMS fit residual in meters
+    double ballPredictionSampleSpanSec = 0.0; // Time covered by retained observations
+    double ballPredictionObservationAgeSec = 0.0; // Age of the newest observation
     double ballTimeToIntercept = 0.0; // Seconds until the predicted defensive-line crossing
     int ballPredictionSampleCount = 0;
     bool goalkeeperPredictionEnabled = false;
     bool goalkeeperPredictionLocalizationReady = false;
     bool goalkeeperPredictionRequireLocalization = true;
     bool ballPredictionValid = false;
+    bool ballPredictionFitComputed = false;
     bool ballMovingTowardOwnGoal = false;
+    bool goalkeeperPostBlockClearance = false;
     string ballPredictionReason = "initializing";
     string goalkeeperDecision = "initializing";
 

@@ -49,7 +49,7 @@ brain, lo que permite diferenciar un problema de red de uno del árbol.
 
 ## Volver al comportamiento original
 
-El archivo `factory_defaults.json` conserva un perfil protegido de 93 valores.
+El archivo `factory_defaults.json` conserva un perfil protegido de 94 valores.
 No se sobrescribe cuando la GUI guarda `config_local.yaml`.
 
 1. Abrir **Ayuda y restauración**.
@@ -106,6 +106,39 @@ Prueba inicial recomendada:
 5. En suelo, comenzar con `goalkeeper.prediction.block.vy_limit=0.4` y una
    persona junto al paro de emergencia.
 
+### Tiempo de reacción
+
+La latencia de detección se aproxima a:
+
+```text
+máximo(tiempo para reunir min_samples, min_span_msec)
++ edad de la última observación
++ un ciclo de Brain/árbol
+```
+
+El perfil rápido usa `min_samples=5`, `min_span_msec=100`,
+`max_samples=20` e `history_msec=600`. La web muestra `Intervalo observado`,
+`Edad de observación` y `Latencia estimada`; por eso ya no es necesario inferir
+la demora a partir de ceros.
+
+Una vez aceptado el tiro, la rapidez física depende de
+`prediction.block.position_gain`, `prediction.block.vy_limit` y de la capacidad
+de marcha. `reaction_margin_sec` no retrasa la detección: reserva tiempo y hace
+que el comando lateral llegue antes al límite cuando el cruce es inminente.
+`activation_hold_msec` evita perder el bloqueo por una detección intermitente.
+
+La rama de ataque es reactiva: `block_shot` puede interrumpir `chase`, `adjust`
+o `kick`. Al terminar la amenaza, `post_block_claim_msec` mantiene durante un
+intervalo corto el derecho del portero a reclamar un balón cercano; el flujo
+continúa automáticamente por `chase -> adjust -> kick`.
+
+### Visualización 2D
+
+La GUI dibuja el campo, portería propia, línea defensiva, pose/orientación del
+robot, balón, historial de observaciones, trayectoria futura y punto de
+intercepción. Amarillo es historial observado, naranja es predicción y rojo es
+una amenaza. También muestra R² longitudinal y lateral por separado.
+
 ## Observabilidad
 
 El servidor web conserva cada mensaje de estado del portero (10 Hz) y cada
@@ -149,7 +182,7 @@ rerunLog:
 Con `enable_tcp=false`, el brain no transmite por red aunque `server_ip` esté
 correctamente establecido; el registro local continúa según `enable_file`.
 
-El panel incluye un apéndice generado desde el esquema con los 93 parámetros,
+El panel incluye un apéndice generado desde el esquema con los 94 parámetros,
 valor original, rango, descripción y parte del robot afectada.
 
 ## Compilación y arranque

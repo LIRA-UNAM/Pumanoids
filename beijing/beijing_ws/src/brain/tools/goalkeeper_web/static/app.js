@@ -196,7 +196,7 @@ async function apply(persist) {
 }
 
 function loadFactoryDefaults() {
-  if (!confirm("¿Cargar los 93 valores originales en el formulario? Aún no se aplicarán al robot.")) return;
+  if (!confirm("¿Cargar los 94 valores originales en el formulario? Aún no se aplicarán al robot.")) return;
   state.values = structuredClone(state.factory);
   state.group = "Bloqueo reactivo";
   renderTabs();
@@ -206,30 +206,93 @@ function loadFactoryDefaults() {
   toast("Valores originales cargados. Revisa y pulsa ‘Aplicar y guardar’ para completar la restauración.");
 }
 
+function loadFastPredictorProfile() {
+  Object.assign(state.values, {
+    "goalkeeper.prediction.enabled": true,
+    "goalkeeper.prediction.require_localization": true,
+    "goalkeeper.prediction.history_msec": 600,
+    "goalkeeper.prediction.max_samples": 20,
+    "goalkeeper.prediction.min_samples": 5,
+    "goalkeeper.prediction.min_span_msec": 100,
+    "goalkeeper.prediction.activation_hold_msec": 400,
+    "goalkeeper.prediction.post_block_claim_msec": 2500
+  });
+  state.group = "Predicción";
+  renderTabs();
+  renderForm();
+  updateDirty();
+  toast("Perfil rápido cargado. Revisa y pulsa ‘Aplicar y guardar’; todavía no se envió al robot.");
+}
+
 function statusView(status) {
   const online = Boolean(status.connected);
   $("connection").textContent = online ? "Brain conectado" : "Brain sin conexión";
   $("connection").className = `pill ${online ? "online" : "offline"}`;
   $("decision").textContent = status.decision || "—";
   $("kickType").textContent = status.kick_type || "—";
-  $("predictionState").textContent = !status.prediction_enabled ? "desactivada" : status.threatens_goal ? "TIRO DETECTADO" : status.prediction_valid ? "trayectoria válida" : "esperando muestras";
+  $("predictionState").textContent = !status.prediction_enabled ? "DESACTIVADA · NO BLOQUEARÁ" : status.threatens_goal ? "TIRO DETECTADO" : status.prediction_valid ? "trayectoria válida" : "esperando muestras";
+  $("predictionState").classList.toggle("critical", !status.prediction_enabled);
   $("timeToIntercept").textContent = status.threatens_goal ? `${format(status.time_to_intercept)} s` : "—";
   $("gameState").textContent = status.game_state || "?";
   $("localizationState").textContent = status.localization_ready ? "lista" : status.localization_required ? "no calibrada" : "no requerida";
   $("predictionReason").textContent = reasonLabel(status.prediction_reason);
   $("ballDetected").textContent = status.ball_detected ? "detectado" : "no detectado";
-  $("speed").textContent = `${format(status.speed)} m/s`;
-  $("velocity").textContent = `(${format(status.velocity_x)}, ${format(status.velocity_y)})`;
-  $("rSquared").textContent = format(status.r_squared, 3);
-  $("residual").textContent = `${format(status.residual, 3)} m`;
+  const fitted = Boolean(status.fit_computed);
+  $("speed").textContent = fitted ? `${format(status.speed)} m/s` : "—";
+  $("velocity").textContent = fitted ? `(${format(status.velocity_x)}, ${format(status.velocity_y)})` : "—";
+  $("rSquared").textContent = fitted ? format(status.r_squared, 3) : "—";
+  $("rSquaredX").textContent = fitted ? format(status.r_squared_x, 3) : "—";
+  $("rSquaredY").textContent = fitted ? format(status.r_squared_y, 3) : "—";
+  $("residual").textContent = fitted ? `${format(status.residual, 3)} m` : "—";
   $("sampleCount").textContent = Number.isFinite(Number(status.sample_count)) ? String(status.sample_count) : "—";
+  $("sampleSpan").textContent = `${format(status.sample_span_msec, 0)} ms`;
+  $("observationAge").textContent = `${format(status.observation_age_msec, 0)} ms`;
+  $("detectionLatency").textContent = `${format(status.estimated_detection_latency_msec, 0)} ms`;
   $("interceptPoint").textContent = status.threatens_goal ? `(${format(status.intercept_x)}, ${format(status.intercept_y)}) m` : "—";
   $("ballConfidence").textContent = `${format(status.ball_confidence, 1)} %`;
   $("robotPose").textContent = `(${format(status.robot_x)}, ${format(status.robot_y)}, ${format(status.robot_theta)})`;
-  const marker = $("intercept");
-  marker.classList.toggle("active", Boolean(status.threatens_goal));
-  const normalized = Math.max(-1.5, Math.min(1.5, Number(status.intercept_y) || 0));
-  marker.style.left = `${50 + normalized / 3 * 76}%`;
+  $("postBlockClearance").textContent = status.post_block_clearance ? "activo: buscar y patear" : "inactivo";
+  renderField2D(status);
+}
+
+function svgPoint(element, x, y, visible = true) {
+  element.setAttribute("cx", x);
+  element.setAttribute("cy", y);
+  element.classList.toggle("hidden", !visible);
+}
+
+function renderField2D(status) {
+  const length = Number(status.field_length) || 14;
+  const width = Number(status.field_width) || 9;
+  const goalWidth = Number(status.goal_width) || 2.6;
+  const left = 55, top = 25, drawWidth = 700, drawHeight = 450;
+  const px = x => left + (Number(x) + length / 2) / length * drawWidth;
+  const py = y => top + (width / 2 - Number(y)) / width * drawHeight;
+  const validPair = pair => Array.isArray(pair) && pair.length >= 2 && pair.every(value => Number.isFinite(Number(value)));
+
+  const bounds = $("fieldBounds");
+  bounds.setAttribute("x", left); bounds.setAttribute("y", top);
+  bounds.setAttribute("width", drawWidth); bounds.setAttribute("height", drawHeight);
+  const goalX = px(-length / 2);
+  $("goalShape").setAttribute("d", `M ${goalX} ${py(goalWidth / 2)} L ${goalX - 28} ${py(goalWidth / 2)} L ${goalX - 28} ${py(-goalWidth / 2)} L ${goalX} ${py(-goalWidth / 2)}`);
+  const blockX = px(Number(status.block_line_x));
+  $("blockLine").setAttribute("x1", blockX); $("blockLine").setAttribute("x2", blockX);
+  $("blockLine").setAttribute("y1", py(goalWidth / 2 + .4)); $("blockLine").setAttribute("y2", py(-goalWidth / 2 - .4));
+
+  const observations = (status.observations || []).filter(validPair);
+  $("observationTrail").setAttribute("points", observations.map(p => `${px(p[0])},${py(p[1])}`).join(" "));
+  const trajectory = (status.trajectory || []).filter(validPair);
+  $("trajectoryLine").setAttribute("points", trajectory.map(p => `${px(p[0])},${py(p[1])}`).join(" "));
+
+  const ballVisible = Boolean(status.ball_detected) && Number.isFinite(Number(status.ball_x)) && Number.isFinite(Number(status.ball_y));
+  svgPoint($("ballMarker"), px(status.ball_x), py(status.ball_y), ballVisible);
+  const robotVisible = Number.isFinite(Number(status.robot_x)) && Number.isFinite(Number(status.robot_y));
+  const robot = $("robotMarker");
+  robot.setAttribute("transform", `translate(${px(status.robot_x)} ${py(status.robot_y)}) rotate(${-Number(status.robot_theta || 0) * 180 / Math.PI})`);
+  robot.classList.toggle("hidden", !robotVisible);
+  const interceptVisible = Boolean(status.threatens_goal) && Number.isFinite(Number(status.intercept_x)) && Number.isFinite(Number(status.intercept_y));
+  svgPoint($("interceptMarker"), px(status.intercept_x), py(status.intercept_y), interceptVisible);
+  $("field2d").classList.toggle("threat", Boolean(status.threatens_goal));
 }
 
 const REASONS = {
@@ -283,6 +346,7 @@ $("reload").onclick = load;
 $("apply").onclick = () => apply(false);
 $("save").onclick = () => apply(true);
 $("restoreFactory").onclick = loadFactoryDefaults;
+$("fastProfile").onclick = loadFastPredictorProfile;
 $("helpLink").onclick = () => { $("help").open = true; };
 document.querySelectorAll(".go-group").forEach(button => {
   button.onclick = () => selectGroup(button.dataset.group);

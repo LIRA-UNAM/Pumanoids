@@ -682,10 +682,10 @@ Brain::Brain() : rclcpp::Node("brain_node")
 
     declare_parameter<bool>("goalkeeper.prediction.enabled", false);
     declare_parameter<bool>("goalkeeper.prediction.require_localization", true);
-    declare_parameter<double>("goalkeeper.prediction.history_msec", 900.0);
-    declare_parameter<int>("goalkeeper.prediction.max_samples", 12);
+    declare_parameter<double>("goalkeeper.prediction.history_msec", 600.0);
+    declare_parameter<int>("goalkeeper.prediction.max_samples", 20);
     declare_parameter<int>("goalkeeper.prediction.min_samples", 5);
-    declare_parameter<double>("goalkeeper.prediction.min_span_msec", 250.0);
+    declare_parameter<double>("goalkeeper.prediction.min_span_msec", 100.0);
     declare_parameter<double>("goalkeeper.prediction.min_speed", 0.45);
     declare_parameter<double>("goalkeeper.prediction.min_toward_goal_speed", 0.35);
     declare_parameter<double>("goalkeeper.prediction.min_r_squared", 0.90);
@@ -699,7 +699,8 @@ Brain::Brain() : rclcpp::Node("brain_node")
     declare_parameter<double>("goalkeeper.prediction.goal_margin", 0.15);
     declare_parameter<double>("goalkeeper.prediction.min_time_to_block", 0.08);
     declare_parameter<double>("goalkeeper.prediction.max_time_to_block", 2.50);
-    declare_parameter<double>("goalkeeper.prediction.activation_hold_msec", 250.0);
+    declare_parameter<double>("goalkeeper.prediction.activation_hold_msec", 400.0);
+    declare_parameter<double>("goalkeeper.prediction.post_block_claim_msec", 2500.0);
     declare_parameter<double>("goalkeeper.prediction.block.vx_limit", 0.70);
     declare_parameter<double>("goalkeeper.prediction.block.vy_limit", 1.00);
     declare_parameter<double>("goalkeeper.prediction.block.vtheta_limit", 1.00);
@@ -4855,6 +4856,15 @@ void Brain::updateBallPrediction()
         data->ballPredictionSpeed = 0.0;
         data->ballTimeToIntercept = 0.0;
         data->ballPredictionSampleCount = 0;
+        data->ballPredictionFitComputed = false;
+        data->ballPredictionSampleSpanSec = 0.0;
+        data->ballPredictionObservationAgeSec = 0.0;
+        data->ballPredictionRSquaredX = 0.0;
+        data->ballPredictionRSquaredY = 0.0;
+        data->ballPredictionRSquared = 0.0;
+        data->ballPredictionResidual = 0.0;
+        data->ballPredictionObservations.clear();
+        data->goalkeeperPostBlockClearance = false;
         data->ballPredictionReason = !enabled
             ? "disabled" : "localization_required";
         return;
@@ -4881,6 +4891,12 @@ void Brain::updateBallPrediction()
         }
     }
     data->ballPredictionSampleCount = static_cast<int>(observations.size());
+    data->ballPredictionObservations.clear();
+    data->ballPredictionObservations.reserve(observations.size());
+    for (const auto &observation : observations) {
+        data->ballPredictionObservations.push_back(
+            {observation.x, observation.y});
+    }
 
     goalkeeper_prediction::Config predictionConfig;
     predictionConfig.minSamples = static_cast<std::size_t>(std::clamp<int64_t>(
@@ -4929,11 +4945,15 @@ void Brain::updateBallPrediction()
     data->ballPredictionReason = prediction.reason;
 
     data->ballPredictionValid = prediction.valid;
+    data->ballPredictionFitComputed = prediction.fitComputed;
     data->ballMovingTowardOwnGoal = prediction.movingTowardOwnGoal;
     data->ballVelocityX = prediction.velocityX;
     data->ballVelocityY = prediction.velocityY;
     data->ballPredictionSpeed = prediction.speed;
     data->ballPredictionRSquared = prediction.rSquared;
+    data->ballPredictionRSquaredX = prediction.rSquaredX;
+    data->ballPredictionRSquaredY = prediction.rSquaredY;
+    data->ballPredictionSampleSpanSec = prediction.sampleSpanSec;
     data->ballPredictionResidual = std::isfinite(prediction.residualRms)
         ? prediction.residualRms : 0.0;
     data->predictedBallPos.clear();
@@ -4946,6 +4966,7 @@ void Brain::updateBallPrediction()
         observationAgeSec = std::max(
             0.0, now.seconds() - lastObservationTimeSec);
     }
+    data->ballPredictionObservationAgeSec = observationAgeSec;
     const double remainingSec = std::isfinite(prediction.timeToBlock)
         ? prediction.timeToBlock - observationAgeSec
         : 0.0;
@@ -4973,6 +4994,12 @@ void Brain::updateBallPrediction()
             data->ballTimeToIntercept = 0.0;
         }
     }
+    const double postBlockClaimMsec = std::max(
+        0.0, get_parameter(
+            "goalkeeper.prediction.post_block_claim_msec").as_double());
+    data->goalkeeperPostBlockClearance =
+        goalkeeperLastThreatTime_.nanoseconds() > 0 &&
+        msecsSince(goalkeeperLastThreatTime_) <= postBlockClaimMsec;
 
     if (log->shouldLog("goalkeeper_prediction_visual", config->rerunLogVisualHz)) {
         log->setTimeNow();
@@ -5027,6 +5054,8 @@ void Brain::publishGoalkeeperStatus()
                    ? "true" : "false")
            << ",\"prediction_valid\":"
            << (data->ballPredictionValid ? "true" : "false")
+           << ",\"fit_computed\":"
+           << (data->ballPredictionFitComputed ? "true" : "false")
            << ",\"prediction_reason\":\""
            << data->ballPredictionReason << "\""
            << ",\"threatens_goal\":"
@@ -5035,6 +5064,8 @@ void Brain::publishGoalkeeperStatus()
            << (data->ballDetected ? "true" : "false")
            << ",\"ball_range\":" << data->ball.range
            << ",\"ball_confidence\":" << data->ball.confidence
+           << ",\"ball_x\":" << data->ball.posToField.x
+           << ",\"ball_y\":" << data->ball.posToField.y
            << ",\"robot_x\":" << data->robotPoseToField.x
            << ",\"robot_y\":" << data->robotPoseToField.y
            << ",\"robot_theta\":" << data->robotPoseToField.theta
@@ -5042,13 +5073,47 @@ void Brain::publishGoalkeeperStatus()
            << ",\"velocity_y\":" << data->ballVelocityY
            << ",\"speed\":" << data->ballPredictionSpeed
            << ",\"r_squared\":" << data->ballPredictionRSquared
+           << ",\"r_squared_x\":" << data->ballPredictionRSquaredX
+           << ",\"r_squared_y\":" << data->ballPredictionRSquaredY
            << ",\"residual\":" << data->ballPredictionResidual
            << ",\"sample_count\":" << data->ballPredictionSampleCount
+           << ",\"sample_span_msec\":"
+           << data->ballPredictionSampleSpanSec * 1000.0
+           << ",\"observation_age_msec\":"
+           << data->ballPredictionObservationAgeSec * 1000.0
+           << ",\"estimated_detection_latency_msec\":"
+           << (data->ballPredictionSampleSpanSec +
+               data->ballPredictionObservationAgeSec) * 1000.0
            << ",\"intercept_x\":" << data->ballInterceptPoint.x
            << ",\"intercept_y\":" << data->ballInterceptPoint.y
            << ",\"time_to_intercept\":" << data->ballTimeToIntercept
+           << ",\"post_block_clearance\":"
+           << (data->goalkeeperPostBlockClearance ? "true" : "false")
+           << ",\"field_length\":" << config->fieldDimensions.length
+           << ",\"field_width\":" << config->fieldDimensions.width
+           << ",\"goal_width\":" << config->fieldDimensions.goalWidth
+           << ",\"block_line_x\":"
+           << (-config->fieldDimensions.length / 2.0 +
+               std::clamp(
+                   get_parameter(
+                       "goalkeeper.blocking.dist_to_goalline").as_double(),
+                   0.4, std::max(
+                       0.4, config->fieldDimensions.goalAreaLength - 0.2)))
            << ",\"game_state\":\""
-           << tree->getEntry<string>("gc_game_state") << "\"}";
+           << tree->getEntry<string>("gc_game_state") << "\""
+           << ",\"observations\":[";
+    for (std::size_t i = 0; i < data->ballPredictionObservations.size(); ++i) {
+        if (i > 0) status << ',';
+        status << '[' << data->ballPredictionObservations[i][0] << ','
+               << data->ballPredictionObservations[i][1] << ']';
+    }
+    status << "],\"trajectory\":[";
+    for (std::size_t i = 0; i < data->predictedBallPos.size(); ++i) {
+        if (i > 0) status << ',';
+        status << '[' << data->predictedBallPos[i][0] << ','
+               << data->predictedBallPos[i][1] << ']';
+    }
+    status << "]}";
     std_msgs::msg::String statusMessage;
     statusMessage.data = status.str();
     goalkeeperStatusPublisher_->publish(statusMessage);

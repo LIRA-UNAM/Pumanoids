@@ -14,10 +14,10 @@ locales terminadas y compilación/aceptación física pendientes en el Booster.
 
 | Área | Implementación | Estado |
 |---|---|---|
-| GUI | 93 parámetros ROS con límites, descripciones y ayuda | Terminado |
+| GUI | 94 parámetros ROS con límites, descripciones y ayuda | Terminado |
 | Aplicación | Servicio atómico de parámetros de `/brain_node` | Terminado |
 | Persistencia | Escritura atómica de `config_local.yaml` | Terminado |
-| Restauración | Perfil original protegido de 93 valores | Terminado |
+| Restauración | Perfil original protegido de 94 valores | Terminado |
 | Kick | Parámetros dinámicos y detención segura | Terminado |
 | VisualKick | Selector, kV1/kV2, tiempos y protecciones | Terminado |
 | Predicción | Ajuste ponderado, velocidad, calidad, fricción y cruce | Terminado |
@@ -43,7 +43,7 @@ locales terminadas y compilación/aceptación física pendientes en el Booster.
 
 - API web: página, esquema, perfil original, aplicación, persistencia y rechazo
   de combinaciones inválidas.
-- Correspondencia GUI/C++/perfil: 93/93 parámetros.
+- Correspondencia GUI/C++/perfil: 94/94 parámetros.
 - Accesos `goalkeeper.*`: ninguno sin declaración.
 - XML, Python, JavaScript y scripts Bash: sintaxis válida.
 - Predictor aislado preparado como prueba C++17.

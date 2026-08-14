@@ -90,10 +90,10 @@ brain_node:
       prediction:
         enabled: false
         require_localization: true
-        history_msec: 900.0
-        max_samples: 12
+        history_msec: 600.0
+        max_samples: 20
         min_samples: 5
-        min_span_msec: 250.0
+        min_span_msec: 100.0
         min_speed: 0.45
         min_toward_goal_speed: 0.35
         min_r_squared: 0.90
@@ -107,7 +107,8 @@ brain_node:
         goal_margin: 0.15
         min_time_to_block: 0.08
         max_time_to_block: 2.50
-        activation_hold_msec: 250.0
+        activation_hold_msec: 400.0
+        post_block_claim_msec: 2500.0 # Temporarily clear a nearby ball after blocking, even without team lead
         block:
           vx_limit: 0.70
           vy_limit: 1.00

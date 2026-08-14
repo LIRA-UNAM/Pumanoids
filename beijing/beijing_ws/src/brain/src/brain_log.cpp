@@ -5,6 +5,7 @@
 #include "utils/misc.h"
 
 #include <cmath>
+#include <filesystem>
 
 BrainLog::BrainLog(Brain *argBrain) : brain(argBrain), log_tcp("robocup"), log_file("robocup")
 {
@@ -26,11 +27,22 @@ BrainLog::BrainLog(Brain *argBrain) : brain(argBrain), log_tcp("robocup"), log_f
         auto dir = brain->config->rerunLogLogDir;
         dir = gen_timestamped_filename(dir, format("_P%d_T%d", brain->config->playerId, brain->config->teamId));
         brain->config->rerunLogLogDir = dir;
-        mkdir_if_not_exist(brain->config->rerunLogLogDir);
-        
-        auto file_name = gen_timestamped_filename(brain->config->rerunLogLogDir, ".rrd");
-        auto saveError = log_file.save(file_name);
-        if (saveError.is_err()) prtErr("Rerun log save Error: " + saveError.description);
+        std::error_code directoryError;
+        std::filesystem::create_directories(
+            brain->config->rerunLogLogDir, directoryError);
+        if (directoryError) {
+            prtErr("Cannot create Rerun log directory " +
+                brain->config->rerunLogLogDir + ": " +
+                directoryError.message());
+            enable_log_file = false;
+        } else {
+            auto file_name = gen_timestamped_filename(
+                brain->config->rerunLogLogDir, ".rrd");
+            auto saveError = log_file.save(file_name);
+            if (saveError.is_err()) {
+                prtErr("Rerun log save Error: " + saveError.description);
+            }
+        }
     }
 
 }
@@ -199,6 +211,15 @@ void BrainLog::updateLogFilePath() {
         return;
 
     brain->data->timeLastLogSave = brain->get_clock()->now();
+    std::error_code directoryError;
+    std::filesystem::create_directories(
+        brain->config->rerunLogLogDir, directoryError);
+    if (directoryError) {
+        prtErr("Cannot create Rerun log directory " +
+            brain->config->rerunLogLogDir + ": " +
+            directoryError.message());
+        return;
+    }
     auto file_name = gen_timestamped_filename(brain->config->rerunLogLogDir, ".rrd");
     auto saveError = log_file.save(file_name);
     if (saveError.is_err()) prtErr("Rerun log save Error: " + saveError.description);

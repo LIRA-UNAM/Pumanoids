@@ -2766,6 +2766,11 @@ NodeStatus GoalieDecide::tick()
         brain->data->tmMyCost);
     const bool requireTeamLead = brain->get_parameter(
         "goalkeeper.claim.require_team_lead").as_bool();
+    const bool postBlockClearance =
+        brain->data->goalkeeperPostBlockClearance &&
+        brain->data->ballDetected &&
+        ballRange <= brain->get_parameter(
+            "goalkeeper.claim.max_ball_range").as_double();
 
     string newDecision;
     auto color = 0xFFFFFFFF; // for log
@@ -2786,8 +2791,9 @@ NodeStatus GoalieDecide::tick()
         newDecision = "find";
         color = 0x0000FFFF;
     }
-    else if (!goalieMayClaimBall ||
-             (requireTeamLead && !brain->data->tmImLead))
+    else if ((!goalieMayClaimBall && !postBlockClearance) ||
+             (requireTeamLead && !brain->data->tmImLead &&
+              !postBlockClearance))
     {
         newDecision = "retreat";
         color = 0xFF00FFFF;
@@ -2816,7 +2822,7 @@ NodeStatus GoalieDecide::tick()
         "goalie_kick_type",
         configuredKickType == "visual" ? "visual" : "default");
     brain->log->logToScreen("tree/Decide",
-                            format("Decision: %s ballrange: %.2f ballyaw: %.2f kickDir: %.2f rbDir: %.2f angleIsGood: %d lead: %d claim: %d", newDecision.c_str(), ballRange, ballYaw, kickDir, dir_rb_f, angleIsGood, brain->data->tmImLead, goalieMayClaimBall),
+                            format("Decision: %s ballrange: %.2f ballyaw: %.2f kickDir: %.2f rbDir: %.2f angleIsGood: %d lead: %d claim: %d postBlock: %d", newDecision.c_str(), ballRange, ballYaw, kickDir, dir_rb_f, angleIsGood, brain->data->tmImLead, goalieMayClaimBall, postBlockClearance),
                             color);
     return NodeStatus::SUCCESS;
 }
