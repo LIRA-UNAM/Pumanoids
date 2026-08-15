@@ -1,5 +1,9 @@
 # Portero configurable — guía de operación
 
+> Para continuar el desarrollo, desplegar varios robots o fusionar esta rama
+> con `beijing_demo`, consulte
+> [Traspaso técnico de test_goalkeeper](HANDOFF_TEST_GOALKEEPER.md).
+
 ## Alcance
 
 La rama `test_goalkeeper` se basa en `beijing_demo` y modifica únicamente el

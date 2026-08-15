@@ -22,6 +22,7 @@
 > - [Configuración actual del robot y red](./beijing/README.md#configuración-actual-del-robot-y-la-red)
 > - [Manual completo de GUI y predicción](./Documentation/Goalkeeper/PORTERO_GUI_PREDICCION.md)
 > - [Manifiesto detallado de implementación](./Documentation/Goalkeeper/IMPLEMENTACION_PORTERO_MANIFIESTO.md)
+> - [Traspaso técnico, parámetros y guía de fusión](./Documentation/Goalkeeper/HANDOFF_TEST_GOALKEEPER.md)
 >
 > La GUI se inicia junto al demo normal con GameController y guarda telemetría
 > en `beijing/goalkeeper_logs/*.jsonl` para diagnóstico posterior.

@@ -118,3 +118,5 @@ La documentación completa está en
 [Documentation/Goalkeeper](../Documentation/Goalkeeper/README.md), incluyendo
 el [manual completo de GUI y predicción](../Documentation/Goalkeeper/PORTERO_GUI_PREDICCION.md)
 y el [manifiesto de implementación](../Documentation/Goalkeeper/IMPLEMENTACION_PORTERO_MANIFIESTO.md).
+Para continuar el desarrollo o integrar `beijing_demo`, consulte el
+[traspaso técnico y guía de fusión](../Documentation/Goalkeeper/HANDOFF_TEST_GOALKEEPER.md).
