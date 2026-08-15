@@ -259,6 +259,43 @@ class ParameterTransport:
         raise NotImplementedError
 
 
+class PreviewBridge(ParameterTransport):
+    """Read-only bridge used to inspect the complete GUI without ROS/robot."""
+
+    def __init__(self, log_dir: pathlib.Path):
+        self.log_path = log_dir / "goalkeeper_preview.jsonl"
+
+    def snapshot(self) -> dict[str, Any]:
+        return {
+            "connected": False,
+            "decision": "vista_offline",
+            "prediction_enabled": False,
+            "prediction_valid": False,
+            "prediction_reason": "brain_node_offline",
+            "sample_count": 0,
+            "continuity_filter_enabled": True,
+            "forward_intercept_enabled": True,
+            "forward_intercept_active": False,
+        }
+
+    def read_values(self) -> dict[str, Any]:
+        raise ConnectionError("brain_node no está conectado (vista offline)")
+
+    def telemetry_snapshot(self, limit: int = 200) -> list[dict[str, Any]]:
+        del limit
+        return []
+
+    def record_event(self, event_type: str, payload: dict[str, Any]) -> None:
+        del event_type, payload
+
+    def apply_values(self, values: dict[str, Any]) -> list[str]:
+        del values
+        raise ConnectionError("vista offline: no se pueden aplicar parámetros en vivo")
+
+    def close(self) -> None:
+        pass
+
+
 class GoalkeeperBridge(Node):
     def __init__(self, target_node: str, log_dir: pathlib.Path):
         super().__init__("goalkeeper_web_bridge")
@@ -656,18 +693,25 @@ def main() -> None:
     parser.add_argument("--node", default="/brain_node")
     parser.add_argument("--config", action="append", default=[])
     parser.add_argument(
+        "--offline", action="store_true",
+        help="Previsualizar la GUI sin ROS ni conexión al robot")
+    parser.add_argument(
         "--log-dir", default="goalkeeper_logs",
         help="Directorio para telemetria JSONL persistente")
     args = parser.parse_args()
 
-    if rclpy is None:
+    if rclpy is None and not args.offline:
         raise RuntimeError(
             "rclpy no está disponible; ejecute después de source install/setup.bash")
-    rclpy.init()
-    bridge = GoalkeeperBridge(
-        args.node, pathlib.Path(args.log_dir).expanduser().resolve())
-    spin_thread = threading.Thread(target=rclpy.spin, args=(bridge,), daemon=True)
-    spin_thread.start()
+    log_dir = pathlib.Path(args.log_dir).expanduser().resolve()
+    if args.offline:
+        bridge = PreviewBridge(log_dir)
+    else:
+        rclpy.init()
+        bridge = GoalkeeperBridge(args.node, log_dir)
+        spin_thread = threading.Thread(
+            target=rclpy.spin, args=(bridge,), daemon=True)
+        spin_thread.start()
 
     ApiHandler.bridge = bridge
     ApiHandler.static_dir = pathlib.Path(__file__).with_name("static")
@@ -675,6 +719,8 @@ def main() -> None:
         pathlib.Path(item).expanduser().resolve() for item in args.config))
     server = ThreadingHTTPServer((args.host, args.port), ApiHandler)
     print(f"Goalkeeper web panel: http://{args.host}:{args.port}")
+    if args.offline:
+        print("Goalkeeper web panel: OFFLINE PREVIEW (sin comandos al robot)")
     print(f"Goalkeeper telemetry log: {bridge.log_path}")
     try:
         server.serve_forever()

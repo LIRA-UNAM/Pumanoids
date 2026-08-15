@@ -28,6 +28,20 @@ demo ubicado en `beijing/`. El panel web controla parámetros reales del nodo
 Aplicar cualquiera de las dos opciones sí puede cambiar inmediatamente el
 movimiento si el GameController permite actuar.
 
+### Previsualización local sin robot
+
+Para revisar pestañas, ayuda y valores en una PC sin ROS:
+
+```bash
+python beijing/beijing_ws/src/brain/tools/goalkeeper_web/server.py \
+  --offline --host 127.0.0.1 --port 8088 \
+  --config beijing/beijing_ws/src/brain/config/config_local.yaml
+```
+
+Este modo no crea conexión ROS ni permite aplicar parámetros en vivo. Para no
+modificar el repositorio al probar el botón de persistencia, se recomienda
+pasarle una copia temporal de `config_local.yaml`.
+
 ## Identidad y red configuradas
 
 El portero está configurado como equipo `5`, jugador `1`, rol `goal_keeper`.
