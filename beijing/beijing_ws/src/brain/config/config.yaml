@@ -100,6 +100,7 @@ brain_node:
         min_r_squared: 0.90
         max_residual: 0.20
         max_sample_jump: 0.80
+        continuity_filter_enabled: true
         field_margin: 0.50
         reject_outside_field: false # Original demo behavior; enable after validating localization.
         min_ball_confidence: 40.0
@@ -112,6 +113,20 @@ brain_node:
         max_time_to_block: 2.50
         activation_hold_msec: 400.0
         post_block_claim_msec: 2500.0 # Temporarily clear a nearby ball after blocking, even without team lead
+        intercept:
+          enabled: false # Original behavior: wait on the fixed defensive line.
+          max_forward_distance: 1.20
+          front_max_forward_distance: 1.60
+          front_min_forward_distance: 0.40
+          front_lateral_threshold: 0.25
+          min_ball_separation: 0.25
+          search_step: 0.10
+          robot_speed_min: 0.45
+          robot_speed_max: 1.20
+          measured_speed_gain: 1.20
+          safety_time_sec: 0.12
+          diagonal_vx_limit: 1.00
+          front_vx_limit: 1.50
         block:
           vx_limit: 0.70
           vy_limit: 1.00

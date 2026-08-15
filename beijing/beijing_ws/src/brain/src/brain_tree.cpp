@@ -1789,6 +1789,8 @@ NodeStatus GoalkeeperBlockShot::tick()
     if (!brain->get_parameter("goalkeeper.prediction.enabled").as_bool() ||
         !brain->data->ballWillBreach) {
         brain->data->goalkeeperUrgentBlock = false;
+        brain->data->goalkeeperForwardInterceptActive = false;
+        brain->data->goalkeeperFrontIntercept = false;
         brain->client->setVelocity(0.0, 0.0, 0.0, false, false, false);
         return NodeStatus::SUCCESS;
     }
@@ -1809,15 +1811,147 @@ NodeStatus GoalkeeperBlockShot::tick()
         brain->data->ballInterceptPoint.y,
         -lateralLimit, lateralLimit);
 
+    // Optionally meet the ball before it reaches the fixed defensive line.
+    // Search from the most advanced point backwards and select the first point
+    // that the robot can reach with the speed measured from odometry.  This
+    // produces a forward diagonal for lateral shots and a direct, fast advance
+    // for shots whose crossing point is close to the robot centre line.
+    const bool forwardInterceptEnabled = brain->get_parameter(
+        "goalkeeper.prediction.intercept.enabled").as_bool();
+    const double lateralErrorAtLine =
+        brain->data->ballInterceptPoint.y - brain->data->robotPoseToField.y;
+    const double frontThreshold = std::max(
+        0.0, brain->get_parameter(
+            "goalkeeper.prediction.intercept.front_lateral_threshold").as_double());
+    const bool frontIntercept =
+        forwardInterceptEnabled && std::abs(lateralErrorAtLine) <= frontThreshold;
+    const double configuredMaxForward = std::max(
+        0.0, brain->get_parameter(frontIntercept
+            ? "goalkeeper.prediction.intercept.front_max_forward_distance"
+            : "goalkeeper.prediction.intercept.max_forward_distance").as_double());
+    const double ballSeparation = std::max(
+        0.05, brain->get_parameter(
+            "goalkeeper.prediction.intercept.min_ball_separation").as_double());
+    const double searchStep = std::max(
+        0.02, brain->get_parameter(
+            "goalkeeper.prediction.intercept.search_step").as_double());
+    const double speedMin = std::max(
+        0.05, brain->get_parameter(
+            "goalkeeper.prediction.intercept.robot_speed_min").as_double());
+    const double speedMax = std::max(
+        speedMin, brain->get_parameter(
+            "goalkeeper.prediction.intercept.robot_speed_max").as_double());
+    const double measuredSpeedGain = std::max(
+        0.1, brain->get_parameter(
+            "goalkeeper.prediction.intercept.measured_speed_gain").as_double());
+    const double reachSpeed = std::clamp(
+        brain->data->goalkeeperMeasuredOdomSpeed * measuredSpeedGain,
+        speedMin, speedMax);
+    const double safetyTime = std::max(
+        0.0, brain->get_parameter(
+            "goalkeeper.prediction.intercept.safety_time_sec").as_double());
+    double targetTime = brain->data->ballTimeToIntercept;
+    bool forwardInterceptActive = false;
+
+    const double ballX = brain->data->ball.posToField.x;
+    const double ballY = brain->data->ball.posToField.y;
+    const double dxToLine = targetField.x - ballX;
+    const double dyToLine = targetField.y - ballY;
+    const double distanceToLine = std::hypot(dxToLine, dyToLine);
+    const double ballSpeed = std::hypot(
+        brain->data->ballVelocityX, brain->data->ballVelocityY);
+    const double deceleration = std::max(
+        0.0, brain->get_parameter(
+            "goalkeeper.prediction.deceleration").as_double());
+    auto ballTravelTime = [ballSpeed, deceleration](double distance) {
+        if (distance <= 0.0) return 0.0;
+        if (ballSpeed <= 1e-6) return std::numeric_limits<double>::infinity();
+        if (deceleration <= 1e-6) return distance / ballSpeed;
+        const double discriminant =
+            ballSpeed * ballSpeed - 2.0 * deceleration * distance;
+        if (discriminant < 0.0)
+            return std::numeric_limits<double>::infinity();
+        return (ballSpeed - std::sqrt(discriminant)) / deceleration;
+    };
+
+    if (forwardInterceptEnabled && distanceToLine > 1e-6 &&
+        ballX > targetField.x + ballSeparation) {
+        const double ballLimitedForward = std::max(
+            0.0, ballX - ballSeparation - targetField.x);
+        const double maxForward = std::min(
+            configuredMaxForward, ballLimitedForward);
+        for (double forward = maxForward;
+             forward >= searchStep * 0.5; forward -= searchStep) {
+            const double candidateX = targetField.x + forward;
+            const double ratio = std::clamp(
+                (candidateX - ballX) / dxToLine, 0.0, 1.0);
+            // Keep the candidate on the actual trajectory.  An early point
+            // can legitimately be outside the goal-mouth width even though
+            // the later line crossing is inside it.
+            const double candidateY = ballY + ratio * dyToLine;
+            const double candidateDistance = std::hypot(
+                candidateX - ballX, candidateY - ballY);
+            const double candidateTime = ballTravelTime(candidateDistance);
+            const double robotDistance = std::hypot(
+                candidateX - brain->data->robotPoseToField.x,
+                candidateY - brain->data->robotPoseToField.y);
+            if (std::isfinite(candidateTime) &&
+                robotDistance / reachSpeed + safetyTime <= candidateTime) {
+                targetField.x = candidateX;
+                targetField.y = candidateY;
+                targetTime = candidateTime;
+                forwardInterceptActive = true;
+                break;
+            }
+        }
+        // A centred shot must not leave a stationary goalkeeper waiting on
+        // its current line merely because the conservative reach model has no
+        // solution yet.  Force a short forward target and command the frontal
+        // speed limit; this fallback remains bounded by the ball separation.
+        if (frontIntercept && !forwardInterceptActive && maxForward > 0.0) {
+            const double frontMinimum = std::max(
+                0.0, brain->get_parameter(
+                    "goalkeeper.prediction.intercept.front_min_forward_distance").as_double());
+            const double forward = std::min(maxForward, frontMinimum);
+            if (forward > 0.0) {
+                const double candidateX = targetField.x + forward;
+                const double ratio = std::clamp(
+                    (candidateX - ballX) / dxToLine, 0.0, 1.0);
+                const double candidateY = ballY + ratio * dyToLine;
+                const double candidateDistance = std::hypot(
+                    candidateX - ballX, candidateY - ballY);
+                const double candidateTime = ballTravelTime(candidateDistance);
+                targetField.x = candidateX;
+                targetField.y = candidateY;
+                if (std::isfinite(candidateTime)) targetTime = candidateTime;
+                forwardInterceptActive = true;
+            }
+        }
+    }
+
+    brain->data->goalkeeperForwardInterceptActive = forwardInterceptActive;
+    brain->data->goalkeeperFrontIntercept =
+        forwardInterceptActive && frontIntercept;
+    brain->data->goalkeeperAdaptiveReachSpeed = reachSpeed;
+    brain->data->goalkeeperBlockTargetFieldX = targetField.x;
+    brain->data->goalkeeperBlockTargetFieldY = targetField.y;
+    brain->data->goalkeeperBlockTargetTime = targetTime;
+
     const Pose2D targetRobot = brain->data->field2robot(targetField);
     brain->data->goalkeeperBlockTargetRobotX = targetRobot.x;
     brain->data->goalkeeperBlockTargetRobotY = targetRobot.y;
     const double gain = std::max(
         0.1, brain->get_parameter(
             "goalkeeper.prediction.block.position_gain").as_double());
-    const double vxLimit = std::max(
+    double vxLimit = std::max(
         0.0, brain->get_parameter(
             "goalkeeper.prediction.block.vx_limit").as_double());
+    if (forwardInterceptActive) {
+        vxLimit = std::max(0.0, brain->get_parameter(
+            frontIntercept
+                ? "goalkeeper.prediction.intercept.front_vx_limit"
+                : "goalkeeper.prediction.intercept.diagonal_vx_limit").as_double());
+    }
     const double vyLimit = std::max(
         0.0, brain->get_parameter(
             "goalkeeper.prediction.block.vy_limit").as_double());
@@ -1844,7 +1978,15 @@ NodeStatus GoalkeeperBlockShot::tick()
     // If the available time is shorter than the nominal lateral travel time,
     // saturate the lateral command immediately instead of approaching softly.
     const double availableTime = std::max(
-        0.01, brain->data->ballTimeToIntercept - reactionMargin);
+        0.01, targetTime - reactionMargin);
+    if (forwardInterceptActive &&
+        std::abs(targetRobot.x) / availableTime > std::abs(vx) + 1e-6) {
+        vx = std::copysign(vxLimit, targetRobot.x);
+    }
+    if (forwardInterceptActive && frontIntercept &&
+        std::abs(targetRobot.x) >= tolerance) {
+        vx = std::copysign(vxLimit, targetRobot.x);
+    }
     if (std::abs(targetRobot.y) / availableTime > std::abs(vy) + 1e-6) {
         vy = std::copysign(vyLimit, targetRobot.y);
     }
@@ -1856,7 +1998,7 @@ NodeStatus GoalkeeperBlockShot::tick()
         0.02, brain->get_parameter(
             "goalkeeper.prediction.block.urgent_lateral_error").as_double());
     const bool urgentBlock =
-        brain->data->ballTimeToIntercept <= urgentTime &&
+        targetTime <= urgentTime &&
         std::abs(targetRobot.y) >= urgentLateralError;
     brain->data->goalkeeperUrgentBlock = urgentBlock;
     if (urgentBlock) {

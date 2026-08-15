@@ -27,12 +27,12 @@ brain_node:
         vy_limit: 1.5
         vtheta_limit: 1.0
         target_distance: 0.4
-        safe_distance: 0.5
+        safe_distance: 0.6
       adjust:
         turn_threshold: 0.2
-        range: 1.0
+        range: 0.3
         vx_limit: 1.5
-        vy_limit: 1.5
+        vy_limit: 0.2
         vtheta_limit: 1.0
       claim:
         max_ball_range: 3.0
@@ -83,6 +83,7 @@ brain_node:
         min_r_squared: 0.9
         max_residual: 0.2
         max_sample_jump: 0.8
+        continuity_filter_enabled: true
         field_margin: 0.5
         reject_outside_field: true
         min_ball_confidence: 40.0
@@ -95,6 +96,20 @@ brain_node:
         max_time_to_block: 3.0
         activation_hold_msec: 400.0
         post_block_claim_msec: 2500.0
+        intercept:
+          enabled: true
+          max_forward_distance: 1.20
+          front_max_forward_distance: 1.60
+          front_min_forward_distance: 0.40
+          front_lateral_threshold: 0.25
+          min_ball_separation: 0.25
+          search_step: 0.10
+          robot_speed_min: 0.45
+          robot_speed_max: 1.20
+          measured_speed_gain: 1.20
+          safety_time_sec: 0.12
+          diagonal_vx_limit: 1.00
+          front_vx_limit: 1.50
         block:
           vx_limit: 0.65
           vy_limit: 1.5
@@ -119,7 +134,7 @@ brain_node:
       fallen_robot_distance: 3.0
       fallen_robot_angle: 0.785
       avoid_during_chase: true
-      chase_ao_safe_dist: 1.0
+      chase_ao_safe_dist: 1.5
     # Ruta relativa al directorio beijing, creado por scripts/start.sh.
     # Evita el Permission denied observado en /home/booster/Workspace/rrlog.
     rerunLog:

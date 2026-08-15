@@ -55,11 +55,57 @@ function movementEffect(name) {
   if (name.startsWith("goalkeeper.adjust.")) return "pasos de alineación y giro antes del despeje";
   if (name.startsWith("goalkeeper.claim.")) return "decisión de abandonar la cobertura; después puede activar persecución";
   if (name.startsWith("goalkeeper.camera.")) return "movimiento de la cabeza/cámara, no de las piernas";
+  if (name.startsWith("goalkeeper.prediction.intercept.")) return "selección del punto adelantado y velocidad de salida frontal/diagonal";
   if (name.startsWith("goalkeeper.prediction.block.")) return "locomoción del cuerpo durante block_shot";
   if (name.startsWith("goalkeeper.prediction.")) return "cálculo y decisión del predictor; sólo mueve si termina activando block_shot";
   if (name.includes("fallen_robot") || name.startsWith("obstacle_avoidance.")) return "protección de trayectoria o salida de la acción de patada";
   if (name.startsWith("goalkeeper.kick.") || name.startsWith("RLVisionKick.")) return "selección, preparación o ejecución de la patada";
   return "comportamiento del portero";
+}
+
+function tuningEffect(name, spec) {
+  if (spec.type === "boolean") return {
+    up: `Activar: ${spec.description}`,
+    down: "Desactivar: conserva el comportamiento alternativo u original indicado."
+  };
+  const exact = {
+    "goalkeeper.chase.target_distance": ["se aproxima desde más lejos detrás del balón", "se acerca más al balón antes de entregar a Adjust"],
+    "goalkeeper.chase.safe_distance": ["rodea con más margen y recorre una trayectoria mayor", "rodea más cerca y recorta camino, con menos margen"],
+    "goalkeeper.adjust.range": ["mantiene el balón más lejos al preparar la patada", "se acerca más al balón; exige mejor control para no pasarlo entre los pies"],
+    "goalkeeper.prediction.max_sample_jump": ["tolera cambios mayores de posición", "rechaza antes los saltos entre candidatos"],
+    "goalkeeper.prediction.recency_weight": ["responde más a las muestras nuevas, pero amplifica ruido reciente", "suaviza más usando el historial"],
+    "goalkeeper.prediction.deceleration": ["supone que el balón frena más y predice más tiempo de llegada", "supone que conserva más velocidad"],
+    "goalkeeper.prediction.intercept.max_forward_distance": ["busca cortar antes y más lejos de la portería", "mantiene la intercepción más cerca de la línea defensiva"],
+    "goalkeeper.prediction.intercept.front_max_forward_distance": ["sale más adelante ante tiros centrados", "espera más cerca de la portería"],
+    "goalkeeper.prediction.intercept.front_min_forward_distance": ["fuerza una salida frontal mínima más larga cuando el cálculo conservador no encuentra solución", "reduce la salida frontal de emergencia"],
+    "goalkeeper.prediction.intercept.front_lateral_threshold": ["clasifica más tiros como frontales y usa salida directa", "reserva la salida frontal para tiros más centrados"],
+    "goalkeeper.prediction.intercept.robot_speed_min": ["supone mayor capacidad antes de medirla; puede elegir puntos exigentes", "elige puntos iniciales más conservadores"],
+    "goalkeeper.prediction.intercept.robot_speed_max": ["permite que la velocidad medida adelante más el objetivo", "limita el optimismo del cálculo de alcance"],
+    "goalkeeper.prediction.intercept.measured_speed_gain": ["confía más en la velocidad medida y adelanta el objetivo", "reduce el alcance estimado y acerca el objetivo a portería"],
+    "goalkeeper.prediction.intercept.safety_time_sec": ["reserva más tiempo y elige puntos más conservadores", "intercepta más adelante, con mayor riesgo de llegar tarde"],
+    "goalkeeper.prediction.intercept.search_step": ["calcula menos candidatos y el punto queda menos preciso", "afina el punto con más candidatos"],
+    "goalkeeper.prediction.intercept.min_ball_separation": ["mantiene el objetivo más detrás del balón", "permite cortar más cerca del balón"],
+  };
+  if (exact[name]) return {up: `Aumentar: ${exact[name][0]}.`, down: `Disminuir: ${exact[name][1]}.`};
+  if (name.includes("time") || name.includes("msec") || name.includes("history") || name.includes("interval"))
+    return {up: "Aumentar: da más tiempo/estabilidad, normalmente con más demora.", down: "Disminuir: reacciona antes, pero tolera menos retrasos o ruido."};
+  if (name.includes("tolerance") || name.includes("margin") || name.includes("range") || name.includes("distance"))
+    return {up: "Aumentar: amplía la zona, distancia o error aceptado.", down: "Disminuir: exige una condición más cercana o precisa."};
+  if (name.includes("threshold") || name.includes("min_"))
+    return {up: "Aumentar: vuelve la condición de activación más exigente.", down: "Disminuir: permite activarla antes o con evidencia menor."};
+  if (name.includes("limit") || name.includes("rate") || name.includes("gain"))
+    return {up: "Aumentar: permite una respuesta más rápida o agresiva.", down: "Disminuir: suaviza y limita el movimiento o corrección."};
+  if (name.includes("max_") || name.includes("count"))
+    return {up: "Aumentar: admite o conserva más datos/alcance.", down: "Disminuir: restringe el cálculo y reduce su alcance."};
+  return {up: "Aumentar: incrementa la influencia de este parámetro.", down: "Disminuir: reduce su influencia."};
+}
+
+function tuningGuide(name, spec) {
+  const effect = tuningEffect(name, spec);
+  const guide = document.createElement("div");
+  guide.className = "tuning-guide";
+  guide.innerHTML = `<span class="increase-effect">↑ ${effect.up}</span><span class="decrease-effect">↓ ${effect.down}</span>`;
+  return guide;
 }
 
 function updateDirty() {
@@ -118,7 +164,7 @@ function renderForm() {
           line.lastChild.textContent = input.checked ? "Activado" : "Desactivado";
           updateDirty();
         };
-        wrap.append(head, code, desc, line);
+        wrap.append(head, code, desc, tuningGuide(name, spec), line);
       } else if (spec.type === "choice") {
         input = document.createElement("select");
         spec.options.forEach(option => {
@@ -129,7 +175,7 @@ function renderForm() {
         });
         input.value = state.values[name];
         input.onchange = () => { state.values[name] = input.value; updateDirty(); };
-        wrap.append(head, code, desc, input);
+        wrap.append(head, code, desc, tuningGuide(name, spec), input);
       } else {
         input = document.createElement("input");
         input.type = "number";
@@ -141,7 +187,7 @@ function renderForm() {
           state.values[name] = spec.type === "integer" ? Number.parseInt(input.value, 10) : Number(input.value);
           updateDirty();
         };
-        wrap.append(head, code, desc, input);
+        wrap.append(head, code, desc, tuningGuide(name, spec), input);
       }
       form.appendChild(wrap);
     });
@@ -171,7 +217,7 @@ function renderParameterHelp() {
           ? `${spec.minimum}–${spec.maximum}${spec.unit ? ` ${spec.unit}` : ""}`
           : spec.type === "choice" ? spec.options.join(" / ") : "Activado / Desactivado";
         meta.textContent = `Original: ${original} · Opciones/rango: ${range} · Afecta: ${movementEffect(name)}.`;
-        row.append(title, explanation, meta);
+        row.append(title, explanation, tuningGuide(name, spec), meta);
         table.appendChild(row);
       });
     section.appendChild(table);
@@ -225,7 +271,7 @@ async function apply(persist) {
 function loadFactoryDefaults() {
   if (!confirm(`¿Cargar los ${Object.keys(state.factory).length} valores originales en el formulario? Aún no se aplicarán al robot.`)) return;
   state.values = structuredClone(state.factory);
-  state.group = "Bloqueo reactivo";
+  state.group = state.schema.groups[0];
   renderTabs();
   renderForm();
   updateDirty();
@@ -236,7 +282,7 @@ function loadFactoryDefaults() {
 function loadRecommendedProfile() {
   if (!confirm("¿Cargar el perfil recomendado medido en el formulario? Aún no se aplicará al robot.")) return;
   state.values = structuredClone(state.recommended);
-  state.group = "Predicción";
+  state.group = "Intercepción adelantada";
   renderTabs();
   renderForm();
   updateDirty();
@@ -305,6 +351,18 @@ function statusView(status) {
   $("observationAge").textContent = `${format(status.observation_age_msec, 0)} ms`;
   $("detectionLatency").textContent = `${format(status.estimated_detection_latency_msec, 0)} ms`;
   $("interceptPoint").textContent = status.threatens_goal ? `(${format(status.intercept_x)}, ${format(status.intercept_y)}) m` : "—";
+  $("continuityFilterState").textContent = status.continuity_filter_enabled ? "activo" : "desactivado";
+  $("forwardInterceptState").textContent = !status.forward_intercept_enabled
+    ? "desactivada · línea fija"
+    : status.forward_intercept_active
+      ? status.front_intercept ? "ACTIVA · salida frontal" : "ACTIVA · salida diagonal"
+      : "activa · sin punto adelantado alcanzable";
+  $("adaptiveTarget").textContent = status.threatens_goal
+    ? `(${format(status.block_target_field_x)}, ${format(status.block_target_field_y)}) m` : "—";
+  $("adaptiveTargetTime").textContent = status.threatens_goal
+    ? `${format(status.block_target_time)} s` : "—";
+  $("adaptiveReachSpeed").textContent = status.forward_intercept_enabled
+    ? `${format(status.adaptive_reach_speed)} m/s` : "—";
   $("ballConfidence").textContent = `${format(status.ball_confidence, 1)} %`;
   $("robotPose").textContent = `(${format(status.robot_x)}, ${format(status.robot_y)}, ${format(status.robot_theta)})`;
   $("postBlockClearance").textContent = status.post_block_clearance ? "activo: buscar y patear" : "inactivo";
@@ -348,8 +406,10 @@ function renderField2D(status) {
   const robot = $("robotMarker");
   robot.setAttribute("transform", `translate(${px(status.robot_x)} ${py(status.robot_y)}) rotate(${-Number(status.robot_theta || 0) * 180 / Math.PI})`);
   robot.classList.toggle("hidden", !robotVisible);
-  const interceptVisible = Boolean(status.threatens_goal) && Number.isFinite(Number(status.intercept_x)) && Number.isFinite(Number(status.intercept_y));
-  svgPoint($("interceptMarker"), px(status.intercept_x), py(status.intercept_y), interceptVisible);
+  const targetX = Number.isFinite(Number(status.block_target_field_x)) ? status.block_target_field_x : status.intercept_x;
+  const targetY = Number.isFinite(Number(status.block_target_field_y)) ? status.block_target_field_y : status.intercept_y;
+  const interceptVisible = Boolean(status.threatens_goal) && Number.isFinite(Number(targetX)) && Number.isFinite(Number(targetY));
+  svgPoint($("interceptMarker"), px(targetX), py(targetY), interceptVisible);
   $("field2d").classList.toggle("threat", Boolean(status.threatens_goal));
 }
 

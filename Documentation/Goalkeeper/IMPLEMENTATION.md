@@ -20,7 +20,7 @@
   Kick/VisualKick.
 - `subtree_goal_keeper_play_original.xml`: copia del árbol anterior.
 - `tools/goalkeeper_web/`: servidor ROS/HTTP y GUI.
-- `factory_defaults.json`: perfil de recuperación protegido con 102 parámetros.
+- `factory_defaults.json`: perfil de recuperación protegido con 116 parámetros.
 - `config_local.yaml`: perfil recomendado medido y ajustes persistentes de GUI.
 - `start.sh`/`stop.sh`: ciclo de vida del panel integrado al demo.
 
@@ -28,10 +28,12 @@
 
 - el perfil de fábrica mantiene el predictor desactivado;
 - `config_local.yaml` activa el perfil recomendado medido;
-- el bloqueo urgente recomendado usa desplazamiento lateral puro (`vx=0`,
-  `vtheta=0`) y la compensación de zona muerta se limita al eje Y;
+- el perfil recomendado desactiva el sobrecontrol urgente (`urgent_time_sec=0`)
+  y la compensación de zona muerta se limita al eje Y;
 - localización requerida al activarlo;
-- patada convencional seleccionada;
+- VisualKick `kV2` seleccionada localmente; el perfil de fábrica conserva la
+  patada convencional;
+- intercepción adelantada activa localmente y desactivada en fábrica;
 - restauración sólo carga el formulario y exige una aplicación explícita;
 - validación de tipos, límites y relaciones antes de enviar parámetros.
 
@@ -55,7 +57,7 @@ Cuando cambie la IP del GameController se deben actualizar tanto
 
 - API HTTP: esquema, perfil original, archivos estáticos, aplicación,
   persistencia y rechazo de combinaciones inválidas;
-- correspondencia de los 102 parámetros entre GUI, perfil y C++;
+- correspondencia de los 116 parámetros entre GUI, perfil y C++;
 - XML y JavaScript válidos;
 - scripts Bash válidos;
 - prueba aislada del predictor preparada para C++17.

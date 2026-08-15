@@ -6,6 +6,8 @@
 >
 > El perfil vigente para la siguiente prueba y la evidencia que lo originó se
 > documentan en [Ajuste de prueba 2026-08-15](AJUSTE_PRUEBA_20260815.md).
+> La estrategia nueva está descrita en
+> [Intercepción adelantada adaptativa](INTERCEPCION_ADELANTADA_20260816.md).
 
 ## Alcance
 
@@ -56,7 +58,7 @@ brain, lo que permite diferenciar un problema de red de uno del árbol.
 
 ## Volver al comportamiento original
 
-El archivo `factory_defaults.json` conserva un perfil protegido de 102 valores.
+El archivo `factory_defaults.json` conserva un perfil protegido de 116 valores.
 No se sobrescribe cuando la GUI guarda `config_local.yaml`.
 
 1. Abrir **Ayuda y restauración**.
@@ -100,6 +102,17 @@ detecciones del balón, ajusta una trayectoria ponderada, calcula velocidad,
 calidad, desaceleración y cruce con la línea defensiva. Si el cruce amenaza la
 portería dentro del horizonte configurado, `GoalieDecide` emite `block_shot` y
 el robot se desplaza al punto lateral previsto.
+
+Con `goalkeeper.prediction.intercept.enabled=true`, el portero intenta primero
+un punto alcanzable anterior a la línea defensiva. Para tiros laterales usa una
+diagonal; si el cruce está a menos de `front_lateral_threshold` del robot usa la
+salida frontal rápida. Si el cálculo no encuentra un punto alcanzable vuelve a
+la línea fija sin cancelar el bloqueo.
+
+El filtro de continuidad ahora se controla independientemente con
+`goalkeeper.prediction.continuity_filter_enabled`. Desactivarlo facilita una
+reacquisición inmediata, pero permite que una falsa detección sustituya el
+balón seguido y cambie bruscamente el objetivo.
 
 Mantener `goalkeeper.prediction.require_localization=true`: sin
 `odom_calibrated`, el historial se limpia y no se ordena el bloqueo.

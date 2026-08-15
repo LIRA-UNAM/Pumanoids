@@ -173,6 +173,13 @@ public:
     bool ballMovingTowardOwnGoal = false;
     bool goalkeeperPostBlockClearance = false;
     bool goalkeeperUrgentBlock = false;
+    bool goalkeeperForwardInterceptActive = false;
+    bool goalkeeperFrontIntercept = false;
+    double goalkeeperMeasuredOdomSpeed = 0.0;
+    double goalkeeperAdaptiveReachSpeed = 0.0;
+    double goalkeeperBlockTargetFieldX = 0.0;
+    double goalkeeperBlockTargetFieldY = 0.0;
+    double goalkeeperBlockTargetTime = 0.0;
     double goalkeeperBlockTargetRobotX = 0.0;
     double goalkeeperBlockTargetRobotY = 0.0;
     string ballPredictionReason = "initializing";

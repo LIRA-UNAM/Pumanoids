@@ -97,7 +97,7 @@ def main() -> None:
         base = ("127.0.0.1", httpd.server_port)
         try:
             status, schema = request(base, "/api/schema")
-            assert status == 200 and len(schema["parameters"]) == 102
+            assert status == 200 and len(schema["parameters"]) == 116
             assert "goalkeeper.prediction.post_block_claim_msec" in schema["parameters"]
             assert "goalkeeper.prediction.block.urgent_vy_limit" in schema["parameters"]
             status, factory = request(base, "/api/factory-defaults")
@@ -118,9 +118,13 @@ def main() -> None:
             assert recommended["values"]["goalkeeper.kick.alignment_tolerance"] == 1.5707963268
             assert recommended["values"]["goalkeeper.chase.vx_limit"] == 0.5
             assert recommended["values"]["goalkeeper.chase.vy_limit"] == 1.5
-            assert recommended["values"]["goalkeeper.adjust.range"] == 1.0
+            assert recommended["values"]["goalkeeper.chase.safe_distance"] == 0.6
+            assert recommended["values"]["goalkeeper.adjust.range"] == 0.3
             assert recommended["values"]["goalkeeper.adjust.vx_limit"] == 1.5
-            assert recommended["values"]["goalkeeper.adjust.vy_limit"] == 1.5
+            assert recommended["values"]["goalkeeper.adjust.vy_limit"] == 0.2
+            assert recommended["values"]["obstacle_avoidance.chase_ao_safe_dist"] == 1.5
+            assert recommended["values"]["goalkeeper.prediction.continuity_filter_enabled"] is True
+            assert recommended["values"]["goalkeeper.prediction.intercept.enabled"] is True
             assert recommended["values"]["goalkeeper.prediction.history_msec"] == 600.0
             assert recommended["values"]["goalkeeper.prediction.max_samples"] == 20
             assert recommended["values"]["goalkeeper.prediction.block.urgent_time_sec"] == 0.0
@@ -161,6 +165,14 @@ def main() -> None:
                 "values": {
                     "goalkeeper.prediction.min_speed": 5.0,
                     "goalkeeper.prediction.max_speed": 4.0,
+                }
+            })
+            assert status == 400 and "error" in result
+
+            status, result = request(base, "/api/apply", {
+                "values": {
+                    "goalkeeper.prediction.intercept.robot_speed_min": 1.5,
+                    "goalkeeper.prediction.intercept.robot_speed_max": 1.0,
                 }
             })
             assert status == 400 and "error" in result

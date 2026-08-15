@@ -147,6 +147,7 @@ SCHEMA: dict[str, dict[str, Any]] = {
     "goalkeeper.prediction.min_r_squared": number("Calidad lineal R²", "Predicción", .90, 0., 1., .01, "Calidad mínima del ajuste temporal."),
     "goalkeeper.prediction.max_residual": number("Residual máximo", "Predicción", .20, .01, 1., .01, "Error RMS máximo de la trayectoria.", "m"),
     "goalkeeper.prediction.max_sample_jump": number("Salto máximo", "Predicción", .80, .05, 3., .05, "Reinicia el historial ante saltos de percepción.", "m"),
+    "goalkeeper.prediction.continuity_filter_enabled": boolean("Filtro de continuidad", "Predicción", True, "Activado rechaza saltos grandes entre detecciones consecutivas; desactivado permite cambiar inmediatamente a otro candidato."),
     "goalkeeper.prediction.field_margin": number("Margen exterior del campo", "Predicción", .50, 0., 3., .05, "Descarta posiciones del balón fuera del campo más este margen.", "m"),
     "goalkeeper.prediction.reject_outside_field": boolean("Ignorar balón fuera del campo", "Predicción", False, "Con localización calibrada, rechaza candidatos cuya posición exceda el campo más el margen exterior."),
     "goalkeeper.prediction.min_ball_confidence": number("Confianza mínima", "Predicción", 40., 0., 100., 1., "Descarta detecciones débiles antes del ajuste.", "%"),
@@ -159,6 +160,19 @@ SCHEMA: dict[str, dict[str, Any]] = {
     "goalkeeper.prediction.max_time_to_block": number("Horizonte máximo", "Predicción", 2.5, .1, 8., .1, "Solo bloquea tiros dentro de este horizonte.", "s"),
     "goalkeeper.prediction.activation_hold_msec": number("Retención de amenaza", "Predicción", 400., 0., 1500., 25., "Evita alternar block_shot por una detección perdida.", "ms"),
     "goalkeeper.prediction.post_block_claim_msec": number("Despeje después del bloqueo", "Predicción", 2500., 0., 8000., 100., "Tiempo durante el que el portero puede perseguir y patear un balón cercano después de bloquear.", "ms"),
+    "goalkeeper.prediction.intercept.enabled": boolean("Intercepción adelantada", "Intercepción adelantada", False, "Busca un punto alcanzable antes de la línea defensiva; desactivado conserva el bloqueo original sobre la línea fija."),
+    "goalkeeper.prediction.intercept.max_forward_distance": number("Adelanto diagonal máximo", "Intercepción adelantada", 1.20, 0., 3., .05, "Máximo avance desde la línea defensiva para interceptar tiros laterales en diagonal.", "m"),
+    "goalkeeper.prediction.intercept.front_max_forward_distance": number("Adelanto frontal máximo", "Intercepción adelantada", 1.60, 0., 3., .05, "Máximo avance para interceptar de frente un tiro centrado.", "m"),
+    "goalkeeper.prediction.intercept.front_min_forward_distance": number("Adelanto frontal mínimo", "Intercepción adelantada", .40, 0., 1.5, .05, "Salida frontal mínima cuando ningún candidato adelantado satisface el cálculo conservador de alcance.", "m"),
+    "goalkeeper.prediction.intercept.front_lateral_threshold": number("Umbral de tiro frontal", "Intercepción adelantada", .25, 0., 1., .02, "Diferencia lateral máxima respecto al robot para usar la salida frontal rápida.", "m"),
+    "goalkeeper.prediction.intercept.min_ball_separation": number("Separación mínima del balón", "Intercepción adelantada", .25, .05, 1., .05, "Evita seleccionar un objetivo demasiado próximo o por delante del balón.", "m"),
+    "goalkeeper.prediction.intercept.search_step": number("Resolución del objetivo", "Intercepción adelantada", .10, .02, .5, .02, "Separación entre candidatos al buscar el punto adelantado alcanzable.", "m"),
+    "goalkeeper.prediction.intercept.robot_speed_min": number("Velocidad asumida mínima", "Intercepción adelantada", .45, .05, 2., .05, "Capacidad conservadora usada antes de disponer de movimiento medido.", "m/s"),
+    "goalkeeper.prediction.intercept.robot_speed_max": number("Velocidad asumida máxima", "Intercepción adelantada", 1.20, .1, 2., .05, "Tope de la velocidad medida empleada para no elegir objetivos inalcanzables.", "m/s"),
+    "goalkeeper.prediction.intercept.measured_speed_gain": number("Ganancia de velocidad medida", "Intercepción adelantada", 1.20, .2, 3., .05, "Escala la velocidad obtenida del odómetro al estimar el alcance real del robot."),
+    "goalkeeper.prediction.intercept.safety_time_sec": number("Reserva temporal", "Intercepción adelantada", .12, 0., 1., .01, "Tiempo reservado para latencia y aceleración antes de declarar alcanzable un punto.", "s"),
+    "goalkeeper.prediction.intercept.diagonal_vx_limit": number("Velocidad diagonal frontal", "Intercepción adelantada", 1.00, 0., 2., .05, "Límite longitudinal de una salida diagonal hacia el punto de impacto.", "m/s"),
+    "goalkeeper.prediction.intercept.front_vx_limit": number("Velocidad frontal directa", "Intercepción adelantada", 1.50, 0., 2., .05, "Orden longitudinal máxima para tiros que cruzan cerca del centro del robot.", "m/s"),
     "goalkeeper.prediction.block.vx_limit": number("Bloqueo longitudinal", "Bloqueo predictivo", .7, 0., 2., .05, "Límite longitudinal durante block_shot.", "m/s"),
     "goalkeeper.prediction.block.vy_limit": number("Bloqueo lateral", "Bloqueo predictivo", 1., 0., 1.7, .05, "Límite lateral durante block_shot.", "m/s"),
     "goalkeeper.prediction.block.vtheta_limit": number("Giro en bloqueo", "Bloqueo predictivo", 1., 0., 1.5, .05, "Límite angular durante block_shot.", "rad/s"),
@@ -174,7 +188,7 @@ SCHEMA: dict[str, dict[str, Any]] = {
 }
 
 
-GROUPS = ["Bloqueo reactivo", "Persecución", "Ajuste y posesión", "Cámara", "Patada", "Predicción", "Bloqueo predictivo"]
+GROUPS = ["Bloqueo reactivo", "Persecución", "Ajuste y posesión", "Cámara", "Patada", "Predicción", "Intercepción adelantada", "Bloqueo predictivo"]
 
 # This file is deliberately separate from config_local.yaml: the GUI may
 # overwrite the latter, but never mutates the original recovery profile.
@@ -197,10 +211,10 @@ RECOMMENDED_PROFILE.update({
     "goalkeeper.blocking.position_gain": 1.0,
     "goalkeeper.chase.vx_limit": .50,
     "goalkeeper.chase.vy_limit": 1.50,
-    "goalkeeper.chase.safe_distance": .50,
-    "goalkeeper.adjust.range": 1.0,
+    "goalkeeper.chase.safe_distance": .60,
+    "goalkeeper.adjust.range": .30,
     "goalkeeper.adjust.vx_limit": 1.50,
-    "goalkeeper.adjust.vy_limit": 1.50,
+    "goalkeeper.adjust.vy_limit": .20,
     "goalkeeper.claim.max_ball_range": 3.0,
     "goalkeeper.claim.lateral_margin": 1.0,
     "goalkeeper.kick.type": "visual",
@@ -212,8 +226,10 @@ RECOMMENDED_PROFILE.update({
     "goalkeeper.kick.default.ball_move_threshold": .30,
     "goalkeeper.kick.visual.pre_delay_msec": 200.0,
     "goalkeeper.kick.visual.post_delay_msec": 450.0,
-    "obstacle_avoidance.chase_ao_safe_dist": 1.0,
+    "obstacle_avoidance.chase_ao_safe_dist": 1.5,
     "goalkeeper.prediction.enabled": True,
+    "goalkeeper.prediction.continuity_filter_enabled": True,
+    "goalkeeper.prediction.intercept.enabled": True,
     "goalkeeper.prediction.reject_outside_field": True,
     "goalkeeper.prediction.history_msec": 600.0,
     "goalkeeper.prediction.max_samples": 20,
@@ -393,6 +409,12 @@ def validate_relationships(values: dict[str, Any]) -> None:
         ("goalkeeper.prediction.min_speed",
          "goalkeeper.prediction.max_speed",
          "La velocidad mínima no puede superar la máxima creíble"),
+        ("goalkeeper.prediction.intercept.robot_speed_min",
+         "goalkeeper.prediction.intercept.robot_speed_max",
+         "La velocidad mínima de alcance no puede superar la máxima"),
+        ("goalkeeper.prediction.intercept.front_min_forward_distance",
+         "goalkeeper.prediction.intercept.front_max_forward_distance",
+         "El adelanto frontal mínimo no puede superar el máximo"),
     ]
     for lower, upper, message in pairs:
         if values[lower] > values[upper]:
@@ -527,12 +549,12 @@ class ApiHandler(SimpleHTTPRequestHandler):
                 })
             if self.path == "/api/recommended-profile":
                 return self._json(200, {
-                    "profile": "goalkeeper-measured-2026-08-14-v1",
+                    "profile": "goalkeeper-adaptive-intercept-2026-08-16-v1",
                     "values": RECOMMENDED_PROFILE,
                     "notes": (
-                        "Perfil recomendado a partir de los logs de campo: "
-                        "predictor con menor memoria, bloqueo lateral urgente "
-                        "y despeje convencional rápido.")
+                        "Perfil local basado en la sesión del 14 de agosto, "
+                        "con aproximación restaurada e intercepción adelantada "
+                        "frontal/diagonal adaptada a la velocidad medida.")
                 })
             if self.path == "/api/config":
                 values, live, warning, source = self._current_values()

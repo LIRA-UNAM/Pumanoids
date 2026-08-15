@@ -61,6 +61,20 @@
 .status-panel > h3 { margin: 22px 0 6px; color: var(--cyan); font-size: 15px; }
 .status-panel > h3 + .notice { margin-top: 8px; }
 .reaction-diagnostics { margin-top: 10px; }
+.tuning-guide {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 11px;
+  padding: 8px 9px;
+  border-radius: 8px;
+  background: #091310;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.tuning-guide span { display: block; }
+.increase-effect { color: #9de7cf; }
+.decrease-effect { color: #f1c982; }
+.help-table .tuning-guide { margin-top: 8px; max-width: 900px; }
 
 @media (max-width: 900px) {
   .header-actions { align-items: flex-end; flex-direction: column; }

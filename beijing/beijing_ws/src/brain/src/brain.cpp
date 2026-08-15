@@ -692,6 +692,7 @@ Brain::Brain() : rclcpp::Node("brain_node")
     declare_parameter<double>("goalkeeper.prediction.min_r_squared", 0.90);
     declare_parameter<double>("goalkeeper.prediction.max_residual", 0.20);
     declare_parameter<double>("goalkeeper.prediction.max_sample_jump", 0.80);
+    declare_parameter<bool>("goalkeeper.prediction.continuity_filter_enabled", true);
     declare_parameter<double>("goalkeeper.prediction.field_margin", 0.50);
     declare_parameter<bool>("goalkeeper.prediction.reject_outside_field", false);
     declare_parameter<double>("goalkeeper.prediction.min_ball_confidence", 40.0);
@@ -704,6 +705,19 @@ Brain::Brain() : rclcpp::Node("brain_node")
     declare_parameter<double>("goalkeeper.prediction.max_time_to_block", 2.50);
     declare_parameter<double>("goalkeeper.prediction.activation_hold_msec", 400.0);
     declare_parameter<double>("goalkeeper.prediction.post_block_claim_msec", 2500.0);
+    declare_parameter<bool>("goalkeeper.prediction.intercept.enabled", false);
+    declare_parameter<double>("goalkeeper.prediction.intercept.max_forward_distance", 1.20);
+    declare_parameter<double>("goalkeeper.prediction.intercept.front_max_forward_distance", 1.60);
+    declare_parameter<double>("goalkeeper.prediction.intercept.front_min_forward_distance", 0.40);
+    declare_parameter<double>("goalkeeper.prediction.intercept.front_lateral_threshold", 0.25);
+    declare_parameter<double>("goalkeeper.prediction.intercept.min_ball_separation", 0.25);
+    declare_parameter<double>("goalkeeper.prediction.intercept.search_step", 0.10);
+    declare_parameter<double>("goalkeeper.prediction.intercept.robot_speed_min", 0.45);
+    declare_parameter<double>("goalkeeper.prediction.intercept.robot_speed_max", 1.20);
+    declare_parameter<double>("goalkeeper.prediction.intercept.measured_speed_gain", 1.20);
+    declare_parameter<double>("goalkeeper.prediction.intercept.safety_time_sec", 0.12);
+    declare_parameter<double>("goalkeeper.prediction.intercept.diagonal_vx_limit", 1.00);
+    declare_parameter<double>("goalkeeper.prediction.intercept.front_vx_limit", 1.50);
     declare_parameter<double>("goalkeeper.prediction.block.vx_limit", 0.70);
     declare_parameter<double>("goalkeeper.prediction.block.vy_limit", 1.00);
     declare_parameter<double>("goalkeeper.prediction.block.vtheta_limit", 1.00);
@@ -4816,6 +4830,8 @@ void Brain::recordBallPredictionObservation(const GameObject &ball)
         timeSec = get_clock()->now().seconds();
     }
 
+    const bool continuityFilterEnabled = get_parameter(
+        "goalkeeper.prediction.continuity_filter_enabled").as_bool();
     const double maxJump = std::max(
         0.05, get_parameter(
             "goalkeeper.prediction.max_sample_jump").as_double());
@@ -4826,7 +4842,7 @@ void Brain::recordBallPredictionObservation(const GameObject &ball)
         if (dt <= 1e-4) return;
         const double jump = std::hypot(
             ball.posToField.x - last.x, ball.posToField.y - last.y);
-        if (dt > 1.0 || jump > maxJump) {
+        if (dt > 1.0 || (continuityFilterEnabled && jump > maxJump)) {
             goalkeeperBallObservations_.clear();
         }
     }
@@ -5313,6 +5329,26 @@ void Brain::publishGoalkeeperStatus()
            << ",\"intercept_x\":" << data->ballInterceptPoint.x
            << ",\"intercept_y\":" << data->ballInterceptPoint.y
            << ",\"time_to_intercept\":" << data->ballTimeToIntercept
+           << ",\"continuity_filter_enabled\":"
+           << (get_parameter(
+                   "goalkeeper.prediction.continuity_filter_enabled").as_bool()
+                   ? "true" : "false")
+           << ",\"forward_intercept_enabled\":"
+           << (get_parameter(
+                   "goalkeeper.prediction.intercept.enabled").as_bool()
+                   ? "true" : "false")
+           << ",\"forward_intercept_active\":"
+           << (data->goalkeeperForwardInterceptActive ? "true" : "false")
+           << ",\"front_intercept\":"
+           << (data->goalkeeperFrontIntercept ? "true" : "false")
+           << ",\"adaptive_reach_speed\":"
+           << data->goalkeeperAdaptiveReachSpeed
+           << ",\"block_target_field_x\":"
+           << data->goalkeeperBlockTargetFieldX
+           << ",\"block_target_field_y\":"
+           << data->goalkeeperBlockTargetFieldY
+           << ",\"block_target_time\":"
+           << data->goalkeeperBlockTargetTime
            << ",\"post_block_clearance\":"
            << (data->goalkeeperPostBlockClearance ? "true" : "false")
            << ",\"urgent_block\":"
@@ -6225,6 +6261,7 @@ void Brain::odometerCallback(const booster_interface::msg::Odometer &msg)
         }
     }
     goalkeeperPreviousOdomPose_ = rawOdomPose;
+    data->goalkeeperMeasuredOdomSpeed = goalkeeperOdomSpeed_;
     goalkeeperPreviousOdomTime_ = callbackTime;
     goalkeeperPreviousOdomValid_ = true;
 
@@ -7152,6 +7189,8 @@ void Brain::detectProcessBalls(const vector<GameObject> &ballObjs)
             "goalkeeper.prediction.history_msec").as_double()));
     const bool applyGoalkeeperContinuityFilter =
         get_parameter("goalkeeper.prediction.enabled").as_bool() &&
+        get_parameter(
+            "goalkeeper.prediction.continuity_filter_enabled").as_bool() &&
         tree->getEntry<string>("player_role") == "goal_keeper";
     const bool previousBallRecent = applyGoalkeeperContinuityFilter &&
         oldBall.timePoint.nanoseconds() > 0 &&
