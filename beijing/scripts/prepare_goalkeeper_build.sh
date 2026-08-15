@@ -82,9 +82,9 @@ ctest --test-dir "${WORKSPACE_ROOT}/build/brain" \
   --output-on-failure
 
 echo "[CHECK runtime files]"
-test -f install/share/brain/tools/goalkeeper_web/server.py
-test -f install/share/brain/config/config_local.yaml
-test -f install/share/brain/behavior_trees/subtrees/subtree_goal_keeper_play.xml
+test -f install/brain/share/brain/tools/goalkeeper_web/server.py
+test -f install/brain/share/brain/config/config_local.yaml
+test -f install/brain/share/brain/behavior_trees/subtrees/subtree_goal_keeper_play.xml
 
 echo "PREPARACION OK. Inicie con: cd ${DEMO_ROOT} && ./scripts/start.sh role:=goal_keeper"
 echo "Panel: http://IP_DEL_ROBOT:8088"
