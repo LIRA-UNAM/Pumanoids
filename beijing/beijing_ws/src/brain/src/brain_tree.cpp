@@ -1788,6 +1788,7 @@ NodeStatus GoalkeeperBlockShot::tick()
 {
     if (!brain->get_parameter("goalkeeper.prediction.enabled").as_bool() ||
         !brain->data->ballWillBreach) {
+        brain->data->goalkeeperUrgentBlock = false;
         brain->client->setVelocity(0.0, 0.0, 0.0, false, false, false);
         return NodeStatus::SUCCESS;
     }
@@ -1809,6 +1810,8 @@ NodeStatus GoalkeeperBlockShot::tick()
         -lateralLimit, lateralLimit);
 
     const Pose2D targetRobot = brain->data->field2robot(targetField);
+    brain->data->goalkeeperBlockTargetRobotX = targetRobot.x;
+    brain->data->goalkeeperBlockTargetRobotY = targetRobot.y;
     const double gain = std::max(
         0.1, brain->get_parameter(
             "goalkeeper.prediction.block.position_gain").as_double());
@@ -1846,10 +1849,41 @@ NodeStatus GoalkeeperBlockShot::tick()
         vy = std::copysign(vyLimit, targetRobot.y);
     }
 
+    const double urgentTime = std::max(
+        0.0, brain->get_parameter(
+            "goalkeeper.prediction.block.urgent_time_sec").as_double());
+    const double urgentLateralError = std::max(
+        0.02, brain->get_parameter(
+            "goalkeeper.prediction.block.urgent_lateral_error").as_double());
+    const bool urgentBlock =
+        brain->data->ballTimeToIntercept <= urgentTime &&
+        std::abs(targetRobot.y) >= urgentLateralError;
+    brain->data->goalkeeperUrgentBlock = urgentBlock;
+    if (urgentBlock) {
+        const double urgentVxLimit = std::max(
+            0.0, brain->get_parameter(
+                "goalkeeper.prediction.block.urgent_vx_limit").as_double());
+        const double urgentVyLimit = std::max(
+            0.0, brain->get_parameter(
+                "goalkeeper.prediction.block.urgent_vy_limit").as_double());
+        const double urgentVthetaLimit = std::max(
+            0.0, brain->get_parameter(
+                "goalkeeper.prediction.block.urgent_vtheta_limit").as_double());
+        vx = std::clamp(vx, -urgentVxLimit, urgentVxLimit);
+        vy = std::copysign(urgentVyLimit, targetRobot.y);
+        vtheta = std::clamp(vtheta, -urgentVthetaLimit, urgentVthetaLimit);
+    }
+
     const bool applyMinimum = brain->get_parameter(
         "goalkeeper.prediction.block.apply_min_velocity").as_bool();
+    // The predictive blocker must preserve its longitudinal and yaw limits.
+    // Applying the global dead-zone floors to all axes used to turn a small
+    // correction (for example urgent vx <= 0.15 m/s) into vx=0.40 m/s and
+    // similarly inflated yaw.  That made an intended lateral block diagonal
+    // and consumed gait capacity needed by vy.  Keep dead-zone compensation
+    // only on the lateral axis, whose command performs the interception.
     brain->client->setVelocity(
-        vx, vy, vtheta, applyMinimum, applyMinimum, applyMinimum);
+        vx, vy, vtheta, false, applyMinimum, false);
     return NodeStatus::SUCCESS;
 }
 

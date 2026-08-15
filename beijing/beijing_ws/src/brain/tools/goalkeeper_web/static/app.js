@@ -1,4 +1,4 @@
-const state = {schema: null, values: {}, baseline: {}, factory: {}, group: null};
+const state = {schema: null, values: {}, baseline: {}, factory: {}, recommended: {}, group: null};
 const $ = id => document.getElementById(id);
 
 function toast(message, error = false) {
@@ -181,13 +181,15 @@ function renderParameterHelp() {
 
 async function load() {
   try {
-    const [schema, config, factory] = await Promise.all([
-      api("/api/schema"), api("/api/config"), api("/api/factory-defaults")
+    const [schema, config, factory, recommended] = await Promise.all([
+      api("/api/schema"), api("/api/config"), api("/api/factory-defaults"),
+      api("/api/recommended-profile")
     ]);
     state.schema = schema;
     state.values = config.values;
     state.baseline = structuredClone(config.values);
     state.factory = factory.values;
+    state.recommended = recommended.values;
     state.group = schema.groups[0];
     renderTabs();
     renderForm();
@@ -218,7 +220,7 @@ async function apply(persist) {
 }
 
 function loadFactoryDefaults() {
-  if (!confirm("¿Cargar los 94 valores originales en el formulario? Aún no se aplicarán al robot.")) return;
+  if (!confirm(`¿Cargar los ${Object.keys(state.factory).length} valores originales en el formulario? Aún no se aplicarán al robot.`)) return;
   state.values = structuredClone(state.factory);
   state.group = "Bloqueo reactivo";
   renderTabs();
@@ -228,22 +230,14 @@ function loadFactoryDefaults() {
   toast("Valores originales cargados. Revisa y pulsa ‘Aplicar y guardar’ para completar la restauración.");
 }
 
-function loadFastPredictorProfile() {
-  Object.assign(state.values, {
-    "goalkeeper.prediction.enabled": true,
-    "goalkeeper.prediction.require_localization": true,
-    "goalkeeper.prediction.history_msec": 600,
-    "goalkeeper.prediction.max_samples": 20,
-    "goalkeeper.prediction.min_samples": 5,
-    "goalkeeper.prediction.min_span_msec": 100,
-    "goalkeeper.prediction.activation_hold_msec": 400,
-    "goalkeeper.prediction.post_block_claim_msec": 2500
-  });
+function loadRecommendedProfile() {
+  if (!confirm("¿Cargar el perfil recomendado medido en el formulario? Aún no se aplicará al robot.")) return;
+  state.values = structuredClone(state.recommended);
   state.group = "Predicción";
   renderTabs();
   renderForm();
   updateDirty();
-  toast("Perfil rápido cargado. Revisa y pulsa ‘Aplicar y guardar’; todavía no se envió al robot.");
+  toast("Perfil recomendado cargado. Revisa y pulsa ‘Aplicar y guardar’; todavía no se envió al robot.");
 }
 
 function statusView(status) {
@@ -256,6 +250,8 @@ function statusView(status) {
   $("predictionState").classList.toggle("critical", !status.prediction_enabled);
   $("timeToIntercept").textContent = status.threatens_goal ? `${format(status.time_to_intercept)} s` : "—";
   $("gameState").textContent = status.game_state || "?";
+  $("score").textContent = Number.isFinite(Number(status.own_score)) && Number.isFinite(Number(status.opponent_score))
+    ? `${status.own_score} - ${status.opponent_score}` : "—";
   $("localizationState").textContent = status.localization_ready ? "lista" : status.localization_required ? "no calibrada" : "no requerida";
   $("predictionReason").textContent = reasonLabel(status.prediction_reason);
   $("ballDetected").textContent = status.ball_detected ? "detectado" : "no detectado";
@@ -267,6 +263,8 @@ function statusView(status) {
   $("decisionToCommand").textContent = formatMs(status.decision_to_command_msec);
   $("commandToMotion").textContent = formatMs(status.command_to_motion_msec);
   $("decisionToMotion").textContent = formatMs(status.decision_to_motion_msec);
+  $("commandToAlignedMotion").textContent = formatMs(status.command_to_aligned_motion_msec);
+  $("decisionToAlignedMotion").textContent = formatMs(status.decision_to_aligned_motion_msec);
   $("commandRequested").textContent = motionVector(status.command_requested_x, status.command_requested_y, status.command_requested_theta);
   $("commandSent").textContent = motionVector(status.command_sent_x, status.command_sent_y, status.command_sent_theta);
   $("commandAge").textContent = formatMs(status.command_age_msec);
@@ -282,6 +280,11 @@ function statusView(status) {
     ? `${format(status.claim_cost)} / ${format(status.claim_max_cost)}` : "—";
   $("teamLead").textContent = typeof status.team_lead === "boolean" ? status.team_lead ? "sí" : "no" : "—";
   $("goalkeeperMode").textContent = status.goalkeeper_mode || "—";
+  $("fieldFilterState").textContent = !status.field_filter_enabled
+    ? "desactivado"
+    : status.field_filter_localization_ready ? "activo" : "esperando localización";
+  $("fieldFilterRejected").textContent = Number.isFinite(Number(status.field_filter_rejected_count))
+    ? String(status.field_filter_rejected_count) : "—";
   const fitted = Boolean(status.fit_computed);
   $("speed").textContent = fitted ? `${format(status.speed)} m/s` : "—";
   $("velocity").textContent = fitted ? `(${format(status.velocity_x)}, ${format(status.velocity_y)})` : "—";
@@ -297,6 +300,8 @@ function statusView(status) {
   $("ballConfidence").textContent = `${format(status.ball_confidence, 1)} %`;
   $("robotPose").textContent = `(${format(status.robot_x)}, ${format(status.robot_y)}, ${format(status.robot_theta)})`;
   $("postBlockClearance").textContent = status.post_block_clearance ? "activo: buscar y patear" : "inactivo";
+  $("urgentBlock").textContent = status.urgent_block ? "ACTIVO: máxima prioridad lateral" : "inactivo";
+  $("urgentBlock").classList.toggle("critical", Boolean(status.urgent_block));
   renderField2D(status);
 }
 
@@ -349,6 +354,7 @@ const REASONS = {
   speed_below_minimum: "velocidad menor al umbral",
   r_squared_below_minimum: "R² menor al umbral",
   residual_above_maximum: "residual demasiado alto",
+  speed_above_maximum: "velocidad irreal: posible salto de visión",
   not_toward_own_goal: "el balón no va hacia nuestra portería",
   already_past_block_line: "el balón ya cruzó la línea de bloqueo",
   stops_before_block_line: "se detendría antes de la línea",
@@ -394,7 +400,7 @@ $("reload").onclick = load;
 $("apply").onclick = () => apply(false);
 $("save").onclick = () => apply(true);
 $("restoreFactory").onclick = loadFactoryDefaults;
-$("fastProfile").onclick = loadFastPredictorProfile;
+$("fastProfile").onclick = loadRecommendedProfile;
 $("helpLink").onclick = () => { $("help").open = true; };
 document.querySelectorAll(".go-group").forEach(button => {
   button.onclick = () => selectGroup(button.dataset.group);

@@ -142,10 +142,13 @@ SCHEMA: dict[str, dict[str, Any]] = {
     "goalkeeper.prediction.min_samples": integer("Muestras mínimas", "Predicción", 5, 3, 20, 1, "Cantidad mínima para aceptar una velocidad."),
     "goalkeeper.prediction.min_span_msec": number("Intervalo mínimo", "Predicción", 100., 50., 1500., 25., "Tiempo mínimo cubierto por las muestras; es la principal latencia antes de calcular el tiro.", "ms"),
     "goalkeeper.prediction.min_speed": number("Velocidad mínima", "Predicción", .45, 0., 5., .05, "Ignora balones demasiado lentos.", "m/s"),
+    "goalkeeper.prediction.max_speed": number("Velocidad máxima creíble", "Predicción", 8., 1., 20., .25, "Rechaza ajustes causados por saltos de visión que implicarían una velocidad irreal.", "m/s"),
     "goalkeeper.prediction.min_toward_goal_speed": number("Componente hacia portería", "Predicción", .35, 0., 5., .05, "Velocidad x negativa mínima para considerarlo tiro.", "m/s"),
     "goalkeeper.prediction.min_r_squared": number("Calidad lineal R²", "Predicción", .90, 0., 1., .01, "Calidad mínima del ajuste temporal."),
     "goalkeeper.prediction.max_residual": number("Residual máximo", "Predicción", .20, .01, 1., .01, "Error RMS máximo de la trayectoria.", "m"),
     "goalkeeper.prediction.max_sample_jump": number("Salto máximo", "Predicción", .80, .05, 3., .05, "Reinicia el historial ante saltos de percepción.", "m"),
+    "goalkeeper.prediction.field_margin": number("Margen exterior del campo", "Predicción", .50, 0., 3., .05, "Descarta posiciones del balón fuera del campo más este margen.", "m"),
+    "goalkeeper.prediction.reject_outside_field": boolean("Ignorar balón fuera del campo", "Predicción", False, "Con localización calibrada, rechaza candidatos cuya posición exceda el campo más el margen exterior."),
     "goalkeeper.prediction.min_ball_confidence": number("Confianza mínima", "Predicción", 40., 0., 100., 1., "Descarta detecciones débiles antes del ajuste.", "%"),
     "goalkeeper.prediction.recency_weight": number("Peso de muestras recientes", "Predicción", 2., 1., 10., .25, "Da más influencia a las detecciones nuevas para reducir la latencia."),
     "goalkeeper.prediction.deceleration": number("Desaceleración", "Predicción", .40, 0., 3., .05, "Fricción supuesta sobre el balón.", "m/s²"),
@@ -162,7 +165,12 @@ SCHEMA: dict[str, dict[str, Any]] = {
     "goalkeeper.prediction.block.position_gain": number("Ganancia de posición", "Bloqueo predictivo", 1.5, .1, 5., .1, "Convierte el error de posición en velocidad."),
     "goalkeeper.prediction.block.reaction_margin_sec": number("Margen de reacción", "Bloqueo predictivo", .12, 0., 1., .01, "Tiempo reservado a latencia y aceleración.", "s"),
     "goalkeeper.prediction.block.target_tolerance": number("Tolerancia del punto", "Bloqueo predictivo", .10, .02, .5, .01, "Distancia para considerar alcanzado el punto.", "m"),
-    "goalkeeper.prediction.block.apply_min_velocity": boolean("Compensar zona muerta", "Bloqueo predictivo", True, "Aplica la velocidad mínima configurada para iniciar movimiento."),
+    "goalkeeper.prediction.block.apply_min_velocity": boolean("Compensar zona muerta lateral", "Bloqueo predictivo", True, "Aplica la velocidad mínima sólo a Y; X y giro conservan sus límites para no convertir el bloqueo en una diagonal involuntaria."),
+    "goalkeeper.prediction.block.urgent_time_sec": number("Ventana de bloqueo urgente", "Bloqueo predictivo", 1.20, 0., 3., .05, "Por debajo de este tiempo prioriza el desplazamiento lateral.", "s"),
+    "goalkeeper.prediction.block.urgent_lateral_error": number("Error lateral urgente", "Bloqueo predictivo", .20, .02, 1., .02, "Error lateral mínimo para entrar al bloqueo urgente.", "m"),
+    "goalkeeper.prediction.block.urgent_vx_limit": number("Avance durante urgencia", "Bloqueo predictivo", 0., 0., 1., .05, "Cero produce bloqueo lateral puro; aumentarlo permite una corrección diagonal hacia la línea defensiva fija, no una intercepción adelantada.", "m/s"),
+    "goalkeeper.prediction.block.urgent_vy_limit": number("Lateral durante urgencia", "Bloqueo predictivo", 1.70, 0., 1.7, .05, "Orden lateral usada inmediatamente en tiros con poco tiempo.", "m/s"),
+    "goalkeeper.prediction.block.urgent_vtheta_limit": number("Giro durante urgencia", "Bloqueo predictivo", 0., 0., 1.5, .05, "Cero evita que el giro compita con el desplazamiento lateral durante la emergencia.", "rad/s"),
 }
 
 
@@ -179,6 +187,39 @@ if set(FACTORY_DEFAULTS) != set(SCHEMA):
     extra = sorted(set(FACTORY_DEFAULTS) - set(SCHEMA))
     raise RuntimeError(
         f"Perfil original desactualizado; faltan={missing}, sobran={extra}")
+
+# Complete operating profile derived from the 2026-08-14 field session.
+# FACTORY_DEFAULTS remains immutable so the original demo is always recoverable.
+RECOMMENDED_PROFILE = dict(FACTORY_DEFAULTS)
+RECOMMENDED_PROFILE.update({
+    "goalkeeper.blocking.vy_limit": 1.30,
+    "goalkeeper.blocking.position_gain": 1.50,
+    "goalkeeper.chase.vy_limit": 1.50,
+    "goalkeeper.chase.safe_distance": .50,
+    "goalkeeper.claim.max_ball_range": 3.0,
+    "goalkeeper.claim.lateral_margin": 1.0,
+    "goalkeeper.kick.type": "default",
+    "goalkeeper.kick.alignment_tolerance": .78,
+    "goalkeeper.kick.default.speed_limit": 1.50,
+    "goalkeeper.kick.default.min_msec": 500.0,
+    "goalkeeper.kick.default.exit_range": 1.50,
+    "goalkeeper.kick.default.ball_move_threshold": .25,
+    "goalkeeper.kick.visual.pre_delay_msec": 200.0,
+    "goalkeeper.kick.visual.post_delay_msec": 450.0,
+    "obstacle_avoidance.chase_ao_safe_dist": 1.0,
+    "goalkeeper.prediction.enabled": True,
+    "goalkeeper.prediction.reject_outside_field": True,
+    "goalkeeper.prediction.history_msec": 350.0,
+    "goalkeeper.prediction.max_samples": 12,
+    "goalkeeper.prediction.recency_weight": 2.50,
+    "goalkeeper.prediction.step_interval_msec": 50.0,
+    "goalkeeper.prediction.step_count": 60,
+    "goalkeeper.prediction.max_time_to_block": 3.0,
+    "goalkeeper.prediction.activation_hold_msec": 500.0,
+    "goalkeeper.prediction.post_block_claim_msec": 3000.0,
+    "goalkeeper.prediction.block.vy_limit": 1.50,
+    "goalkeeper.prediction.block.reaction_margin_sec": .25,
+})
 
 
 class ParameterTransport:
@@ -341,6 +382,9 @@ def validate_relationships(values: dict[str, Any]) -> None:
         ("goalkeeper.prediction.min_time_to_block",
          "goalkeeper.prediction.max_time_to_block",
          "El tiempo mínimo de bloqueo no puede superar el máximo"),
+        ("goalkeeper.prediction.min_speed",
+         "goalkeeper.prediction.max_speed",
+         "La velocidad mínima no puede superar la máxima creíble"),
     ]
     for lower, upper, message in pairs:
         if values[lower] > values[upper]:
@@ -413,6 +457,15 @@ class ApiHandler(SimpleHTTPRequestHandler):
                         "Comportamiento original del demo: modo attack, patada "
                         "default y predictor desactivado. Los controles nuevos "
                         "usan sus valores iniciales seguros.")
+                })
+            if self.path == "/api/recommended-profile":
+                return self._json(200, {
+                    "profile": "goalkeeper-measured-2026-08-14-v1",
+                    "values": RECOMMENDED_PROFILE,
+                    "notes": (
+                        "Perfil recomendado a partir de los logs de campo: "
+                        "predictor con menor memoria, bloqueo lateral urgente "
+                        "y despeje convencional rápido.")
                 })
             if self.path == "/api/config":
                 return self._json(200, {"values": self.bridge.read_values()})

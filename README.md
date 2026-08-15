@@ -12,8 +12,9 @@
 > [!IMPORTANT]
 > **Rama experimental `test_goalkeeper`.** Esta rama parte de
 > `beijing_demo` y contiene el portero configurable para Booster T2: panel web,
-> selección Kick/VisualKick, predictor de tiros y bloqueo lateral. El predictor
-> está desactivado por defecto y exige localización calibrada al activarse.
+> selección Kick/VisualKick, predictor de tiros y bloqueo lateral urgente. El
+> perfil recomendado activo exige localización calibrada; el perfil original
+> protegido conserva el predictor desactivado para una reversión segura.
 >
 > - [Inicio rápido y compilación](./beijing/README.md)
 > - [Guía completa del portero](./Documentation/Goalkeeper/README.md)

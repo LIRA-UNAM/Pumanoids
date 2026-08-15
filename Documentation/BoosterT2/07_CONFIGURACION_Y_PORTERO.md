@@ -330,7 +330,8 @@ visualizada. `goal_margin` amplía el ancho considerado peligroso.
 - `block.position_gain`: respuesta al error lateral;
 - `block.reaction_margin_sec`: anticipación temporal;
 - `block.target_tolerance`: zona muerta alrededor del objetivo;
-- `block.apply_min_velocity`: aplica mínimos globales del T2.
+- `block.apply_min_velocity`: compensa la zona muerta sólo en el eje lateral
+  Y. No eleva X ni giro, para respetar los límites del bloqueo urgente.
 
 El ajuste seguro es: validar primero el signo lateral con el robot elevado,
 después probar en suelo con `vy_limit=0.4`, y subir gradualmente sin tocar a la

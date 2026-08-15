@@ -7,7 +7,7 @@ no depende de Internet.
 ## Resultado
 
 - Panel web en `http://IP_DEL_ROBOT:8088`.
-- 94 parámetros agrupados: READY/cobertura, persecución, ajuste/posesión,
+- 102 parámetros agrupados: READY/cobertura, persecución, ajuste/posesión,
   cámara, patadas, predictor y bloqueo predictivo.
 - Aplicación inmediata mediante parámetros ROS 2.
 - Persistencia en
@@ -82,7 +82,7 @@ muestras mínimas que máximas o un tiempo mínimo de bloqueo superior al máxim
 
 ## Restaurar el comportamiento original
 
-El perfil `factory_defaults.json` conserva los 94 valores conocidos y no se
+El perfil `factory_defaults.json` conserva los 102 valores conocidos y no se
 modifica al guardar ajustes locales.
 
 1. Abrir **Ayuda y restauración**.
@@ -114,15 +114,32 @@ conservan, pero sólo se ejecuta el seleccionado.
 Cambiar el tipo durante una ejecución detiene la acción anterior mediante el
 manejo `onHalted()` del árbol.
 
+### Potencia y rapidez de la patada
+
+- En `default`, `goalkeeper.kick.default.speed_limit` controla la velocidad
+  límite del `crabWalk` que empuja/despeja el balón. El perfil recomendado usa
+  1.5 m/s. Aumentarlo hasta 2.0 puede hacer el contacto más rápido, pero no lo
+  convierte en una patada articulada y aumenta el riesgo de perder estabilidad.
+- En `visual`, la API accesible no recibe un valor de potencia. `kV1/kV2` elige
+  la versión de VisualKick y las esperas sólo cambian la preparación/salida.
+- `strategy.power_shoot` no se habilita para el portero: en este código
+  `AdjustForPowerShoot` y `Shoot` son stubs, y `useStrongShoot` está marcado
+  como imposible. Activarlo daría una falsa sensación de funcionalidad.
+
 ## Funcionamiento del predictor
 
 1. Cada detección del balón se convierte a coordenadas del campo.
 2. Se descartan detecciones inferiores a `min_ball_confidence`.
 3. Por defecto no se predice hasta que `odom_calibrated=true`.
-4. Un salto superior a `max_sample_jump` reinicia el historial.
+4. El predictor descarta posiciones fuera del campo más `field_margin`; con
+   `reject_outside_field=true` también se rechaza el candidato antes de que los
+   comportamientos lo acepten. Este segundo filtro exige localización calibrada
+   y una pose del robot geométricamente plausible.
+5. Un salto superior a `max_sample_jump` reinicia el historial.
 5. Se ajustan `x(t)` e `y(t)` por mínimos cuadrados ponderados.
 6. Se calculan `vx`, `vy`, rapidez, R² y residual RMS.
-7. El resultado debe cumplir muestras, intervalo, rapidez y calidad mínima.
+7. El resultado debe cumplir muestras, intervalo, rapidez mínima/máxima y
+   calidad.
 8. Sólo se considera tiro si apunta a la portería propia y supera
    `min_toward_goal_speed`.
 9. La desaceleración determina si alcanza la línea defensiva y cuándo.
@@ -130,6 +147,11 @@ manejo `onHalted()` del árbol.
     a `block_shot` con prioridad sobre chase, adjust y kick.
 11. `GoalkeeperBlockShot` mueve el cuerpo al punto previsto usando los límites
     del grupo **Bloqueo predictivo**.
+12. Si queda menos de `block.urgent_time_sec` y el error lateral supera
+    `block.urgent_lateral_error`, el modo urgente limita X/giro y prioriza Y.
+13. La compensación de zona muerta de `block.apply_min_velocity` se aplica sólo
+    a Y. X y giro no reciben el piso global de `0.4`, porque eso sobrepasaría
+    sus límites urgentes y convertiría el bloqueo en una diagonal involuntaria.
 
 ## Parámetros que más afectan la respuesta
 
@@ -142,6 +164,12 @@ manejo `onHalted()` del árbol.
 - Activación anticipada: aumentar `max_time_to_block`.
 - Movimiento lateral más rápido: aumentar `block.vy_limit` y
   `block.position_gain` dentro de límites seguros.
+- Bloqueo urgente lateral puro: usar `block.urgent_vx_limit=0` y
+  `block.urgent_vtheta_limit=0`. Estos son los valores recomendados medidos.
+- Corrección diagonal experimental hacia la línea defensiva fija: aumentar
+  gradualmente `block.urgent_vx_limit`. Esto no selecciona todavía un punto
+  adelantado sobre la trayectoria del balón y no debe confundirse con el avance
+  involuntario que antes introducía el piso global de velocidad.
 - Menos oscilación: aumentar `activation_hold_msec` o reducir la ganancia.
 - Adaptación al césped: medir y ajustar `deceleration`.
 
@@ -157,8 +185,9 @@ velocidad, R², residual, intercepción, GameController y localización.
 También publica diagnóstico independiente del predictor: edad de la medición
 del balón, edad/cambio de decisión, comando solicitado y enviado, velocidad de
 odometría, permiso para reclamar, liderazgo, coste y tiempos
-`decision_to_command_msec`, `command_to_motion_msec` y
-`decision_to_motion_msec`.
+`decision_to_command_msec`, `command_to_motion_msec`,
+`decision_to_motion_msec`, `command_to_aligned_motion_msec` y
+`decision_to_aligned_motion_msec`.
 
 En **Cadena de reacción**, `waiting_command` significa que Brain decidió pero
 todavía no produjo movimiento; `waiting_motion` que la marcha ya recibió un

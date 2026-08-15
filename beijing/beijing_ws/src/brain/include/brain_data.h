@@ -172,6 +172,9 @@ public:
     bool ballPredictionFitComputed = false;
     bool ballMovingTowardOwnGoal = false;
     bool goalkeeperPostBlockClearance = false;
+    bool goalkeeperUrgentBlock = false;
+    double goalkeeperBlockTargetRobotX = 0.0;
+    double goalkeeperBlockTargetRobotY = 0.0;
     string ballPredictionReason = "initializing";
     string goalkeeperDecision = "initializing";
 

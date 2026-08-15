@@ -21,6 +21,7 @@ struct Config
     std::size_t minSamples = 5;
     double minSpanSec = 0.25;
     double minSpeed = 0.45;
+    double maxSpeed = 8.0;
     double minTowardGoalSpeed = 0.35;
     double minRSquared = 0.90;
     double maxResidual = 0.20;
@@ -222,6 +223,10 @@ inline Result predict(const std::vector<Observation> &observations,
 
     if (result.speed < config.minSpeed) {
         result.reason = "speed_below_minimum";
+        return result;
+    }
+    if (result.speed > config.maxSpeed) {
+        result.reason = "speed_above_maximum";
         return result;
     }
     if (fitX.rSquared < config.minRSquared) {

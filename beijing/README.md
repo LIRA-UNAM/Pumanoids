@@ -5,7 +5,7 @@
 Esta rama se creó desde `beijing_demo` para probar el portero configurable en
 el Booster T2. Mantiene el demo de Beijing y agrega:
 
-- panel web en `http://IP_DEL_ROBOT:8088` con 94 parámetros;
+- panel web en `http://IP_DEL_ROBOT:8088` con 102 parámetros;
 - aplicación temporal o persistente de parámetros ROS 2;
 - restauración del perfil original protegido;
 - selector entre Kick convencional y VisualKick;
@@ -14,9 +14,11 @@ el Booster T2. Mantiene el demo de Beijing y agrega:
   predictor desactivado;
 - estado por topics ROS y trayectoria/punto de cruce en Rerun.
 
-El comportamiento seguro/original queda seleccionado inicialmente:
-`goalkeeper.mode=attack`, `goalkeeper.kick.type=default` y
-`goalkeeper.prediction.enabled=false`.
+El perfil original seguro continúa protegido en `factory_defaults.json`. El
+`config_local.yaml` de esta rama carga inicialmente el perfil recomendado de
+pruebas: modo `attack`, patada `default`, predictor activo y bloqueo lateral
+urgente. Para recuperar exactamente el demo original usar **Ayuda y
+restauración → Cargar todos los valores originales → Aplicar y guardar**.
 
 ## Configuración actual del robot y la red
 

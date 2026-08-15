@@ -95,10 +95,13 @@ brain_node:
         min_samples: 5
         min_span_msec: 100.0
         min_speed: 0.45
+        max_speed: 8.0
         min_toward_goal_speed: 0.35
         min_r_squared: 0.90
         max_residual: 0.20
         max_sample_jump: 0.80
+        field_margin: 0.50
+        reject_outside_field: false # Original demo behavior; enable after validating localization.
         min_ball_confidence: 40.0
         recency_weight: 2.0
         deceleration: 0.40
@@ -116,7 +119,12 @@ brain_node:
           position_gain: 1.5
           reaction_margin_sec: 0.12
           target_tolerance: 0.10
-          apply_min_velocity: true
+          apply_min_velocity: true # Dead-zone compensation applies only to lateral Y during block_shot.
+          urgent_time_sec: 1.20
+          urgent_lateral_error: 0.20
+          urgent_vx_limit: 0.00
+          urgent_vy_limit: 1.70
+          urgent_vtheta_limit: 0.00
       
     robot:
       robot_height: 1.28146 # 1.28146 for T2 ; 0.90 for k1

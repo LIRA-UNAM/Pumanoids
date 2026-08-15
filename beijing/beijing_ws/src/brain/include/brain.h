@@ -481,11 +481,16 @@ private:
     rclcpp::Time goalkeeperReactionDecisionAt_;
     rclcpp::Time goalkeeperReactionCommandAt_;
     rclcpp::Time goalkeeperReactionMotionAt_;
+    rclcpp::Time goalkeeperReactionAlignedMotionAt_;
     double goalkeeperReactionDecisionInputAgeMs_ = -1.0;
     double goalkeeperReactionCommandDelayMs_ = -1.0;
     double goalkeeperReactionMotionDelayMs_ = -1.0;
     double goalkeeperReactionTotalDelayMs_ = -1.0;
+    double goalkeeperReactionAlignedMotionDelayMs_ = -1.0;
+    double goalkeeperReactionAlignedTotalDelayMs_ = -1.0;
     Pose2D goalkeeperReactionCommandStartOdomPose_ = {};
+    double goalkeeperReactionCommandOdomUnitX_ = 0.0;
+    double goalkeeperReactionCommandOdomUnitY_ = 0.0;
     bool goalkeeperReactionCommandStartPoseValid_ = false;
 
     // Smoothed odometry velocity for live diagnostics. The displacement gate
@@ -497,6 +502,14 @@ private:
     double goalkeeperOdomVy_ = 0.0;
     double goalkeeperOdomVtheta_ = 0.0;
     double goalkeeperOdomSpeed_ = 0.0;
+
+    // Diagnostics for candidate ball detections rejected beyond the field.
+    // These values are published in /brain/goalkeeper/status and therefore
+    // persisted by Goalkeeper Lab without accepting the false observation.
+    uint64_t goalkeeperRejectedOutsideBallCount_ = 0;
+    double goalkeeperLastRejectedOutsideBallX_ = 0.0;
+    double goalkeeperLastRejectedOutsideBallY_ = 0.0;
+    double goalkeeperLastRejectedOutsideBallConfidence_ = 0.0;
 
     // ------------------------------------------------------ Diagnostic logging ------------------------------------------------------
     void logObstacleDistance();

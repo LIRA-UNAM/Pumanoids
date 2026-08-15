@@ -72,10 +72,13 @@
   "goalkeeper.prediction.min_samples": 5,
   "goalkeeper.prediction.min_span_msec": 100.0,
   "goalkeeper.prediction.min_speed": 0.45,
+  "goalkeeper.prediction.max_speed": 8.0,
   "goalkeeper.prediction.min_toward_goal_speed": 0.35,
   "goalkeeper.prediction.min_r_squared": 0.9,
   "goalkeeper.prediction.max_residual": 0.2,
   "goalkeeper.prediction.max_sample_jump": 0.8,
+  "goalkeeper.prediction.field_margin": 0.5,
+  "goalkeeper.prediction.reject_outside_field": false,
   "goalkeeper.prediction.min_ball_confidence": 40.0,
   "goalkeeper.prediction.recency_weight": 2.0,
   "goalkeeper.prediction.deceleration": 0.4,
@@ -92,5 +95,10 @@
   "goalkeeper.prediction.block.position_gain": 1.5,
   "goalkeeper.prediction.block.reaction_margin_sec": 0.12,
   "goalkeeper.prediction.block.target_tolerance": 0.1,
-  "goalkeeper.prediction.block.apply_min_velocity": true
+  "goalkeeper.prediction.block.apply_min_velocity": true,
+  "goalkeeper.prediction.block.urgent_time_sec": 1.2,
+  "goalkeeper.prediction.block.urgent_lateral_error": 0.2,
+  "goalkeeper.prediction.block.urgent_vx_limit": 0.0,
+  "goalkeeper.prediction.block.urgent_vy_limit": 1.7,
+  "goalkeeper.prediction.block.urgent_vtheta_limit": 0.0
 }

@@ -94,6 +94,18 @@ int main()
     assert(partial.reason == "insufficient_span");
     assert(partial.speed > 0.0);
 
+    Config implausibleConfig = config;
+    implausibleConfig.maxSpeed = 8.0;
+    std::vector<Observation> implausible;
+    for (int i = 0; i < 7; ++i) {
+        const double t = 0.1 * i;
+        implausible.push_back({t, -1.0 - 12.0 * t, 0.0});
+    }
+    const auto impossibleShot = goalkeeper_prediction::predict(
+        implausible, implausibleConfig);
+    assert(!impossibleShot.valid);
+    assert(impossibleShot.reason == "speed_above_maximum");
+
     std::cout << "goalkeeper_ball_prediction_policy_test passed\n";
     return 0;
 }

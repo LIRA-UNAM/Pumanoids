@@ -19,6 +19,7 @@
       <div><span>Predicción</span><strong id="predictionState">—</strong></div>
       <div><span>Tiempo al cruce</span><strong id="timeToIntercept">—</strong></div>
       <div><span>GameController</span><strong id="gameState">—</strong></div>
+      <div><span>Marcador (nosotros-rival)</span><strong id="score">—</strong></div>
       <div><span>Localización</span><strong id="localizationState">—</strong></div>
       <div><span>Diagnóstico</span><strong id="predictionReason">—</strong></div>
     </section>
@@ -70,7 +71,7 @@
         </section>
 
         <details class="parameter-appendix">
-          <summary><strong>Apéndice completo: los 94 parámetros</strong><span>Valor original, rango y efecto</span></summary>
+          <summary><strong>Apéndice completo de parámetros</strong><span>Valor original, rango y efecto</span></summary>
           <div id="parameterHelp"></div>
         </details>
       </div>
@@ -99,6 +100,8 @@
           <div><dt>Decisión → comando</dt><dd id="decisionToCommand">—</dd></div>
           <div><dt>Comando → movimiento</dt><dd id="commandToMotion">—</dd></div>
           <div><dt>Decisión → movimiento</dt><dd id="decisionToMotion">—</dd></div>
+          <div><dt>Comando → movimiento correcto</dt><dd id="commandToAlignedMotion">—</dd></div>
+          <div><dt>Decisión → movimiento correcto</dt><dd id="decisionToAlignedMotion">—</dd></div>
           <div><dt>Comando solicitado</dt><dd id="commandRequested">—</dd></div>
           <div><dt>Comando enviado</dt><dd id="commandSent">—</dd></div>
           <div><dt>Edad del comando</dt><dd id="commandAge">—</dd></div>
@@ -127,6 +130,9 @@
           <div><dt>Confianza del balón</dt><dd id="ballConfidence">—</dd></div>
           <div><dt>Pose del robot</dt><dd id="robotPose">—</dd></div>
           <div><dt>Despeje post-bloqueo</dt><dd id="postBlockClearance">—</dd></div>
+          <div><dt>Bloqueo urgente</dt><dd id="urgentBlock">—</dd></div>
+          <div><dt>Filtro fuera del campo</dt><dd id="fieldFilterState">—</dd></div>
+          <div><dt>Detecciones rechazadas</dt><dd id="fieldFilterRejected">—</dd></div>
         </dl>
         <a class="secondary log-download" href="/api/log/download">Descargar log JSONL</a>
         <p id="logPath" class="notice">Esperando ruta del registro.</p>
@@ -136,7 +142,7 @@
       <section class="panel controls">
         <div class="toolbar">
           <div><h2>Parámetros</h2><p id="dirtyLabel">Sin cambios pendientes</p></div>
-          <div class="actions"><button id="fastProfile" class="secondary">Perfil predictor rápido</button><button id="reload" class="secondary">Recargar</button><button id="apply">Aplicar en vivo</button><button id="save">Aplicar y guardar</button></div>
+          <div class="actions"><button id="fastProfile" class="secondary">Cargar perfil recomendado</button><button id="reload" class="secondary">Recargar</button><button id="apply">Aplicar en vivo</button><button id="save">Aplicar y guardar</button></div>
         </div>
         <nav id="tabs"></nav>
         <form id="parameters"></form>

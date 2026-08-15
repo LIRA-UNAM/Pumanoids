@@ -1121,7 +1121,6 @@ void VisionNode::ProcessData(SyncedDataBlock &synced_data, vision_interface::msg
             ball_msg.x = value[0] + ball_x_compensation_;
             ball_msg.y = value[1] + ball_y_compensation_;
             ball_msg.confidence = detection.confidence;
-            break;
         }
     }
     ball_pub_->publish(ball_msg);

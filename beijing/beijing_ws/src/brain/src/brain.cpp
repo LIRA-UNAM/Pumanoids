@@ -687,10 +687,13 @@ Brain::Brain() : rclcpp::Node("brain_node")
     declare_parameter<int>("goalkeeper.prediction.min_samples", 5);
     declare_parameter<double>("goalkeeper.prediction.min_span_msec", 100.0);
     declare_parameter<double>("goalkeeper.prediction.min_speed", 0.45);
+    declare_parameter<double>("goalkeeper.prediction.max_speed", 8.0);
     declare_parameter<double>("goalkeeper.prediction.min_toward_goal_speed", 0.35);
     declare_parameter<double>("goalkeeper.prediction.min_r_squared", 0.90);
     declare_parameter<double>("goalkeeper.prediction.max_residual", 0.20);
     declare_parameter<double>("goalkeeper.prediction.max_sample_jump", 0.80);
+    declare_parameter<double>("goalkeeper.prediction.field_margin", 0.50);
+    declare_parameter<bool>("goalkeeper.prediction.reject_outside_field", false);
     declare_parameter<double>("goalkeeper.prediction.min_ball_confidence", 40.0);
     declare_parameter<double>("goalkeeper.prediction.recency_weight", 2.0);
     declare_parameter<double>("goalkeeper.prediction.deceleration", 0.40);
@@ -708,6 +711,11 @@ Brain::Brain() : rclcpp::Node("brain_node")
     declare_parameter<double>("goalkeeper.prediction.block.reaction_margin_sec", 0.12);
     declare_parameter<double>("goalkeeper.prediction.block.target_tolerance", 0.10);
     declare_parameter<bool>("goalkeeper.prediction.block.apply_min_velocity", true);
+    declare_parameter<double>("goalkeeper.prediction.block.urgent_time_sec", 1.20);
+    declare_parameter<double>("goalkeeper.prediction.block.urgent_lateral_error", 0.20);
+    declare_parameter<double>("goalkeeper.prediction.block.urgent_vx_limit", 0.0);
+    declare_parameter<double>("goalkeeper.prediction.block.urgent_vy_limit", 1.70);
+    declare_parameter<double>("goalkeeper.prediction.block.urgent_vtheta_limit", 0.0);
 
     declare_parameter<int>("obstacle_avoidance.depth_sample_step", 8);
     declare_parameter<int>("obstacle_avoidance.depth_confirm_frames", 2);
@@ -4785,6 +4793,16 @@ void Brain::recordBallPredictionObservation(const GameObject &ball)
     }
     if (!std::isfinite(ball.posToField.x) ||
         !std::isfinite(ball.posToField.y)) return;
+    const double fieldMargin = std::max(
+        0.0, get_parameter("goalkeeper.prediction.field_margin").as_double());
+    if (std::abs(ball.posToField.x) >
+            config->fieldDimensions.length / 2.0 + fieldMargin ||
+        std::abs(ball.posToField.y) >
+            config->fieldDimensions.width / 2.0 + fieldMargin) {
+        std::lock_guard<std::mutex> lock(goalkeeperPredictionMutex_);
+        goalkeeperBallObservations_.clear();
+        return;
+    }
     const double minConfidence = std::clamp(
         get_parameter(
             "goalkeeper.prediction.min_ball_confidence").as_double(),
@@ -4907,6 +4925,9 @@ void Brain::updateBallPrediction()
             "goalkeeper.prediction.min_span_msec").as_double() / 1000.0);
     predictionConfig.minSpeed = std::max(
         0.0, get_parameter("goalkeeper.prediction.min_speed").as_double());
+    predictionConfig.maxSpeed = std::max(
+        predictionConfig.minSpeed,
+        get_parameter("goalkeeper.prediction.max_speed").as_double());
     predictionConfig.minTowardGoalSpeed = std::max(
         0.0, get_parameter(
             "goalkeeper.prediction.min_toward_goal_speed").as_double());
@@ -5044,9 +5065,13 @@ void Brain::updateGoalkeeperReactionDiagnostics()
         goalkeeperReactionDecisionAt_ = now;
         goalkeeperReactionCommandAt_ = rclcpp::Time(0, 0, now.get_clock_type());
         goalkeeperReactionMotionAt_ = rclcpp::Time(0, 0, now.get_clock_type());
+        goalkeeperReactionAlignedMotionAt_ =
+            rclcpp::Time(0, 0, now.get_clock_type());
         goalkeeperReactionCommandDelayMs_ = -1.0;
         goalkeeperReactionMotionDelayMs_ = -1.0;
         goalkeeperReactionTotalDelayMs_ = -1.0;
+        goalkeeperReactionAlignedMotionDelayMs_ = -1.0;
+        goalkeeperReactionAlignedTotalDelayMs_ = -1.0;
         goalkeeperReactionCommandStartPoseValid_ = false;
         goalkeeperReactionStage_ = "waiting_command";
 
@@ -5075,6 +5100,22 @@ void Brain::updateGoalkeeperReactionDiagnostics()
         goalkeeperReactionCommandDelayMs_ = elapsedMs(
             goalkeeperReactionDecisionAt_, goalkeeperReactionCommandAt_);
         goalkeeperReactionCommandStartOdomPose_ = data->robotPoseToOdom;
+        const double translationMagnitude = std::hypot(
+            velocity.sentX, velocity.sentY);
+        if (translationMagnitude >= 0.05) {
+            const double commandRobotX = velocity.sentX / translationMagnitude;
+            const double commandRobotY = velocity.sentY / translationMagnitude;
+            const double theta = data->robotPoseToOdom.theta;
+            goalkeeperReactionCommandOdomUnitX_ =
+                std::cos(theta) * commandRobotX -
+                std::sin(theta) * commandRobotY;
+            goalkeeperReactionCommandOdomUnitY_ =
+                std::sin(theta) * commandRobotX +
+                std::cos(theta) * commandRobotY;
+        } else {
+            goalkeeperReactionCommandOdomUnitX_ = 0.0;
+            goalkeeperReactionCommandOdomUnitY_ = 0.0;
+        }
         goalkeeperReactionCommandStartPoseValid_ = true;
         goalkeeperReactionStage_ = "waiting_motion";
     }
@@ -5106,6 +5147,27 @@ void Brain::updateGoalkeeperReactionDiagnostics()
                commandIsNewForDecision && sentMotionMagnitude < 0.05) {
         goalkeeperReactionStage_ = "stopped";
     }
+
+    // The first odometry change can be residual motion in the wrong direction.
+    // Keep measuring until translation has progressed at least 15 mm along the
+    // command that started this decision.
+    if (goalkeeperReactionCommandStartPoseValid_ &&
+        goalkeeperReactionAlignedMotionAt_.nanoseconds() <= 0) {
+        const double dx = data->robotPoseToOdom.x -
+            goalkeeperReactionCommandStartOdomPose_.x;
+        const double dy = data->robotPoseToOdom.y -
+            goalkeeperReactionCommandStartOdomPose_.y;
+        const double alignedDisplacement =
+            dx * goalkeeperReactionCommandOdomUnitX_ +
+            dy * goalkeeperReactionCommandOdomUnitY_;
+        if (alignedDisplacement >= 0.015) {
+            goalkeeperReactionAlignedMotionAt_ = now;
+            goalkeeperReactionAlignedMotionDelayMs_ = elapsedMs(
+                goalkeeperReactionCommandAt_, now);
+            goalkeeperReactionAlignedTotalDelayMs_ = elapsedMs(
+                goalkeeperReactionDecisionAt_, now);
+        }
+    }
 }
 
 void Brain::publishGoalkeeperStatus()
@@ -5121,6 +5183,14 @@ void Brain::publishGoalkeeperStatus()
     goalkeeperDecisionPublisher_->publish(decisionMessage);
 
     const string kickType = get_parameter("goalkeeper.kick.type").as_string();
+    const double fieldFilterMargin = std::max(
+        0.0, get_parameter("goalkeeper.prediction.field_margin").as_double());
+    const bool fieldFilterLocalizationReady =
+        tree->getEntry<bool>("odom_calibrated") &&
+        std::abs(data->robotPoseToField.x) <=
+            config->fieldDimensions.length / 2.0 + fieldFilterMargin &&
+        std::abs(data->robotPoseToField.y) <=
+            config->fieldDimensions.width / 2.0 + fieldFilterMargin;
     const auto elapsedMs = [](const rclcpp::Time &from,
                               const rclcpp::Time &to) -> double {
         if (from.nanoseconds() <= 0 || to.nanoseconds() <= 0 ||
@@ -5161,6 +5231,10 @@ void Brain::publishGoalkeeperStatus()
            << goalkeeperReactionMotionDelayMs_
            << ",\"decision_to_motion_msec\":"
            << goalkeeperReactionTotalDelayMs_
+           << ",\"command_to_aligned_motion_msec\":"
+           << goalkeeperReactionAlignedMotionDelayMs_
+           << ",\"decision_to_aligned_motion_msec\":"
+           << goalkeeperReactionAlignedTotalDelayMs_
            << ",\"kick_type\":\"" << kickType
            << "\",\"prediction_enabled\":"
            << (data->goalkeeperPredictionEnabled ? "true" : "false")
@@ -5241,6 +5315,13 @@ void Brain::publishGoalkeeperStatus()
            << ",\"time_to_intercept\":" << data->ballTimeToIntercept
            << ",\"post_block_clearance\":"
            << (data->goalkeeperPostBlockClearance ? "true" : "false")
+           << ",\"urgent_block\":"
+           << (data->goalkeeperDecision == "block_shot" &&
+                   data->goalkeeperUrgentBlock ? "true" : "false")
+           << ",\"block_target_robot_x\":"
+           << data->goalkeeperBlockTargetRobotX
+           << ",\"block_target_robot_y\":"
+           << data->goalkeeperBlockTargetRobotY
            << ",\"field_length\":" << config->fieldDimensions.length
            << ",\"field_width\":" << config->fieldDimensions.width
            << ",\"goal_width\":" << config->fieldDimensions.goalWidth
@@ -5253,6 +5334,22 @@ void Brain::publishGoalkeeperStatus()
                        0.4, config->fieldDimensions.goalAreaLength - 0.2)))
            << ",\"game_state\":\""
            << tree->getEntry<string>("gc_game_state") << "\""
+           << ",\"own_score\":" << data->score
+           << ",\"opponent_score\":" << data->oppoScore
+           << ",\"field_filter_enabled\":"
+           << (get_parameter(
+                   "goalkeeper.prediction.reject_outside_field").as_bool()
+                   ? "true" : "false")
+           << ",\"field_filter_localization_ready\":"
+           << (fieldFilterLocalizationReady ? "true" : "false")
+           << ",\"field_filter_rejected_count\":"
+           << goalkeeperRejectedOutsideBallCount_
+           << ",\"field_filter_last_rejected_x\":"
+           << goalkeeperLastRejectedOutsideBallX_
+           << ",\"field_filter_last_rejected_y\":"
+           << goalkeeperLastRejectedOutsideBallY_
+           << ",\"field_filter_last_rejected_confidence\":"
+           << goalkeeperLastRejectedOutsideBallConfidence_
            << ",\"observations\":[";
     for (std::size_t i = 0; i < data->ballPredictionObservations.size(); ++i) {
         if (i > 0) status << ',';
@@ -7023,6 +7120,18 @@ void Brain::detectProcessBalls(const vector<GameObject> &ballObjs)
     static rclcpp::Time lastSeenRealBallTime;
     double bestConfidence = 0;
     int indexRealBall = -1;  // Index of the accepted ball; -1 means no ball.
+    const bool rejectOutsideField = get_parameter(
+        "goalkeeper.prediction.reject_outside_field").as_bool();
+    const double fieldMargin = std::max(
+        0.0, get_parameter("goalkeeper.prediction.field_margin").as_double());
+    const double fieldHalfLength = config->fieldDimensions.length / 2.0;
+    const double fieldHalfWidth = config->fieldDimensions.width / 2.0;
+    // A field-frame filter is only meaningful after localization. Keeping it
+    // inactive before calibration preserves ball search and field entry.
+    const bool fieldFilterReady =
+        tree->getEntry<bool>("odom_calibrated") &&
+        std::abs(data->robotPoseToField.x) <= fieldHalfLength + fieldMargin &&
+        std::abs(data->robotPoseToField.y) <= fieldHalfWidth + fieldMargin;
 
     // Select the most likely real ball.
     for (int i = 0; i < ballObjs.size(); i++)
@@ -7034,9 +7143,20 @@ void Brain::detectProcessBalls(const vector<GameObject> &ballObjs)
         if (ballObj.posToRobot.x < -0.5 || ballObj.posToRobot.x > 15.0)
             continue;
 
-        // Reject balls far outside the field. Disabled because it affects behaviors such as chase.
-        // if (isBallOut(2.0, 2.0))
-        //     continue;
+        // Reject the candidate itself when its localized field position is
+        // implausible. The old commented code called isBallOut(), which checks
+        // data->ball (the previous accepted ball) and could therefore reject or
+        // accept the wrong observation. Do not apply this before localization.
+        if (rejectOutsideField && fieldFilterReady &&
+            (std::abs(ballObj.posToField.x) > fieldHalfLength + fieldMargin ||
+             std::abs(ballObj.posToField.y) > fieldHalfWidth + fieldMargin))
+        {
+            goalkeeperRejectedOutsideBallCount_++;
+            goalkeeperLastRejectedOutsideBallX_ = ballObj.posToField.x;
+            goalkeeperLastRejectedOutsideBallY_ = ballObj.posToField.y;
+            goalkeeperLastRejectedOutsideBallConfidence_ = ballObj.confidence;
+            continue;
+        }
 
         // Increase confidence when a detection is close in position and time to the previous ball.
         // double c = ballObj.confidence;

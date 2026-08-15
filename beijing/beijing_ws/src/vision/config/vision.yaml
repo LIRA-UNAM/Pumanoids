@@ -48,7 +48,7 @@ detection_model:
   nms_threshold: 0.4
   classnames: [Ball, Goalpost, Person, LCross, TCross, XCross, PenaltyPoint, Opponent, BRMarker]
   post_process:
-    single_ball_assumption: false
+    single_ball_assumption: true
     confidence_thresholds:
       Ball: 0.4
       Goalpost: 0.4

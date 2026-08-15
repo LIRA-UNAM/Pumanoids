@@ -49,7 +49,7 @@ brain, lo que permite diferenciar un problema de red de uno del árbol.
 
 ## Volver al comportamiento original
 
-El archivo `factory_defaults.json` conserva un perfil protegido de 94 valores.
+El archivo `factory_defaults.json` conserva un perfil protegido de 102 valores.
 No se sobrescribe cuando la GUI guarda `config_local.yaml`.
 
 1. Abrir **Ayuda y restauración**.
@@ -97,6 +97,13 @@ el robot se desplaza al punto lateral previsto.
 Mantener `goalkeeper.prediction.require_localization=true`: sin
 `odom_calibrated`, el historial se limpia y no se ordena el bloqueo.
 
+`goalkeeper.prediction.reject_outside_field=true` filtra detecciones del balón
+fuera de las dimensiones del campo más `field_margin`. El filtro sólo entra si
+la localización está calibrada **y la pose del propio robot todavía es plausible
+dentro del campo**. En caso contrario queda en espera para no rechazar una
+pelota real por una localización desplazada. Personas y robots externos no se
+eliminan de los obstáculos: continúan siendo relevantes para evitar choques.
+
 Prueba inicial recomendada:
 
 1. Robot elevado; predictor activo y localización lista.
@@ -105,6 +112,31 @@ Prueba inicial recomendada:
 4. Mover el balón alejándose: no debe aparecer `block_shot`.
 5. En suelo, comenzar con `goalkeeper.prediction.block.vy_limit=0.4` y una
    persona junto al paro de emergencia.
+
+### Perfil recomendado medido (2026-08-14)
+
+`config_local.yaml` queda preparado con el perfil recomendado y la GUI ofrece
+**Cargar perfil recomendado**. El botón sólo carga el formulario; se debe pulsar
+**Aplicar y guardar** para enviarlo al robot y persistirlo.
+
+La sesión mostró aproximadamente 11 ms de decisión a comando, pero 99 ms de
+comando a cualquier movimiento y cerca de 212 ms hasta movimiento en la
+dirección correcta. Por eso el perfil:
+
+- conserva `min_samples=5` y `min_span_msec=100` para no aceptar ruido;
+- reduce `history_msec` a 350 y `max_samples` a 12 para usar datos recientes;
+- limita la rapidez estimada a 8 m/s y descarta posiciones claramente fuera
+  del campo;
+- usa `reaction_margin_sec=0.25`;
+- activa bloqueo urgente con `urgent_time_sec=1.2`: usa `vx=0`, giro `=0` y
+  ordena hasta 1.7 m/s lateral cuando el error supera 0.20 m;
+- aplica el piso global de velocidad sólo a Y durante `block_shot`; X y giro
+  conservan el valor solicitado y ya no generan una diagonal involuntaria;
+- mantiene tres segundos de reclamación post-bloqueo para ejecutar
+  `chase -> adjust -> kick` si el balón queda cerca.
+
+“Óptimo” aquí significa el mejor punto inicial inferido de esa sesión, no una
+garantía universal: césped, batería y firmware cambian la aceleración física.
 
 ### Tiempo de reacción
 
@@ -116,8 +148,8 @@ máximo(tiempo para reunir min_samples, min_span_msec)
 + un ciclo de Brain/árbol
 ```
 
-El perfil rápido usa `min_samples=5`, `min_span_msec=100`,
-`max_samples=20` e `history_msec=600`. La web muestra `Intervalo observado`,
+El perfil recomendado usa `min_samples=5`, `min_span_msec=100`,
+`max_samples=12` e `history_msec=350`. La web muestra `Intervalo observado`,
 `Edad de observación` y `Latencia estimada`; por eso ya no es necesario inferir
 la demora a partir de ceros.
 
@@ -136,8 +168,11 @@ La demora general del portero se mide aparte del predictor. La sección
 ```
 
 `Decisión -> comando` identifica espera dentro de Brain/árbol;
-`Comando -> movimiento` mide el arranque físico de la marcha del T2, usando
+`Comando -> movimiento` mide cualquier inicio físico de la marcha del T2, usando
 como confirmación 15 mm de traslación o 0.02 rad de giro. También se muestran
+`Comando -> movimiento correcto` y `Decisión -> movimiento correcto`, que no
+terminan hasta confirmar 15 mm proyectados en el sentido del comando inicial.
+Esto evita contar inercia o un paso residual en sentido contrario. También se muestran
 el comando solicitado, el realmente enviado después de límites/protecciones,
 la velocidad de odometría, liderazgo, coste y permiso para reclamar el balón.
 Estas métricas funcionan con `prediction.enabled=false`.
@@ -164,6 +199,12 @@ velocidad estimada, R², residual, muestras y punto/tiempo de intercepción.
 Además registra edades de percepción/decisión, etapa de reacción, comandos
 solicitados/enviados, velocidad de odometría, permiso de reclamación y las
 latencias decisión-comando-movimiento.
+
+El estado incluye además `urgent_block`, el objetivo de bloqueo en coordenadas
+del robot y las latencias hasta movimiento alineado. También guarda
+`own_score`/`opponent_score` para correlacionar goles marcados por el
+GameController, y el estado/contador/última posición del filtro de balón fuera
+del campo.
 
 Etapas de reacción:
 
@@ -208,7 +249,7 @@ rerunLog:
 Con `enable_tcp=false`, el brain no transmite por red aunque `server_ip` esté
 correctamente establecido; el registro local continúa según `enable_file`.
 
-El panel incluye un apéndice generado desde el esquema con los 94 parámetros,
+El panel incluye un apéndice generado desde el esquema con los 102 parámetros,
 valor original, rango, descripción y parte del robot afectada.
 
 ## Compilación y arranque

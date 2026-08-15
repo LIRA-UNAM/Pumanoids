@@ -20,13 +20,16 @@
   Kick/VisualKick.
 - `subtree_goal_keeper_play_original.xml`: copia del árbol anterior.
 - `tools/goalkeeper_web/`: servidor ROS/HTTP y GUI.
-- `factory_defaults.json`: perfil de recuperación protegido con 94 parámetros.
-- `config_local.yaml`: ajustes persistentes realizados desde la GUI.
+- `factory_defaults.json`: perfil de recuperación protegido con 102 parámetros.
+- `config_local.yaml`: perfil recomendado medido y ajustes persistentes de GUI.
 - `start.sh`/`stop.sh`: ciclo de vida del panel integrado al demo.
 
 ## Valores y seguridad predeterminados
 
-- predictor desactivado;
+- el perfil de fábrica mantiene el predictor desactivado;
+- `config_local.yaml` activa el perfil recomendado medido;
+- el bloqueo urgente recomendado usa desplazamiento lateral puro (`vx=0`,
+  `vtheta=0`) y la compensación de zona muerta se limita al eje Y;
 - localización requerida al activarlo;
 - patada convencional seleccionada;
 - restauración sólo carga el formulario y exige una aplicación explícita;
@@ -52,7 +55,7 @@ Cuando cambie la IP del GameController se deben actualizar tanto
 
 - API HTTP: esquema, perfil original, archivos estáticos, aplicación,
   persistencia y rechazo de combinaciones inválidas;
-- correspondencia de los 94 parámetros entre GUI, perfil y C++;
+- correspondencia de los 102 parámetros entre GUI, perfil y C++;
 - XML y JavaScript válidos;
 - scripts Bash válidos;
 - prueba aislada del predictor preparada para C++17.
@@ -73,6 +76,8 @@ Booster; por eso debe ejecutarse el preflight en el robot.
 6. La prueba en suelo valida el sentido lateral antes de elevar velocidades.
 7. La GUI distingue espera de Brain (`waiting_command`) de espera física
    (`waiting_motion`) y registra los tiempos resultantes en JSONL.
+8. La GUI diferencia cualquier movimiento de movimiento alineado con el
+   comando, y muestra cuándo se activa el bloqueo urgente.
 
 ## Reversión
 
