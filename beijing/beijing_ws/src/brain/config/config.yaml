@@ -1,8 +1,8 @@
 brain_node:
   ros__parameters:
     game:
-      team_id: 16 # consistant with GameControl
-      player_id: 2 # 1 | 2 | 3 | 4 | 5
+      team_id: 0  # consistant with GameControl
+      player_id: 2   # 1 | 2 | 3 | 4 | 5
       field_type: "robo_league" # adult_size | kid_size | robo_league
       player_role: "striker" # striker | goal_keeper
       initial_goalkeeper_id: 1 # Normal-play fallback before valid GameController data; 0 means unassigned in a penalty shootout
@@ -196,7 +196,7 @@ brain_node:
 
     rerunLog:
       enable_tcp: false # Stream logs over the network
-      server_ip: "192.168.10.110:9876" # Address of the machine running Rerun Viewer
+      server_ip: "10.0.16.110:9876" # Address of the machine running Rerun Viewer
       enable_file: true # Write logs locally
       log_dir: "/home/booster/Workspace/rrlog" # Local directory for timestamped log files
       max_log_file_mins: 5.0 # Rotate local logs after this duration to avoid oversized files
@@ -257,7 +257,7 @@ brain_node:
     debug:
       log_ball_pos: false # Write ball positions to ballpos.log for debugging
     
-    game_control_ip: "172.168.208.2"  # Set to the GameController IP address
+    game_control_ip: "10.0.16.150"  # Set to the GameController IP address
 
     # for fun
     sound:
