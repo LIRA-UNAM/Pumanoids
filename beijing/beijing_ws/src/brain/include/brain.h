@@ -511,6 +511,14 @@ private:
     double goalkeeperLastRejectedOutsideBallY_ = 0.0;
     double goalkeeperLastRejectedOutsideBallConfidence_ = 0.0;
 
+    // Diagnostics for discontinuous candidates rejected while a recently
+    // observed ball is still being tracked. This prevents frame-to-frame
+    // confidence changes from instantly switching to another in-field object.
+    uint64_t goalkeeperRejectedBallJumpCount_ = 0;
+    double goalkeeperLastRejectedBallJumpDistance_ = 0.0;
+    double goalkeeperLastRejectedBallJumpX_ = 0.0;
+    double goalkeeperLastRejectedBallJumpY_ = 0.0;
+
     // ------------------------------------------------------ Diagnostic logging ------------------------------------------------------
     void logObstacleDistance();
     void logLags();

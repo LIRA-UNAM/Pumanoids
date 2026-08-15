@@ -192,8 +192,10 @@ Todos aparecen en `server.py`, se declaran en `brain.cpp` y se comprueban en
 
 ## 7. Perfil actual frente al original
 
-De los 102 parámetros, 26 difieren del perfil original protegido. Los otros 76
-permanecen en el valor original aunque siguen siendo editables.
+El perfil vigente fue actualizado después de la sesión de campo del 2026-08-15.
+La evidencia, protocolo A/B y restauración del perfil inmediatamente anterior
+están en `AJUSTE_PRUEBA_20260815.md`. La tabla siguiente refleja el estado
+actual, no el perfil urgente usado durante esa sesión.
 
 | Parámetro | Original | Actual | Efecto principal |
 |---|---:|---:|---|
@@ -211,17 +213,12 @@ permanecen en el valor original aunque siguen siendo editables.
 | `goalkeeper.kick.visual.pre_delay_msec` | 1000 | 200 | Reduce espera antes de VisualKick |
 | `goalkeeper.kick.visual.post_delay_msec` | 1000 | 450 | Reduce espera posterior |
 | `goalkeeper.prediction.enabled` | false | true | Activa `block_shot` predictivo |
-| `goalkeeper.prediction.history_msec` | 600 | 350 | Menos memoria y menor arrastre histórico |
-| `goalkeeper.prediction.max_samples` | 20 | 12 | Ventana de ajuste más compacta |
 | `goalkeeper.prediction.reject_outside_field` | false | true | Filtra falsos balones fuera del campo |
-| `goalkeeper.prediction.recency_weight` | 2.0 | 2.5 | Da más peso a observaciones recientes |
-| `goalkeeper.prediction.step_interval_msec` | 100 | 50 | Duplica resolución temporal de trayectoria |
-| `goalkeeper.prediction.step_count` | 30 | 60 | Mantiene horizonte con pasos más pequeños |
 | `goalkeeper.prediction.max_time_to_block` | 2.5 | 3.0 | Acepta amenazas algo más lejanas |
-| `goalkeeper.prediction.activation_hold_msec` | 400 | 500 | Retiene la amenaza ante pérdidas breves |
-| `goalkeeper.prediction.post_block_claim_msec` | 2500 | 3000 | Más tiempo para perseguir y despejar después |
+| `goalkeeper.prediction.block.vx_limit` | 0.7 | 0.65 | Conserva una corrección diagonal moderada |
 | `goalkeeper.prediction.block.vy_limit` | 1.0 | 1.5 | Bloqueo lateral predictivo más rápido |
-| `goalkeeper.prediction.block.reaction_margin_sec` | 0.12 | 0.25 | Reserva más tiempo para latencia/aceleración |
+| `goalkeeper.prediction.block.reaction_margin_sec` | 0.12 | 0.10 | Vuelve al perfil inicial medido |
+| `goalkeeper.prediction.block.urgent_time_sec` | 1.2 | 0.0 | Desactiva el sobrecontrol urgente tardío |
 | `obstacle_avoidance.chase_ao_safe_dist` | 1.5 | 1.0 | Reduce separación durante persecución |
 
 Cambiar varias velocidades simultáneamente dificulta atribuir resultados. En
@@ -259,6 +256,13 @@ En la web deben observarse:
 Este filtro no limita la trayectoria del robot. Las funciones de borde y
 planificación son mecanismos diferentes.
 
+Además, sólo para `goal_keeper` con predictor activo, una pelota observada hace
+menos de 250 ms impide seleccionar otro candidato separado más de
+`max_sample_jump` (actualmente 0.8 m). Esto evita cambios instantáneos entre
+objetos dentro del campo. La telemetría publica `ball_jump_rejected_count` y la
+distancia/posición del último rechazo. Striker y los demás roles conservan el
+selector original por máxima confianza.
+
 ## 9. Predictor y decisión de bloqueo
 
 Flujo simplificado:
@@ -271,14 +275,15 @@ Flujo simplificado:
 6. simula desaceleración y calcula cruce con la línea defensiva;
 7. comprueba postes, margen y ventana temporal;
 8. publica diagnóstico y selecciona `block_shot`;
-9. `BlockPredictedShot` ordena movimiento lateral, o urgente si queda poco tiempo;
+9. `BlockPredictedShot` ordena movimiento normal X/Y; el código urgente queda
+   disponible, pero el perfil actual lo desactiva con `urgent_time_sec=0`;
 10. después del bloqueo puede habilitar claim, Chase, Adjust y Kick.
 
 `reaction_margin_sec` no retrasa intencionalmente: representa tiempo que ya no
-está disponible para caminar. Aumentarlo hace que el sistema considere urgente
-un tiro antes. `urgent_vx_limit=0` y `urgent_vtheta_limit=0` priorizan el eje
-lateral; cambiarlos introduce movimiento diagonal o giro que puede competir con
-la intercepción.
+está disponible para caminar. Si se reactiva la urgencia, aumentarlo hace que el
+sistema sature antes. En la sesión 16:51, el movimiento alineado urgente tardó
+345 ms frente a 85 ms normal, por lo que no debe reactivarse hasta terminar la
+comparación documentada.
 
 ## 10. Patadas
 

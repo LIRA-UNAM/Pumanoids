@@ -71,8 +71,9 @@ brain_node:
       prediction:
         enabled: true
         require_localization: true
-        history_msec: 350.0
-        max_samples: 12
+        # Baseline estable de la primera prueba de campo (2026-08-15).
+        history_msec: 600.0
+        max_samples: 20
         min_samples: 5
         min_span_msec: 100.0
         min_speed: 0.45
@@ -84,24 +85,26 @@ brain_node:
         field_margin: 0.5
         reject_outside_field: true
         min_ball_confidence: 40.0
-        recency_weight: 2.5
+        recency_weight: 2.0
         deceleration: 0.4
-        step_interval_msec: 50.0
-        step_count: 60
+        step_interval_msec: 100.0
+        step_count: 30
         goal_margin: 0.15
         min_time_to_block: 0.08
         max_time_to_block: 3.0
-        activation_hold_msec: 500.0
-        post_block_claim_msec: 3000.0
+        activation_hold_msec: 400.0
+        post_block_claim_msec: 2500.0
         block:
-          vx_limit: 0.7
+          vx_limit: 0.65
           vy_limit: 1.5
           vtheta_limit: 1.0
           position_gain: 1.5
-          reaction_margin_sec: 0.25
+          reaction_margin_sec: 0.10
           target_tolerance: 0.1
           apply_min_velocity: true # Compensate lateral Y only; keep X/yaw at their requested values.
-          urgent_time_sec: 1.2
+          # 0 desactiva el sobrecontrol lateral urgente. La sesión 16:51
+          # tardó 345 ms en moverse alineado con urgencia frente a 85 ms normal.
+          urgent_time_sec: 0.0
           urgent_lateral_error: 0.2
           urgent_vx_limit: 0.0
           urgent_vy_limit: 1.7
@@ -116,3 +119,7 @@ brain_node:
       fallen_robot_angle: 0.785
       avoid_during_chase: true
       chase_ao_safe_dist: 1.0
+    # Ruta relativa al directorio beijing, creado por scripts/start.sh.
+    # Evita el Permission denied observado en /home/booster/Workspace/rrlog.
+    rerunLog:
+      log_dir: "rrlog"

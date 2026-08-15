@@ -147,8 +147,9 @@ manejo `onHalted()` del árbol.
     a `block_shot` con prioridad sobre chase, adjust y kick.
 11. `GoalkeeperBlockShot` mueve el cuerpo al punto previsto usando los límites
     del grupo **Bloqueo predictivo**.
-12. Si queda menos de `block.urgent_time_sec` y el error lateral supera
-    `block.urgent_lateral_error`, el modo urgente limita X/giro y prioriza Y.
+12. Si `block.urgent_time_sec` es mayor que cero, queda menos de ese tiempo y el
+    error lateral supera `block.urgent_lateral_error`, el modo urgente limita
+    X/giro y prioriza Y. El perfil de prueba vigente usa `urgent_time_sec=0`.
 13. La compensación de zona muerta de `block.apply_min_velocity` se aplica sólo
     a Y. X y giro no reciben el piso global de `0.4`, porque eso sobrepasaría
     sus límites urgentes y convertiría el bloqueo en una diagonal involuntaria.
@@ -164,13 +165,18 @@ manejo `onHalted()` del árbol.
 - Activación anticipada: aumentar `max_time_to_block`.
 - Movimiento lateral más rápido: aumentar `block.vy_limit` y
   `block.position_gain` dentro de límites seguros.
-- Bloqueo urgente lateral puro: usar `block.urgent_vx_limit=0` y
-  `block.urgent_vtheta_limit=0`. Estos son los valores recomendados medidos.
+- El bloqueo urgente lateral puro (`urgent_vx_limit=0`,
+  `urgent_vtheta_limit=0`) queda desactivado para la siguiente serie: en campo
+  tardó aproximadamente 345 ms en moverse en la dirección correcta, frente a
+  85 ms del controlador normal.
 - Corrección diagonal experimental hacia la línea defensiva fija: aumentar
   gradualmente `block.urgent_vx_limit`. Esto no selecciona todavía un punto
   adelantado sobre la trayectoria del balón y no debe confundirse con el avance
   involuntario que antes introducía el piso global de velocidad.
 - Menos oscilación: aumentar `activation_hold_msec` o reducir la ganancia.
+- Evitar saltos entre pelotas: `max_sample_jump` limita tanto el historial del
+  predictor como la sustitución de una pelota vista hace menos de 250 ms. La web
+  muestra `ball_jump_rejected_count` y el último salto rechazado.
 - Adaptación al césped: medir y ajustar `deceleration`.
 
 ## ROS y Rerun
@@ -188,6 +194,8 @@ odometría, permiso para reclamar, liderazgo, coste y tiempos
 `decision_to_command_msec`, `command_to_motion_msec`,
 `decision_to_motion_msec`, `command_to_aligned_motion_msec` y
 `decision_to_aligned_motion_msec`.
+También incluye los contadores `ball_jump_rejected_*`, independientes de los
+rechazos por estar fuera del campo.
 
 En **Cadena de reacción**, `waiting_command` significa que Brain decidió pero
 todavía no produjo movimiento; `waiting_motion` que la marcha ya recibió un

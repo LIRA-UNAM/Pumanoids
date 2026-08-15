@@ -288,6 +288,11 @@ function statusView(status) {
     : status.field_filter_localization_ready ? "activo" : "esperando localización";
   $("fieldFilterRejected").textContent = Number.isFinite(Number(status.field_filter_rejected_count))
     ? String(status.field_filter_rejected_count) : "—";
+  $("ballJumpRejected").textContent = Number.isFinite(Number(status.ball_jump_rejected_count))
+    ? String(status.ball_jump_rejected_count) : "—";
+  $("ballJumpLast").textContent = Number.isFinite(Number(status.ball_jump_last_distance))
+    ? `${format(status.ball_jump_last_distance)} m → (${format(status.ball_jump_last_x)}, ${format(status.ball_jump_last_y)})`
+    : "—";
   const fitted = Boolean(status.fit_computed);
   $("speed").textContent = fitted ? `${format(status.speed)} m/s` : "—";
   $("velocity").textContent = fitted ? `(${format(status.velocity_x)}, ${format(status.velocity_y)})` : "—";

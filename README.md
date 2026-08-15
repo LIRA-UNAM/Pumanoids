@@ -23,6 +23,7 @@
 > - [Manual completo de GUI y predicción](./Documentation/Goalkeeper/PORTERO_GUI_PREDICCION.md)
 > - [Manifiesto detallado de implementación](./Documentation/Goalkeeper/IMPLEMENTACION_PORTERO_MANIFIESTO.md)
 > - [Traspaso técnico, parámetros y guía de fusión](./Documentation/Goalkeeper/HANDOFF_TEST_GOALKEEPER.md)
+> - [Ajuste de prueba basado en logs del 2026-08-15](./Documentation/Goalkeeper/AJUSTE_PRUEBA_20260815.md)
 >
 > La GUI se inicia junto al demo normal con GameController y guarda telemetría
 > en `beijing/goalkeeper_logs/*.jsonl` para diagnóstico posterior.

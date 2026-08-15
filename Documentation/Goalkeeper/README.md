@@ -3,6 +3,9 @@
 > Para continuar el desarrollo, desplegar varios robots o fusionar esta rama
 > con `beijing_demo`, consulte
 > [Traspaso técnico de test_goalkeeper](HANDOFF_TEST_GOALKEEPER.md).
+>
+> El perfil vigente para la siguiente prueba y la evidencia que lo originó se
+> documentan en [Ajuste de prueba 2026-08-15](AJUSTE_PRUEBA_20260815.md).
 
 ## Alcance
 
@@ -117,26 +120,28 @@ Prueba inicial recomendada:
 5. En suelo, comenzar con `goalkeeper.prediction.block.vy_limit=0.4` y una
    persona junto al paro de emergencia.
 
-### Perfil recomendado medido (2026-08-14)
+### Perfil recomendado medido (actualizado 2026-08-15)
 
 `config_local.yaml` queda preparado con el perfil recomendado y la GUI ofrece
 **Cargar perfil recomendado**. El botón sólo carga el formulario; se debe pulsar
 **Aplicar y guardar** para enviarlo al robot y persistirlo.
 
-La sesión mostró aproximadamente 11 ms de decisión a comando, pero 99 ms de
-comando a cualquier movimiento y cerca de 212 ms hasta movimiento en la
-dirección correcta. Por eso el perfil:
+La sesión 16:51 mostró aproximadamente 11 ms de decisión a comando. El bloqueo
+normal inició movimiento correcto en unos 85 ms, mientras que el sobrecontrol
+urgente tardó cerca de 345 ms. Por eso el perfil actual:
 
 - conserva `min_samples=5` y `min_span_msec=100` para no aceptar ruido;
-- reduce `history_msec` a 350 y `max_samples` a 12 para usar datos recientes;
+- vuelve a `history_msec=600` y `max_samples=20`, el perfil inicial más estable;
 - limita la rapidez estimada a 8 m/s y descarta posiciones claramente fuera
   del campo;
-- usa `reaction_margin_sec=0.25`;
-- activa bloqueo urgente con `urgent_time_sec=1.2`: usa `vx=0`, giro `=0` y
-  ordena hasta 1.7 m/s lateral cuando el error supera 0.20 m;
+- usa `reaction_margin_sec=0.10`;
+- desactiva el sobrecontrol urgente con `urgent_time_sec=0`, por lo que el
+  controlador normal conserva `vx=0.65` y `vy=1.5` y puede moverse en diagonal;
+- impide durante 250 ms que un candidato separado más de `max_sample_jump`
+  reemplace instantáneamente a la pelota seguida;
 - aplica el piso global de velocidad sólo a Y durante `block_shot`; X y giro
   conservan el valor solicitado y ya no generan una diagonal involuntaria;
-- mantiene tres segundos de reclamación post-bloqueo para ejecutar
+- mantiene 2.5 segundos de reclamación post-bloqueo para ejecutar
   `chase -> adjust -> kick` si el balón queda cerca.
 
 “Óptimo” aquí significa el mejor punto inicial inferido de esa sesión, no una
@@ -153,7 +158,7 @@ máximo(tiempo para reunir min_samples, min_span_msec)
 ```
 
 El perfil recomendado usa `min_samples=5`, `min_span_msec=100`,
-`max_samples=12` e `history_msec=350`. La web muestra `Intervalo observado`,
+`max_samples=20` e `history_msec=600`. La web muestra `Intervalo observado`,
 `Edad de observación` y `Latencia estimada`; por eso ya no es necesario inferir
 la demora a partir de ceros.
 
@@ -209,6 +214,8 @@ del robot y las latencias hasta movimiento alineado. También guarda
 `own_score`/`opponent_score` para correlacionar goles marcados por el
 GameController, y el estado/contador/última posición del filtro de balón fuera
 del campo.
+También incluye el contador y la última distancia/posición de los candidatos
+rechazados por discontinuidad (`ball_jump_rejected_*`).
 
 Etapas de reacción:
 

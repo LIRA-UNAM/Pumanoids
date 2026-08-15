@@ -4,6 +4,7 @@ cd `dirname $0`
 cd ..
 WORKSPACE_ROOT=$(pwd)
 VISION_CONFIG_PATH="${WORKSPACE_ROOT}/src/vision/config"
+mkdir -p "${WORKSPACE_ROOT}/rrlog"
 
 echo "[STOP EXISTING NODES (IF ANY), TO AVOID CONFILICT]"
 sudo killall -9 booster-video-stream

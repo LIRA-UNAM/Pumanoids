@@ -5350,6 +5350,14 @@ void Brain::publishGoalkeeperStatus()
            << goalkeeperLastRejectedOutsideBallY_
            << ",\"field_filter_last_rejected_confidence\":"
            << goalkeeperLastRejectedOutsideBallConfidence_
+           << ",\"ball_jump_rejected_count\":"
+           << goalkeeperRejectedBallJumpCount_
+           << ",\"ball_jump_last_distance\":"
+           << goalkeeperLastRejectedBallJumpDistance_
+           << ",\"ball_jump_last_x\":"
+           << goalkeeperLastRejectedBallJumpX_
+           << ",\"ball_jump_last_y\":"
+           << goalkeeperLastRejectedBallJumpY_
            << ",\"observations\":[";
     for (std::size_t i = 0; i < data->ballPredictionObservations.size(); ++i) {
         if (i > 0) status << ',';
@@ -7132,12 +7140,30 @@ void Brain::detectProcessBalls(const vector<GameObject> &ballObjs)
         tree->getEntry<bool>("odom_calibrated") &&
         std::abs(data->robotPoseToField.x) <= fieldHalfLength + fieldMargin &&
         std::abs(data->robotPoseToField.y) <= fieldHalfWidth + fieldMargin;
+    const auto now = this->get_clock()->now();
+    const GameObject oldBall = data->ball;
+    const double maxTrackingJump = std::max(
+        0.05, get_parameter(
+            "goalkeeper.prediction.max_sample_jump").as_double());
+    // Three camera callbacks at the observed ~10 Hz are enough to reacquire a
+    // genuinely different ball, while preventing one-frame confidence swaps.
+    const double trackingWindowMsec = std::min(
+        250.0, std::max(100.0, get_parameter(
+            "goalkeeper.prediction.history_msec").as_double()));
+    const bool applyGoalkeeperContinuityFilter =
+        get_parameter("goalkeeper.prediction.enabled").as_bool() &&
+        tree->getEntry<string>("player_role") == "goal_keeper";
+    const bool previousBallRecent = applyGoalkeeperContinuityFilter &&
+        oldBall.timePoint.nanoseconds() > 0 &&
+        oldBall.timePoint.get_clock_type() == now.get_clock_type() &&
+        msecsSince(oldBall.timePoint) <= trackingWindowMsec &&
+        std::isfinite(oldBall.posToField.x) &&
+        std::isfinite(oldBall.posToField.y);
 
     // Select the most likely real ball.
     for (int i = 0; i < ballObjs.size(); i++)
     {
         auto ballObj = ballObjs[i];
-        auto oldBall = data->ball;
 
         // Reject overhead lights misclassified as balls.
         if (ballObj.posToRobot.x < -0.5 || ballObj.posToRobot.x > 15.0)
@@ -7176,7 +7202,27 @@ void Brain::detectProcessBalls(const vector<GameObject> &ballObjs)
         if (ballObj.confidence < config->ballConfidenceThreshold)
             continue;
 
-        // TODO: Reject detections on bodies, clearly outside the field, or with implausible position jumps.
+        // Keep continuity with the recently accepted ball. The previous code
+        // selected only the highest confidence in each frame, which produced
+        // 410 jumps over 0.8 m in 11.8 minutes of PLAY and repeatedly reversed
+        // the goalkeeper target. Once the old observation is older than the
+        // short tracking window, normal confidence-based reacquisition resumes.
+        // Scope this only to an enabled goalkeeper predictor so striker and
+        // other demo roles retain their original ball selection behavior.
+        if (previousBallRecent) {
+            const double jump = std::hypot(
+                ballObj.posToField.x - oldBall.posToField.x,
+                ballObj.posToField.y - oldBall.posToField.y);
+            if (jump > maxTrackingJump) {
+                goalkeeperRejectedBallJumpCount_++;
+                goalkeeperLastRejectedBallJumpDistance_ = jump;
+                goalkeeperLastRejectedBallJumpX_ = ballObj.posToField.x;
+                goalkeeperLastRejectedBallJumpY_ = ballObj.posToField.y;
+                continue;
+            }
+        }
+
+        // TODO: Reject detections on bodies and account for occlusion.
         // Account for occlusion so an occluded ball remains trusted longer than one that disappears in open view.
 
         // Select the highest-confidence remaining detection.
@@ -7186,8 +7232,6 @@ void Brain::detectProcessBalls(const vector<GameObject> &ballObjs)
             indexRealBall = i;
         }
     }
-
-    auto now = this->get_clock()->now();
 
     if (indexRealBall >= 0)
     { // Ball detected.
