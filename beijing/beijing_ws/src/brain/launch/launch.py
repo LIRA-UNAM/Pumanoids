@@ -52,6 +52,14 @@ def handle_configuration(context, *args, **kwargs):
     }
 
     # Normalize optional string arguments.
+    team_id = context.perform_substitution(LaunchConfiguration('team'))
+    if team_id:
+        config['game.team_id'] = int(team_id)
+
+    player_id = context.perform_substitution(LaunchConfiguration('id'))
+    if player_id:
+        config['game.player_id'] = int(player_id)
+
     start_pos = context.perform_substitution(LaunchConfiguration('pos'))
     if start_pos:
         config['game.player_start_pos'] = start_pos
@@ -96,6 +104,11 @@ def generate_launch_description():
         ),
         # Declare every parameter exposed through `ros2 launch brain launch.py name:=value` and process it in handle_configuration.
         DeclareLaunchArgument(
+            'team',
+            default_value='5',
+            description='Override game.team_id from config.yaml'
+        ),
+        DeclareLaunchArgument(
             'tree',
             default_value='game.xml',
             description='Specify behavior tree file name. DO NOT include full path, file should be in src/brain/config/behavior_trees'
@@ -124,6 +137,11 @@ def generate_launch_description():
             'disable_com',
             default_value='false',
             description='Force-disable teammate communication.'
+        ),
+        DeclareLaunchArgument(
+            'id',
+            default_value='',
+            description='Override game.player_id from config.yaml, for example id:=2.'
         ),
         OpaqueFunction(function=handle_configuration) # Resolve launch arguments and construct the node.
     ])

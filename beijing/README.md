@@ -79,6 +79,16 @@ cd beijing
 ./scripts/start.sh role:=goal_keeper
 ```
 
+Opcionalmente se pueden sobrescribir el equipo y jugador del YAML para una
+sesión concreta:
+
+```bash
+./scripts/start.sh role:=goal_keeper team:=5 id:=1
+```
+
+`team` usa `5` de forma predeterminada. Si `id` se omite, se conserva
+`game.player_id` de `config.yaml`.
+
 Luego abrir desde un equipo en la misma red:
 
 ```text
