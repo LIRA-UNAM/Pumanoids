@@ -113,7 +113,14 @@ def main() -> None:
             assert status == 200
             assert len(recommended["values"]) == len(schema["parameters"])
             assert recommended["values"]["goalkeeper.prediction.enabled"] is True
-            assert recommended["values"]["goalkeeper.kick.type"] == "default"
+            assert recommended["values"]["goalkeeper.kick.type"] == "visual"
+            assert recommended["values"]["RLVisionKick.visual_kick_version"] == "kV2"
+            assert recommended["values"]["goalkeeper.kick.alignment_tolerance"] == 1.5707963268
+            assert recommended["values"]["goalkeeper.chase.vx_limit"] == 0.5
+            assert recommended["values"]["goalkeeper.chase.vy_limit"] == 1.5
+            assert recommended["values"]["goalkeeper.adjust.range"] == 1.0
+            assert recommended["values"]["goalkeeper.adjust.vx_limit"] == 1.5
+            assert recommended["values"]["goalkeeper.adjust.vy_limit"] == 1.5
             assert recommended["values"]["goalkeeper.prediction.history_msec"] == 600.0
             assert recommended["values"]["goalkeeper.prediction.max_samples"] == 20
             assert recommended["values"]["goalkeeper.prediction.block.urgent_time_sec"] == 0.0

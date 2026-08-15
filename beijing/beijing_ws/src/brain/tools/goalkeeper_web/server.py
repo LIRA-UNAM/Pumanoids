@@ -188,22 +188,28 @@ if set(FACTORY_DEFAULTS) != set(SCHEMA):
     raise RuntimeError(
         f"Perfil original desactualizado; faltan={missing}, sobran={extra}")
 
-# Complete operating profile derived from the 2026-08-14 field session.
+# Exact first complete parameter snapshot from the field session started at
+# 2026-08-14 20:24 (parameter_apply at 20:27:39 UTC+8).
 # FACTORY_DEFAULTS remains immutable so the original demo is always recoverable.
 RECOMMENDED_PROFILE = dict(FACTORY_DEFAULTS)
 RECOMMENDED_PROFILE.update({
-    "goalkeeper.blocking.vy_limit": 1.30,
-    "goalkeeper.blocking.position_gain": 1.50,
+    "goalkeeper.blocking.vy_limit": .90,
+    "goalkeeper.blocking.position_gain": 1.0,
+    "goalkeeper.chase.vx_limit": .50,
     "goalkeeper.chase.vy_limit": 1.50,
     "goalkeeper.chase.safe_distance": .50,
+    "goalkeeper.adjust.range": 1.0,
+    "goalkeeper.adjust.vx_limit": 1.50,
+    "goalkeeper.adjust.vy_limit": 1.50,
     "goalkeeper.claim.max_ball_range": 3.0,
     "goalkeeper.claim.lateral_margin": 1.0,
-    "goalkeeper.kick.type": "default",
-    "goalkeeper.kick.alignment_tolerance": .78,
-    "goalkeeper.kick.default.speed_limit": 1.50,
-    "goalkeeper.kick.default.min_msec": 500.0,
-    "goalkeeper.kick.default.exit_range": 1.50,
-    "goalkeeper.kick.default.ball_move_threshold": .25,
+    "goalkeeper.kick.type": "visual",
+    "goalkeeper.kick.alignment_tolerance": 1.5707963268,
+    "goalkeeper.kick.default.speed_limit": .50,
+    "goalkeeper.kick.default.min_msec": 600.0,
+    "goalkeeper.kick.default.stabilize_msec": 600.0,
+    "goalkeeper.kick.default.exit_range": 3.0,
+    "goalkeeper.kick.default.ball_move_threshold": .30,
     "goalkeeper.kick.visual.pre_delay_msec": 200.0,
     "goalkeeper.kick.visual.post_delay_msec": 450.0,
     "obstacle_avoidance.chase_ao_safe_dist": 1.0,
