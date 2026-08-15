@@ -50,6 +50,14 @@ class FakeBridge:
         pass
 
 
+class OfflineBridge(FakeBridge):
+    def read_values(self) -> dict[str, Any]:
+        raise ConnectionError("brain_node offline for test")
+
+    def apply_values(self, values: dict[str, Any]) -> list[str]:
+        raise ConnectionError("brain_node offline for test")
+
+
 def request(base: tuple[str, int], path: str,
             payload: dict[str, Any] | None = None):
     data = None if payload is None else json.dumps(payload).encode("utf-8")
@@ -146,6 +154,27 @@ def main() -> None:
                 }
             })
             assert status == 400 and "error" in result
+
+            goalkeeper_server.ApiHandler.bridge = OfflineBridge(
+                goalkeeper_server.SCHEMA)
+            status, config = request(base, "/api/config")
+            assert status == 200 and config["live"] is False
+            assert config["values"]["goalkeeper.kick.type"] == "visual"
+            assert config["source"] == str(config_path)
+
+            status, result = request(base, "/api/apply", {
+                "values": {"goalkeeper.prediction.enabled": False},
+                "persist": False,
+            })
+            assert status == 503 and "próximo arranque" in result["error"]
+
+            status, result = request(base, "/api/apply", {
+                "values": {"goalkeeper.prediction.enabled": False},
+                "persist": True,
+            })
+            assert status == 200 and result["live"] is False
+            saved = config_path.read_text(encoding="utf-8")
+            assert "enabled: false" in saved
         finally:
             httpd.shutdown()
             httpd.server_close()

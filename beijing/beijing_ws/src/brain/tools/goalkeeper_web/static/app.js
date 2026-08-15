@@ -195,6 +195,9 @@ async function load() {
     renderForm();
     renderParameterHelp();
     updateDirty();
+    if (config.live === false) {
+      toast("brain_node detenido: mostrando valores guardados. Use Guardar para el próximo arranque.", true);
+    }
   } catch (error) {
     toast(error.message, true);
   }

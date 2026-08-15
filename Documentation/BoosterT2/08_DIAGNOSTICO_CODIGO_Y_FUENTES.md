@@ -286,16 +286,16 @@ En esta rama los fuentes están almacenados para desarrollo en:
 beijing/beijing_ws/src
 ```
 
-y los scripts están en `beijing/scripts`. `prepare_goalkeeper_build.sh` compila
-el workspace anidado y crea `beijing/beijing_ws/install`. En cambio,
-`beijing/scripts/start.sh` calcula `beijing` como raíz y busca allí
-`install/setup.bash` y `src/vision/config`.
+y los scripts están en `beijing/scripts`. `prepare_goalkeeper_build.sh` usa
+`beijing_ws/src` como origen, pero genera deliberadamente `beijing/build` y
+`beijing/install`. Así conserva el layout plano que espera
+`beijing/scripts/start.sh`, que calcula `beijing` como raíz y carga
+`install/setup.bash`.
 
-Por tanto, el árbol versionado es un **staging/overlay**, no un release plano
-ejecutable directamente tal como está en Windows. Antes de desplegar, sincronice
-los fuentes y scripts con una copia plana de `T2_5v5Demo_Whrg`, compile allí y
-verifique las rutas. Este desajuste debe resolverse o empaquetarse explícitamente
-antes de llamar a la rama “arranque directo”.
+Por tanto, el árbol versionado conserva un **staging/overlay**, pero el script
+de preparación lo despliega en el layout plano antes de ejecutarlo. No cambie
+`start.sh` para cargar `beijing_ws/install`: esa ruta es de staging y dejaría
+coexistiendo dos instalaciones ROS distintas.
 
 ## Mapa del código
 

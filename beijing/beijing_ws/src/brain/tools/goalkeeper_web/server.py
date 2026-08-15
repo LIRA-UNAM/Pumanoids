@@ -391,6 +391,58 @@ def validate_relationships(values: dict[str, Any]) -> None:
             raise ValueError(message)
 
 
+def _yaml_scalar(raw: str) -> Any:
+    value = raw.strip()
+    if not value:
+        return ""
+    if value.startswith(('"', "'")):
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            return value.strip("'\"")
+    lowered = value.lower()
+    if lowered in {"true", "false"}:
+        return lowered == "true"
+    try:
+        return float(value) if any(char in value for char in ".eE") else int(value)
+    except ValueError:
+        return value
+
+
+def read_yaml_parameters(path: pathlib.Path) -> dict[str, Any]:
+    """Read the simple nested parameter YAML emitted by this panel."""
+    stack: list[tuple[int, str]] = []
+    values: dict[str, Any] = {}
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        content = raw_line.lstrip()
+        if not content or content.startswith("#") or ":" not in content:
+            continue
+        indent = len(raw_line) - len(content)
+        key, raw_value = content.split(":", 1)
+        key = key.strip()
+        while stack and stack[-1][0] >= indent:
+            stack.pop()
+        if not raw_value.strip():
+            stack.append((indent, key))
+            continue
+        parts = [item[1] for item in stack] + [key]
+        if parts[:2] != ["brain_node", "ros__parameters"]:
+            continue
+        dotted = ".".join(parts[2:])
+        if dotted in SCHEMA:
+            values[dotted] = _yaml_scalar(raw_value.split("#", 1)[0])
+    return values
+
+
+def persisted_values(paths: list[pathlib.Path]) -> tuple[dict[str, Any], str | None]:
+    values = {name: spec["default"] for name, spec in SCHEMA.items()}
+    for path in paths:
+        if path.is_file():
+            values.update(read_yaml_parameters(path))
+            return values, str(path)
+    return values, None
+
+
 def nest_parameters(values: dict[str, Any]) -> dict[str, Any]:
     root: dict[str, Any] = {}
     for dotted, value in values.items():
@@ -445,6 +497,13 @@ class ApiHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _current_values(self) -> tuple[dict[str, Any], bool, str | None, str | None]:
+        try:
+            return self.bridge.read_values(), True, None, None
+        except Exception as exc:
+            values, source = persisted_values(self.config_paths)
+            return values, False, str(exc), source
+
     def do_GET(self):
         try:
             if self.path == "/api/schema":
@@ -468,7 +527,13 @@ class ApiHandler(SimpleHTTPRequestHandler):
                         "y despeje convencional rápido.")
                 })
             if self.path == "/api/config":
-                return self._json(200, {"values": self.bridge.read_values()})
+                values, live, warning, source = self._current_values()
+                return self._json(200, {
+                    "values": values,
+                    "live": live,
+                    "warning": warning,
+                    "source": source,
+                })
             if self.path == "/api/status":
                 return self._json(200, self.bridge.snapshot())
             if self.path.startswith("/api/telemetry"):
@@ -507,22 +572,44 @@ class ApiHandler(SimpleHTTPRequestHandler):
             values = body.get("values", {})
             if not isinstance(values, dict) or not values:
                 raise ValueError("No se recibieron parámetros")
-            candidate = self.bridge.read_values()
+            current, live, transport_warning, source = self._current_values()
+            candidate = dict(current)
             candidate.update(values)
             validate_relationships(candidate)
-            applied = self.bridge.apply_values(values)
+            persist = bool(body.get("persist", False))
+            if live:
+                applied = self.bridge.apply_values(values)
+            elif persist:
+                applied = list(values)
+            else:
+                raise ConnectionError(
+                    "brain_node no está disponible; use Guardar para aplicar "
+                    "los valores en el próximo arranque")
             saved = []
-            if body.get("persist", False):
-                complete = self.bridge.read_values()
+            if persist:
+                complete = candidate
+                if live:
+                    try:
+                        complete = self.bridge.read_values()
+                    except Exception:
+                        pass
                 for path in self.config_paths:
                     atomic_yaml_write(path, complete)
                     saved.append(str(path))
             self.bridge.record_event("parameter_apply", {
                 "values": {name: values[name] for name in applied},
-                "persist": bool(body.get("persist", False)),
+                "persist": persist,
+                "live": live,
                 "saved": saved,
             })
-            self._json(200, {"ok": True, "applied": applied, "saved": saved})
+            self._json(200, {
+                "ok": True,
+                "applied": applied,
+                "saved": saved,
+                "live": live,
+                "warning": transport_warning,
+                "source": source,
+            })
         except (ValueError, RuntimeError) as exc:
             self._json(400, {"error": str(exc)})
         except Exception as exc:

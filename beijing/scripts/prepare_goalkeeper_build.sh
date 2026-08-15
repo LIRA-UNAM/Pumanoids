@@ -3,8 +3,8 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 DEMO_ROOT="$(pwd)"
-WORKSPACE_ROOT="${DEMO_ROOT}/beijing_ws"
-cd "${WORKSPACE_ROOT}"
+STAGING_ROOT="${DEMO_ROOT}/beijing_ws"
+cd "${STAGING_ROOT}"
 
 ROS_SETUP=""
 for candidate in /opt/ros/kilted/setup.bash /opt/ros/humble/setup.bash; do
@@ -26,8 +26,8 @@ fi
 # Desactive nounset solo mientras se cargan y restaurelo inmediatamente despues.
 set +u
 source "${ROS_SETUP}"
-if [ -f "${WORKSPACE_ROOT}/install/setup.bash" ]; then
-  source "${WORKSPACE_ROOT}/install/setup.bash"
+if [ -f "${DEMO_ROOT}/install/setup.bash" ]; then
+  source "${DEMO_ROOT}/install/setup.bash"
 fi
 set -u
 
@@ -67,24 +67,35 @@ chmod +x "${DEMO_ROOT}/scripts/start_goalkeeper_web.sh" \
   "${DEMO_ROOT}/scripts/prepare_goalkeeper_build.sh"
 
 echo "[BUILD brain]"
-colcon build --symlink-install --packages-select brain \
+cd "${DEMO_ROOT}"
+# El repositorio conserva los fuentes en beijing_ws/src como staging, pero los
+# scripts originales ejecutan el release plano desde beijing/install.
+colcon build \
+  --base-paths "${STAGING_ROOT}/src" \
+  --build-base "${DEMO_ROOT}/build" \
+  --install-base "${DEMO_ROOT}/install" \
+  --packages-select brain \
+  --cmake-clean-cache \
   --event-handlers console_direct+
 
 set +u
-source "${WORKSPACE_ROOT}/install/setup.bash"
+source "${DEMO_ROOT}/install/setup.bash"
 set -u
 echo "[TEST brain: pruebas funcionales]"
 # El demo original acumula deuda en los linters globales (especialmente
 # uncrustify). Para decidir si el robot esta listo, ejecute los tests de codigo,
 # integracion web y compatibilidad con la SDK; los linters se revisan aparte.
-ctest --test-dir "${WORKSPACE_ROOT}/build/brain" \
+ctest --test-dir "${DEMO_ROOT}/build/brain" \
   -E '^(cppcheck|flake8|lint_cmake|pep257|uncrustify|xmllint)$' \
   --output-on-failure
 
 echo "[CHECK runtime files]"
-test -f install/brain/share/brain/tools/goalkeeper_web/server.py
-test -f install/brain/share/brain/config/config_local.yaml
-test -f install/brain/share/brain/behavior_trees/subtrees/subtree_goal_keeper_play.xml
+test -f "${DEMO_ROOT}/install/brain/share/brain/tools/goalkeeper_web/server.py"
+test -f "${DEMO_ROOT}/install/brain/share/brain/config/config_local.yaml"
+test -f "${DEMO_ROOT}/install/brain/share/brain/behavior_trees/subtrees/subtree_goal_keeper_play.xml"
+grep -aFq 'goalkeeper.prediction.reject_outside_field' \
+  "${DEMO_ROOT}/install/brain/lib/brain/brain_node"
+grep -Fq 'source ./install/setup.bash' "${DEMO_ROOT}/scripts/start.sh"
 
 echo "PREPARACION OK. Inicie con: cd ${DEMO_ROOT} && ./scripts/start.sh role:=goal_keeper"
 echo "Panel: http://IP_DEL_ROBOT:8088"

@@ -66,8 +66,11 @@ cd beijing
 bash scripts/prepare_goalkeeper_build.sh
 ```
 
-El script verifica ROS/SDK, la GUI, el árbol de comportamiento, compila
-`brain`, ejecuta sus pruebas y comprueba los archivos instalados.
+El script verifica ROS/SDK, la GUI y el árbol de comportamiento. Los fuentes
+se conservan en `beijing_ws/src`, pero se compilan deliberadamente hacia
+`beijing/build` y `beijing/install`, que es el layout plano utilizado por los
+scripts originales del demo. También ejecuta las pruebas funcionales y confirma
+que el binario instalado contiene el filtro de balón fuera del campo.
 
 ## Ejecutar
 
@@ -84,6 +87,10 @@ http://IP_DEL_ROBOT:8088
 
 La sección **Ayuda y restauración** del panel explica cada parámetro y el flujo
 correcto para probar, aplicar y guardar. Para detener todo:
+
+Si `brain_node` está detenido, el panel muestra los valores persistidos de
+`config_local.yaml`. En ese estado **Aplicar** no modifica ROS en vivo, pero
+**Aplicar y guardar** prepara los valores para el siguiente arranque.
 
 ```bash
 cd beijing
