@@ -196,7 +196,7 @@ brain_node:
 
     rerunLog:
       enable_tcp: false # Stream logs over the network
-      server_ip: "10.0.16.110:9876" # Address of the machine running Rerun Viewer
+      server_ip: "192.168.1.3:9876" # Address of the machine running Rerun Viewer
       enable_file: true # Write logs locally
       log_dir: "/home/booster/Workspace/rrlog" # Local directory for timestamped log files
       max_log_file_mins: 5.0 # Rotate local logs after this duration to avoid oversized files
@@ -257,7 +257,7 @@ brain_node:
     debug:
       log_ball_pos: false # Write ball positions to ballpos.log for debugging
     
-    game_control_ip: "10.0.16.150"  # Set to the GameController IP address
+    game_control_ip: "192.168.1.150"  # Set to the GameController IP address
 
     # for fun
     sound:
