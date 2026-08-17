@@ -8,8 +8,8 @@ brain_node:
         theta_tolerance: 0.1
         long_range_threshold: 1.0
         turn_threshold: 0.4
-        vx_limit: 1.2
-        vy_limit: 0.5
+        vx_limit: 1.5
+        vy_limit: 1.5
         vtheta_limit: 1.5
         avoid_obstacles: true
       blocking:
@@ -17,17 +17,17 @@ brain_node:
         theta_tolerance: 0.3
         vx_limit: 0.7
         vy_limit: 0.9
-        vtheta_limit: 1.0
-        position_gain: 1.0
-        orientation_gain: 2.0
+        vtheta_limit: 1.5
+        position_gain: 2.0
+        orientation_gain: 0.6
         dist_to_goalline: 0.8
       chase:
-        threshold: 1.0
-        vx_limit: 0.5
-        vy_limit: 1.5
-        vtheta_limit: 1.0
-        target_distance: 0.4
-        safe_distance: 0.6
+        threshold: 1.2
+        vx_limit: 1.7
+        vy_limit: 1.7
+        vtheta_limit: 1.5
+        target_distance: 1.0
+        safe_distance: 0.8
       adjust:
         turn_threshold: 0.2
         range: 0.3
@@ -71,8 +71,6 @@ brain_node:
       prediction:
         enabled: true
         require_localization: true
-        # Perfil de la primera instantánea completa de la sesión 2026-08-14
-        # 20:24 (parameter_apply registrado a las 20:27:39 UTC+8).
         history_msec: 600.0
         max_samples: 20
         min_samples: 5
@@ -98,28 +96,26 @@ brain_node:
         post_block_claim_msec: 2500.0
         intercept:
           enabled: true
-          max_forward_distance: 1.20
-          front_max_forward_distance: 1.60
-          front_min_forward_distance: 0.40
+          max_forward_distance: 1.2
+          front_max_forward_distance: 1.6
+          front_min_forward_distance: 0.4
           front_lateral_threshold: 0.25
           min_ball_separation: 0.25
-          search_step: 0.10
+          search_step: 0.1
           robot_speed_min: 0.45
-          robot_speed_max: 1.20
-          measured_speed_gain: 1.20
+          robot_speed_max: 1.2
+          measured_speed_gain: 1.2
           safety_time_sec: 0.12
-          diagonal_vx_limit: 1.00
-          front_vx_limit: 1.50
+          diagonal_vx_limit: 1.0
+          front_vx_limit: 1.5
         block:
           vx_limit: 0.65
           vy_limit: 1.5
           vtheta_limit: 1.0
           position_gain: 1.5
-          reaction_margin_sec: 0.10
+          reaction_margin_sec: 0.1
           target_tolerance: 0.1
-          apply_min_velocity: true # Compensate lateral Y only; keep X/yaw at their requested values.
-          # 0 desactiva el sobrecontrol lateral urgente. La sesión 16:51
-          # tardó 345 ms en moverse alineado con urgencia frente a 85 ms normal.
+          apply_min_velocity: true
           urgent_time_sec: 0.0
           urgent_lateral_error: 0.2
           urgent_vx_limit: 0.0
@@ -133,9 +129,5 @@ brain_node:
       enable_fallen_robot_visual_kick_exit: true
       fallen_robot_distance: 3.0
       fallen_robot_angle: 0.785
-      avoid_during_chase: true
-      chase_ao_safe_dist: 1.5
-    # Ruta relativa al directorio beijing, creado por scripts/start.sh.
-    # Evita el Permission denied observado en /home/booster/Workspace/rrlog.
-    rerunLog:
-      log_dir: "rrlog"
+      avoid_during_chase: false
+      chase_ao_safe_dist: 0.6
