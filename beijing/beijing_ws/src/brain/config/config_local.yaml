@@ -35,10 +35,10 @@ brain_node:
         vy_limit: 0.2
         vtheta_limit: 1.0
       claim:
-        max_ball_range: 3.0
+        max_ball_range: 1.7
         max_cost: 5.0
-        extra_depth: 1.0
-        lateral_margin: 1.0
+        extra_depth: 0.5
+        lateral_margin: 0.5
         require_team_lead: true
       camera:
         track_tolerance_ratio: 0.22
@@ -86,11 +86,11 @@ brain_node:
         continuity_filter_enabled: true
         field_margin: 0.5
         reject_outside_field: true
-        min_ball_confidence: 40.0
+        min_ball_confidence: 50.0
         recency_weight: 2.0
         deceleration: 0.4
-        step_interval_msec: 100.0
-        step_count: 30
+        step_interval_msec: 50.0
+        step_count: 60
         goal_margin: 0.15
         min_time_to_block: 0.08
         max_time_to_block: 3.0
@@ -103,7 +103,7 @@ brain_node:
           front_min_forward_distance: 0.40
           front_lateral_threshold: 0.25
           min_ball_separation: 0.25
-          search_step: 0.10
+          search_step: 0.05
           robot_speed_min: 0.45
           robot_speed_max: 1.20
           measured_speed_gain: 1.20
