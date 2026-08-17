@@ -41,25 +41,25 @@ brain_node:
         lateral_margin: 1.0
         require_team_lead: true
       camera:
-        track_tolerance_ratio: 0.22
-        center_tolerance_factor: 0.8
-        filter_time_constant_sec: 0.08
-        command_interval_sec: 0.03
-        max_pitch_rate: 0.85
-        max_yaw_rate: 1.25
+        track_tolerance_ratio: 0.12
+        center_tolerance_factor: 0.75
+        filter_time_constant_sec: 0.05
+        command_interval_sec: 0.02
+        max_pitch_rate: 1.0
+        max_yaw_rate: 1.7
         min_command_change: 0.004
         search_cycle_msec: 3000
         search_max_pitch_rate: 0.8
         search_max_yaw_rate: 1.4
       kick:
         type: "visual"
-        alignment_tolerance: 1.5707963268
+        alignment_tolerance: 0.8
         default:
-          speed_limit: 0.5
+          speed_limit: 0.2
           min_msec: 600.0
           enable_stabilize: false
           stabilize_msec: 600.0
-          exit_range: 3.0
+          exit_range: 1.0
           abort_when_ball_moved: true
           ball_move_threshold: 0.3
         visual:
