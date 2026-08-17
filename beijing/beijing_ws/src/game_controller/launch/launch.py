@@ -45,7 +45,7 @@ def generate_launch_description():
             'enable_ip_white_list', default_value='true',
             description='Drop packets from IPs not in ip_white_list'),
         DeclareLaunchArgument(
-            'ip_white_list', default_value='192.168.1.150',
+            'ip_white_list', default_value='192.168.1.142',
             description='Comma-separated GameController source IPs'),
         OpaqueFunction(function=_make_node),
     ])

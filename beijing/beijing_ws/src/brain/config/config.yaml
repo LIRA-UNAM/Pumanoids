@@ -257,7 +257,7 @@ brain_node:
     debug:
       log_ball_pos: false # Write ball positions to ballpos.log for debugging
     
-    game_control_ip: "192.168.1.150"  # Set to the GameController IP address
+    game_control_ip: "192.168.1.142"  # Set to the GameController IP address
 
     # for fun
     sound:
