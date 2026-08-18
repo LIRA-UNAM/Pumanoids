@@ -1,53 +1,43 @@
 #!/bin/bash
 set -e
-
+ROOT_DIR="$HOME"
 echo "=== Booster Robot Setup ==="
 echo "NOTE: this script requires an internet connection."
+echo "Root directory detected: $ROOT_DIR"
 echo ""
-
 # ---------------------------------------------------------------------------
 # 1. Install the SDK (sdk_release/)
 # ---------------------------------------------------------------------------
-SDK_DIR="/home/booster/sdk_release"
-
+SDK_DIR="$ROOT_DIR/sdk_release"
 if [ -d "$SDK_DIR" ]; then
     echo "--- Installing SDK from $SDK_DIR ---"
     cd "$SDK_DIR"
-
     echo "Fixing broken dependencies (apt --fix-broken install)..."
     sudo apt --fix-broken install -y
-
     echo "Running SDK install.sh..."
     sudo ./install.sh
-
     echo "Building SDK..."
     mkdir -p build
     cd build
     cmake ..
     make -j4
-
     echo "SDK installed successfully."
     echo ""
 else
     echo "WARNING: folder $SDK_DIR not found. Skipping SDK installation."
     echo ""
 fi
-
 # ---------------------------------------------------------------------------
 # 2. Install Pumanoids (beijing/scripts/install.sh)
 # ---------------------------------------------------------------------------
-SCRIPTS_DIR="/home/booster/Pumanoids/beijing/scripts"
-
+SCRIPTS_DIR="$ROOT_DIR/Pumanoids/beijing/scripts"
 if [ -d "$SCRIPTS_DIR" ]; then
     echo "--- Installing Pumanoids from $SCRIPTS_DIR ---"
     cd "$SCRIPTS_DIR/.."
-
     echo "Running scripts/install.sh..."
     sudo scripts/install.sh
-
     echo "Sourcing ROS kilted..."
-    source /opt/ros/kilted/setup.bash
-
+   ( source /opt/ros/kilted/setup.bash)
     echo "Pumanoids installed successfully."
     echo ""
 else
