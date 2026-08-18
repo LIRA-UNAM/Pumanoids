@@ -2015,11 +2015,32 @@ NodeStatus GoToGoalBlockingPosition::tick() {
         distToGoalline,
         0.4,
         std::max(0.4, fd.goalAreaLength - 0.2));
-    const double safeBallX = std::isfinite(ballPos.x) ? ballPos.x : ownGoalX;
-    const double safeBallY = std::isfinite(ballPos.y) ? ballPos.y : 0.0;
-    const double safeBallYaw = std::isfinite(brain->data->ball.yawToRobot)
-        ? brain->data->ball.yawToRobot
-        : 0.0;
+        const bool ballPositionReliable =
+        curRole != "goal_keeper" ||
+        brain->tree->getEntry<bool>("ball_location_known") ||
+        brain->tree->getEntry<bool>("tm_ball_pos_reliable");
+
+    const double safeBallX =
+        ballPositionReliable &&
+        std::isfinite(ballPos.x)
+            ? ballPos.x
+            : ownGoalX;
+
+    const double safeBallY =
+        ballPositionReliable &&
+        std::isfinite(ballPos.y)
+            ? ballPos.y
+            : 0.0;
+
+    const double safeBallYaw =
+        ballPositionReliable &&
+        std::isfinite(brain->data->ball.yawToRobot)
+            ? brain->data->ball.yawToRobot
+            : (
+                curRole == "goal_keeper"
+                    ? toPInPI(-robotPose.theta)
+                    : 0.0
+            );
     const double ballDepth = std::max(
         safeDistToGoalline,
         safeBallX - ownGoalX);
@@ -2124,103 +2145,40 @@ NodeStatus GoalkeeperBlockShot::tick()
 
     return NodeStatus::SUCCESS;
 }
-    const auto now = brain->get_clock()->now();
-    const bool freezeDuringHold = brain->get_parameter("goalkeeper.prediction.freeze_target_during_hold").as_bool();
-    const bool currentThreat = brain->data->ballPredictionCurrentThreat;
-    const bool heldThreat =brain->data->ballPredictionHeldThreat;
+    const auto fd =
+        brain->config->fieldDimensions;
 
-    const auto fd = brain->config->fieldDimensions;
-    const double ownGoalX = -fd.length / 2.0;
-    const double distToGoalLine = std::clamp(
-        brain->get_parameter(
-            "goalkeeper.blocking.dist_to_goalline").as_double(),
-        0.4, std::max(0.4, fd.goalAreaLength - 0.2));
-    Pose2D targetField;
-    targetField.x = ownGoalX + distToGoalLine;
+    const double ownGoalX =
+        -fd.length / 2.0;
+
+    const double distToGoalLine =
+        std::clamp(
+            brain->get_parameter(
+                "goalkeeper.blocking.dist_to_goalline"
+            ).as_double(),
+            0.4,
+            std::max(
+                0.4,
+                fd.goalAreaLength - 0.2));
+
     const double lateralLimit =
-    fd.goalWidth / 2.0 +
-    std::max(
-        0.0,
-        brain->get_parameter(
-            "goalkeeper.prediction.goal_margin").as_double());
+        fd.goalWidth / 2.0 +
+        std::max(
+            0.0,
+            brain->get_parameter(
+                "goalkeeper.prediction.goal_margin"
+            ).as_double());
 
-Pose2D targetField{
-    ownGoalX + distToGoalLine,
-    std::clamp(
-        brain->data->ballInterceptPoint.y,
-        -lateralLimit,
-        lateralLimit),
-    0.0
-};
-
-double targetTime =
-    brain->data->ballTimeToIntercept;
-
-bool forwardInterceptActive = false;
-bool frontIntercept = false;
-    // Optionally meet the ball before it reaches the fixed defensive line.
-    // Search from the most advanced point backwards and select the first point
-    // that the robot can reach with the speed measured from odometry.  This
-    // produces a forward diagonal for lateral shots and a direct, fast advance
-    // for shots whose crossing point is close to the robot centre line.
-    const bool forwardInterceptEnabled = brain->get_parameter(
-        "goalkeeper.prediction.intercept.enabled").as_bool();
-    const double lateralErrorAtLine =
-        brain->data->ballInterceptPoint.y - brain->data->robotPoseToField.y;
-    const double frontThreshold = std::max(
-        0.0, brain->get_parameter(
-            "goalkeeper.prediction.intercept.front_lateral_threshold").as_double());
-    const bool frontIntercept =
-        forwardInterceptEnabled && std::abs(lateralErrorAtLine) <= frontThreshold;
-    const double configuredMaxForward = std::max(
-        0.0, brain->get_parameter(frontIntercept
-            ? "goalkeeper.prediction.intercept.front_max_forward_distance"
-            : "goalkeeper.prediction.intercept.max_forward_distance").as_double());
-    const double ballSeparation = std::max(
-        0.05, brain->get_parameter(
-            "goalkeeper.prediction.intercept.min_ball_separation").as_double());
-    const double searchStep = std::max(
-        0.02, brain->get_parameter(
-            "goalkeeper.prediction.intercept.search_step").as_double());
-    const double speedMin = std::max(
-        0.05, brain->get_parameter(
-            "goalkeeper.prediction.intercept.robot_speed_min").as_double());
-    const double speedMax = std::max(
-        speedMin, brain->get_parameter(
-            "goalkeeper.prediction.intercept.robot_speed_max").as_double());
-    const double measuredSpeedGain = std::max(
-        0.1, brain->get_parameter(
-            "goalkeeper.prediction.intercept.measured_speed_gain").as_double());
-    const double reachSpeed = std::clamp(
-        brain->data->goalkeeperMeasuredOdomSpeed * measuredSpeedGain,
-        speedMin, speedMax);
-    const double safetyTime = std::max(
-        0.0, brain->get_parameter(
-            "goalkeeper.prediction.intercept.safety_time_sec").as_double());
-    double targetTime = brain->data->ballTimeToIntercept;
-    bool forwardInterceptActive = false;
-
-    const double ballX = brain->data->ball.posToField.x;
-    const double ballY = brain->data->ball.posToField.y;
-    const double dxToLine = targetField.x - ballX;
-    const double dyToLine = targetField.y - ballY;
-    const double distanceToLine = std::hypot(dxToLine, dyToLine);
-    const double ballSpeed = std::hypot(
-        brain->data->ballVelocityX, brain->data->ballVelocityY);
-    const double deceleration = std::max(
-        0.0, brain->get_parameter(
-            "goalkeeper.prediction.deceleration").as_double());
-    auto ballTravelTime = [ballSpeed, deceleration](double distance) {
-        if (distance <= 0.0) return 0.0;
-        if (ballSpeed <= 1e-6) return std::numeric_limits<double>::infinity();
-        if (deceleration <= 1e-6) return distance / ballSpeed;
-        const double discriminant =
-            ballSpeed * ballSpeed - 2.0 * deceleration * distance;
-        if (discriminant < 0.0)
-            return std::numeric_limits<double>::infinity();
-        return (ballSpeed - std::sqrt(discriminant)) / deceleration;
+    Pose2D targetField{
+        ownGoalX + distToGoalLine,
+        std::clamp(
+            brain->data->ballInterceptPoint.y,
+            -lateralLimit,
+            lateralLimit),
+        0.0
     };
-        // -------------------------------------------------------------------------
+    
+    // -------------------------------------------------------------------------
     // Predictive interception target management.
     //
     // A threat can remain active for activation_hold_msec after the current
