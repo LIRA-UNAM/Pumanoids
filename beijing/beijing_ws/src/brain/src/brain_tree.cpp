@@ -730,7 +730,44 @@ NodeStatus CamTrackBall::tick()
 {
     const bool goalkeeper =
         brain->tree->getEntry<string>("player_role") == "goal_keeper";
-    const double kTrackToleranceRatio = goalkeeper
+    const bool frontOnly =
+    goalkeeper &&
+    brain->get_parameter(
+        "goalkeeper.camera.front_only_enabled"
+    ).as_bool();
+
+const double searchYawLimit =
+    goalkeeper
+        ? std::clamp(
+            brain->get_parameter(
+                "goalkeeper.camera.search_yaw_limit"
+            ).as_double(),
+            0.10,
+            M_PI_2 - 0.02)
+        : 1.10;
+
+const double trackingYawLimit =
+    goalkeeper
+        ? std::clamp(
+            brain->get_parameter(
+                "goalkeeper.camera.tracking_yaw_limit"
+            ).as_double(),
+            0.10,
+            M_PI_2 - 0.02)
+        : std::max(
+            std::fabs(
+                brain->config
+                    ->headYawLimitLeft),
+            std::fabs(
+                brain->config
+                    ->headYawLimitRight));
+
+const bool useTeammateHint =
+    !goalkeeper ||
+    brain->get_parameter(
+        "goalkeeper.camera.use_teammate_ball_hint"
+    ).as_bool();
+        const double kTrackToleranceRatio = goalkeeper
         ? std::clamp(brain->get_parameter(
             "goalkeeper.camera.track_tolerance_ratio").as_double(), 0.02, 0.49)
         : 0.30;
@@ -881,43 +918,205 @@ NodeStatus CamTrackBall::tick()
                 "filteredDeltaX: %.1f, filteredDeltaY: %.1f",
                 ballX, ballY, deltaX, deltaY, filteredDeltaX_, filteredDeltaY_));
     } else {
-        // If vision is temporarily unavailable, follow the last reliable
-        // local/teammate angular estimate, but filter the absolute target.
-        if (iKnowBallPos) {
-            targetPitch = brain->data->ball.pitchToRobot;
-            targetYaw = brain->data->ball.yawToRobot;
-        } else if (tmBallPosReliable) {
-            targetPitch = brain->data->tmBall.pitchToRobot;
-            targetYaw = brain->data->tmBall.yawToRobot;
-        }
-        if (!finiteHeadPose(targetPitch, targetYaw)) {
-            trackingInitialized_ = false;
+    const auto objectInFront =
+        [frontOnly,
+         trackingYawLimit](
+            const GameObject &obj)
+    {
+        if (!frontOnly)
+            return true;
+
+        return
+            std::isfinite(
+                obj.posToRobot.x) &&
+            std::isfinite(
+                obj.yawToRobot) &&
+            obj.posToRobot.x > 0.0 &&
+            std::abs(
+                obj.yawToRobot) <=
+                trackingYawLimit;
+    };
+
+    bool havePositionTarget =
+        false;
+
+
+    // Prefer the locally remembered position if it is still in front.
+    if (iKnowBallPos &&
+        objectInFront(
+            brain->data->ball))
+    {
+        targetPitch =
+            brain->data
+                ->ball.pitchToRobot;
+
+        targetYaw =
+            brain->data
+                ->ball.yawToRobot;
+
+        havePositionTarget =
+            true;
+    }
+
+
+    // Otherwise use a teammate hint, but only when it is in the frontal
+    // sector allowed for the goalkeeper.
+    else if (
+        tmBallPosReliable &&
+        useTeammateHint &&
+        objectInFront(
+            brain->data->tmBall))
+    {
+        targetPitch =
+            brain->data
+                ->tmBall.pitchToRobot;
+
+        targetYaw =
+            brain->data
+                ->tmBall.yawToRobot;
+
+        havePositionTarget =
+            true;
+    }
+
+
+    if (havePositionTarget)
+    {
+        fallbackScanInitialized_ =
+            false;
+
+        if (!finiteHeadPose(
+                targetPitch,
+                targetYaw))
+        {
+            trackingInitialized_ =
+                false;
+
             return NodeStatus::SUCCESS;
         }
-        if (!trackingInitialized_ || timingReset || trackingFromVision_) {
-            filteredTargetPitch_ = targetPitch;
-            filteredTargetYaw_ = targetYaw;
-        } else {
-            filteredTargetPitch_ +=
-                filterAlpha * (targetPitch - filteredTargetPitch_);
-            filteredTargetYaw_ +=
-                filterAlpha * (targetYaw - filteredTargetYaw_);
+
+        if (!trackingInitialized_ ||
+            timingReset ||
+            trackingFromVision_)
+        {
+            filteredTargetPitch_ =
+                targetPitch;
+
+            filteredTargetYaw_ =
+                targetYaw;
         }
-        targetPitch = filteredTargetPitch_;
-        targetYaw = filteredTargetYaw_;
-        targetInDeadband_ = false;
-        logTrackingBox(0x000000FF, "ball not detected");
+        else
+        {
+            filteredTargetPitch_ +=
+                filterAlpha *
+                (targetPitch -
+                 filteredTargetPitch_);
+
+            filteredTargetYaw_ +=
+                filterAlpha *
+                (targetYaw -
+                 filteredTargetYaw_);
+        }
+
+        targetPitch =
+            filteredTargetPitch_;
+
+        targetYaw =
+            filteredTargetYaw_;
     }
+
+
+    // Ball information exists but points behind/outside the frontal sector:
+    // scan the front instead of turning toward the rear.
+    else if (frontOnly)
+    {
+        using head_scan_policy::Pose;
+
+        const std::array<Pose, 6>
+            frontWaypoints{{
+                {1.0, +searchYawLimit},
+                {1.0,  0.0},
+                {1.0, -searchYawLimit},
+                {0.2, -searchYawLimit},
+                {0.2,  0.0},
+                {0.2, +searchYawLimit},
+            }};
+
+        if (!fallbackScanInitialized_)
+        {
+            fallbackScanInitialized_ =
+                true;
+
+            fallbackScanStartTime_ =
+                now;
+        }
+
+        const double cycleSec =
+            std::max(
+                0.5,
+                static_cast<double>(
+                    brain->get_parameter(
+                        "goalkeeper.camera.search_cycle_msec"
+                    ).as_int()) /
+                    1000.0);
+
+        const double elapsedSec =
+            std::chrono::duration<double>(
+                now -
+                fallbackScanStartTime_)
+            .count();
+
+        const double phase =
+            elapsedSec /
+            cycleSec;
+
+        const auto scanTarget =
+            head_scan_policy::
+                closedWaypointPose(
+                    frontWaypoints,
+                    phase);
+
+        targetPitch =
+            scanTarget.pitch;
+
+        targetYaw =
+            scanTarget.yaw;
+    }
+    else
+    {
+        trackingInitialized_ =
+            false;
+
+        return NodeStatus::SUCCESS;
+    }
+
+    targetInDeadband_ =
+        false;
+}
 
     if (!finiteHeadPose(targetPitch, targetYaw)) {
         trackingInitialized_ = false;
         return NodeStatus::SUCCESS;
     }
     targetPitch = std::max(targetPitch, brain->config->headPitchLimitUp);
-    targetYaw = cap(
-        targetYaw,
-        brain->config->headYawLimitLeft,
-        brain->config->headYawLimitRight);
+    if (frontOnly)
+{
+    targetYaw =
+        std::clamp(
+            targetYaw,
+            -trackingYawLimit,
+            trackingYawLimit);
+}
+else
+{
+    targetYaw =
+        cap(
+            targetYaw,
+            brain->config
+                ->headYawLimitLeft,
+            brain->config
+                ->headYawLimitRight);
+}
 
     if (!trackingInitialized_ || timingReset ||
         !finiteHeadPose(lastCommandPitch_, lastCommandYaw_)) {
@@ -926,10 +1125,24 @@ NodeStatus CamTrackBall::tick()
         // cause repeated commands that the client clips away.
         lastCommandPitch_ = std::max(
             feedbackPitch, brain->config->headPitchLimitUp);
-        lastCommandYaw_ = cap(
+        if (frontOnly)
+{
+    lastCommandYaw_ =
+        std::clamp(
             feedbackYaw,
-            brain->config->headYawLimitLeft,
-            brain->config->headYawLimitRight);
+            -trackingYawLimit,
+            trackingYawLimit);
+}
+else
+{
+    lastCommandYaw_ =
+        cap(
+            feedbackYaw,
+            brain->config
+                ->headYawLimitLeft,
+            brain->config
+                ->headYawLimitRight);
+}
         lastCommandTime_ = std::chrono::steady_clock::time_point{};
     }
 
@@ -974,32 +1187,76 @@ NodeStatus CamFindBall::tick()
     } // All camera nodes return SUCCESS; FAILURE would prevent subsequent nodes from running.
 
     using head_scan_policy::Pose;
-    static constexpr std::array<Pose, 6> kWaypoints{{
-        {1.0, 1.1},
-        {1.0, 0.0},
-        {1.0, -1.1},
-        {0.2, -1.1},
-        {0.2, 0.0},
-        {0.2, 1.1},
+
+const bool goalkeeper =
+    brain->tree->getEntry<string>(
+        "player_role") ==
+    "goal_keeper";
+
+const double scanYawLimit =
+    goalkeeper
+        ? std::clamp(
+            brain->get_parameter(
+                "goalkeeper.camera.search_yaw_limit"
+            ).as_double(),
+            0.10,
+            M_PI_2 - 0.02)
+        : 1.10;
+
+const std::array<Pose, 6>
+    kWaypoints{{
+        {1.0, +scanYawLimit},
+        {1.0,  0.0},
+        {1.0, -scanYawLimit},
+        {0.2, -scanYawLimit},
+        {0.2,  0.0},
+        {0.2, +scanYawLimit},
     }};
 
-    const rclcpp::Time now = brain->get_clock()->now();
-    double tickDt = 0.0;
-    if (_scanInitialized) {
-        tickDt = (now - _lastTickTime).nanoseconds() / 1e9;
-    }
-    const bool restarted = !_scanInitialized || !std::isfinite(tickDt) ||
-        tickDt <= 0.0 || tickDt > 0.3;
-    const bool goalkeeper =
-        brain->tree->getEntry<string>("player_role") == "goal_keeper";
-    const double cycleMsecs = goalkeeper
-        ? std::max(100.0, static_cast<double>(brain->get_parameter(
-            "goalkeeper.camera.search_cycle_msec").as_int()))
-        : std::max(100.0, static_cast<double>(
-            getInput<int>("msec_cycle").value()));
-    const auto evaluate = [](double phase) {
-        return head_scan_policy::closedWaypointPose(kWaypoints, phase);
-    };
+const rclcpp::Time now =
+    brain->get_clock()->now();
+
+double tickDt = 0.0;
+
+if (_scanInitialized)
+{
+    tickDt =
+        (now - _lastTickTime)
+            .nanoseconds() /
+        1e9;
+}
+
+const bool restarted =
+    !_scanInitialized ||
+    !std::isfinite(tickDt) ||
+    tickDt <= 0.0 ||
+    tickDt > 0.3;
+
+const double cycleMsecs =
+    goalkeeper
+        ? std::max(
+            100.0,
+            static_cast<double>(
+                brain->get_parameter(
+                    "goalkeeper.camera.search_cycle_msec"
+                ).as_int()))
+        : std::max(
+            100.0,
+            static_cast<double>(
+                getInput<int>(
+                    "msec_cycle"
+                ).value()));
+
+const auto evaluate =
+    [&kWaypoints](
+        double phase)
+{
+    return
+        head_scan_policy::
+            closedWaypointPose(
+                kWaypoints,
+                phase);
+};
 
     if (restarted) {
         _scanStartTime = now;
@@ -1223,7 +1480,51 @@ NodeStatus Chase::tick()
         target_f.x = ballPos.x + safeDist * cos(tanTheta);
         target_f.y = ballPos.y + safeDist * sin(tanTheta);
     }
+    const bool isGoalkeeper =
+    brain->tree->getEntry<string>(
+        "player_role") ==
+    "goal_keeper";
 
+if (isGoalkeeper &&
+    brain->get_parameter(
+        "goalkeeper.chase.defensive_clamp_enabled"
+    ).as_bool())
+{
+    const auto fd =
+        brain->config->fieldDimensions;
+
+    const double ownGoalX =
+        -fd.length / 2.0;
+
+    const double maxDepth =
+        std::clamp(
+            brain->get_parameter(
+                "goalkeeper.chase.max_depth_from_goalline"
+            ).as_double(),
+            0.4,
+            fd.penaltyAreaLength);
+
+    // Reuse the same lateral margin as normal goalkeeper coverage.
+    const double lateralLimit =
+        fd.goalWidth / 2.0 +
+        std::max(
+            0.0,
+            brain->get_parameter(
+                "goalkeeper.blocking.lateral_margin"
+            ).as_double());
+
+    target_f.x =
+        std::clamp(
+            target_f.x,
+            ownGoalX + 0.20,
+            ownGoalX + maxDepth);
+
+    target_f.y =
+        std::clamp(
+            target_f.y,
+            -lateralLimit,
+            lateralLimit);
+}
     target_r = brain->data->field2robot(target_f);
     double targetDir = atan2(target_r.y, target_r.x);
     double distToObstacle = brain->distToObstacle(targetDir);
@@ -1732,11 +2033,31 @@ NodeStatus GoToGoalBlockingPosition::tick() {
         // at or behind that line, keep the finite ball-side target instead of
         // jumping to goalWidth/4; this is continuous at the goal line and
         // remains inside the goalkeeper's lateral playing area.
-        targetPose.y = safeBallY * safeDistToGoalline / ballDepth;
-        targetPose.y = std::clamp(
-            targetPose.y,
-            -fd.penaltyAreaWidth / 2.0,
-            fd.penaltyAreaWidth / 2.0);
+        targetPose.y =
+    safeBallY *
+    safeDistToGoalline /
+    ballDepth;
+
+const bool limitToGoalMouth =
+    brain->get_parameter(
+        "goalkeeper.blocking.limit_to_goal_mouth"
+    ).as_bool();
+
+const double lateralLimit =
+    limitToGoalMouth
+        ? fd.goalWidth / 2.0 +
+            std::max(
+                0.0,
+                brain->get_parameter(
+                    "goalkeeper.blocking.lateral_margin"
+                ).as_double())
+        : fd.penaltyAreaWidth / 2.0;
+
+targetPose.y =
+    std::clamp(
+        targetPose.y,
+        -lateralLimit,
+        lateralLimit);
     } else {
         targetPose.y = safeBallY * safeDistToGoalline / ballDepth;
         targetPose.y = std::clamp(
@@ -1787,13 +2108,26 @@ NodeStatus GoToGoalBlockingPosition::tick() {
 NodeStatus GoalkeeperBlockShot::tick()
 {
     if (!brain->get_parameter("goalkeeper.prediction.enabled").as_bool() ||
-        !brain->data->ballWillBreach) {
-        brain->data->goalkeeperUrgentBlock = false;
-        brain->data->goalkeeperForwardInterceptActive = false;
-        brain->data->goalkeeperFrontIntercept = false;
-        brain->client->setVelocity(0.0, 0.0, 0.0, false, false, false);
-        return NodeStatus::SUCCESS;
-    }
+    !brain->data->ballWillBreach) {
+    brain->data->goalkeeperUrgentBlock = false;
+    brain->data->goalkeeperForwardInterceptActive = false;
+    brain->data->goalkeeperFrontIntercept = false;
+
+    // A completed/expired threat must not leave a stale target available
+    // for the next shot.
+    cachedTargetValid_ = false;
+    brain->data->goalkeeperBlockTargetSource = "none";
+
+    brain->client->setVelocity(
+        0.0, 0.0, 0.0,
+        false, false, false);
+
+    return NodeStatus::SUCCESS;
+}
+    const auto now = brain->get_clock()->now();
+    const bool freezeDuringHold = brain->get_parameter("goalkeeper.prediction.freeze_target_during_hold").as_bool();
+    const bool currentThreat = brain->data->ballPredictionCurrentThreat;
+    const bool heldThreat =brain->data->ballPredictionHeldThreat;
 
     const auto fd = brain->config->fieldDimensions;
     const double ownGoalX = -fd.length / 2.0;
@@ -1803,14 +2137,27 @@ NodeStatus GoalkeeperBlockShot::tick()
         0.4, std::max(0.4, fd.goalAreaLength - 0.2));
     Pose2D targetField;
     targetField.x = ownGoalX + distToGoalLine;
-    const double lateralLimit = std::max(
-        fd.goalWidth / 2.0,
-        fd.goalWidth / 2.0 + brain->get_parameter(
+    const double lateralLimit =
+    fd.goalWidth / 2.0 +
+    std::max(
+        0.0,
+        brain->get_parameter(
             "goalkeeper.prediction.goal_margin").as_double());
-    targetField.y = std::clamp(
-        brain->data->ballInterceptPoint.y,
-        -lateralLimit, lateralLimit);
 
+Pose2D targetField{
+    ownGoalX + distToGoalLine,
+    std::clamp(
+        brain->data->ballInterceptPoint.y,
+        -lateralLimit,
+        lateralLimit),
+    0.0
+};
+
+double targetTime =
+    brain->data->ballTimeToIntercept;
+
+bool forwardInterceptActive = false;
+bool frontIntercept = false;
     // Optionally meet the ball before it reaches the fixed defensive line.
     // Search from the most advanced point backwards and select the first point
     // that the robot can reach with the speed measured from odometry.  This
@@ -1873,62 +2220,423 @@ NodeStatus GoalkeeperBlockShot::tick()
             return std::numeric_limits<double>::infinity();
         return (ballSpeed - std::sqrt(discriminant)) / deceleration;
     };
+        // -------------------------------------------------------------------------
+    // Predictive interception target management.
+    //
+    // A threat can remain active for activation_hold_msec after the current
+    // trajectory fit has become invalid. During that HOLD window we must not
+    // use the noisy/new ball observation to create a completely different
+    // interception target.
+    // -------------------------------------------------------------------------
 
-    if (forwardInterceptEnabled && distanceToLine > 1e-6 &&
-        ballX > targetField.x + ballSeparation) {
-        const double ballLimitedForward = std::max(
-            0.0, ballX - ballSeparation - targetField.x);
-        const double maxForward = std::min(
-            configuredMaxForward, ballLimitedForward);
-        for (double forward = maxForward;
-             forward >= searchStep * 0.5; forward -= searchStep) {
-            const double candidateX = targetField.x + forward;
-            const double ratio = std::clamp(
-                (candidateX - ballX) / dxToLine, 0.0, 1.0);
-            // Keep the candidate on the actual trajectory.  An early point
-            // can legitimately be outside the goal-mouth width even though
-            // the later line crossing is inside it.
-            const double candidateY = ballY + ratio * dyToLine;
-            const double candidateDistance = std::hypot(
-                candidateX - ballX, candidateY - ballY);
-            const double candidateTime = ballTravelTime(candidateDistance);
-            const double robotDistance = std::hypot(
-                candidateX - brain->data->robotPoseToField.x,
-                candidateY - brain->data->robotPoseToField.y);
-            if (std::isfinite(candidateTime) &&
-                robotDistance / reachSpeed + safetyTime <= candidateTime) {
-                targetField.x = candidateX;
-                targetField.y = candidateY;
-                targetTime = candidateTime;
-                forwardInterceptActive = true;
-                break;
-            }
-        }
-        // A centred shot must not leave a stationary goalkeeper waiting on
-        // its current line merely because the conservative reach model has no
-        // solution yet.  Force a short forward target and command the frontal
-        // speed limit; this fallback remains bounded by the ball separation.
-        if (frontIntercept && !forwardInterceptActive && maxForward > 0.0) {
-            const double frontMinimum = std::max(
-                0.0, brain->get_parameter(
-                    "goalkeeper.prediction.intercept.front_min_forward_distance").as_double());
-            const double forward = std::min(maxForward, frontMinimum);
-            if (forward > 0.0) {
-                const double candidateX = targetField.x + forward;
-                const double ratio = std::clamp(
-                    (candidateX - ballX) / dxToLine, 0.0, 1.0);
-                const double candidateY = ballY + ratio * dyToLine;
-                const double candidateDistance = std::hypot(
-                    candidateX - ballX, candidateY - ballY);
-                const double candidateTime = ballTravelTime(candidateDistance);
-                targetField.x = candidateX;
-                targetField.y = candidateY;
-                if (std::isfinite(candidateTime)) targetTime = candidateTime;
-                forwardInterceptActive = true;
-            }
-        }
+    const auto now = brain->get_clock()->now();
+
+    const bool freezeDuringHold =
+        brain->get_parameter(
+            "goalkeeper.prediction.freeze_target_during_hold"
+        ).as_bool();
+
+    const bool currentThreat =
+        brain->data->ballPredictionCurrentThreat;
+
+    const bool heldThreat =
+        brain->data->ballPredictionHeldThreat;
+
+    double targetTime =
+        brain->data->ballTimeToIntercept;
+
+    bool forwardInterceptActive = false;
+    bool frontIntercept = false;
+
+    double reachSpeed =
+        brain->data->goalkeeperAdaptiveReachSpeed;
+
+    const bool useCachedTarget =
+        freezeDuringHold &&
+        heldThreat &&
+        !currentThreat &&
+        cachedTargetValid_ &&
+        cachedDeadline_.nanoseconds() > 0 &&
+        cachedDeadline_ > now;
+
+
+    // -------------------------------------------------------------------------
+    // CASE 1:
+    // The predictor is currently invalid, but the threat is still retained by
+    // activation_hold_msec. Keep exactly the last valid target.
+    // -------------------------------------------------------------------------
+    if (useCachedTarget)
+    {
+        targetField =
+            cachedTargetField_;
+
+        forwardInterceptActive =
+            cachedForwardIntercept_;
+
+        frontIntercept =
+            cachedFrontIntercept_;
+
+        reachSpeed =
+            cachedReachSpeed_;
+
+        targetTime = std::max(
+            0.0,
+            (cachedDeadline_ - now).seconds());
+
+        brain->data->goalkeeperBlockTargetSource =
+            "cached_prediction";
     }
 
+
+    // -------------------------------------------------------------------------
+    // CASE 2:
+    // HOLD is active, but no cached target is available.
+    // Fall back to the fixed defensive line instead of calculating an
+    // aggressive forward interception from an invalid trajectory.
+    // -------------------------------------------------------------------------
+    else if (
+        freezeDuringHold &&
+        heldThreat &&
+        !currentThreat)
+    {
+        targetField.x =
+            ownGoalX + distToGoalLine;
+
+        targetField.y = std::clamp(
+            brain->data->ballInterceptPoint.y,
+            -lateralLimit,
+            lateralLimit);
+
+        forwardInterceptActive = false;
+        frontIntercept = false;
+
+        targetTime = std::max(
+            0.0,
+            brain->data->ballTimeToIntercept);
+
+        brain->data->goalkeeperBlockTargetSource =
+            "defensive_fallback";
+    }
+
+
+    // -------------------------------------------------------------------------
+    // CASE 3:
+    // Fresh/current trajectory. Only here are we allowed to calculate a new
+    // forward or diagonal interception.
+    // -------------------------------------------------------------------------
+    else
+    {
+        brain->data->goalkeeperBlockTargetSource =
+            "current_prediction";
+
+        const bool forwardInterceptEnabled =
+            brain->get_parameter(
+                "goalkeeper.prediction.intercept.enabled"
+            ).as_bool();
+
+        const double lateralErrorAtLine =
+            brain->data->ballInterceptPoint.y -
+            brain->data->robotPoseToField.y;
+
+        const double frontThreshold =
+            std::max(
+                0.0,
+                brain->get_parameter(
+                    "goalkeeper.prediction.intercept.front_lateral_threshold"
+                ).as_double());
+
+        frontIntercept =
+            forwardInterceptEnabled &&
+            std::abs(lateralErrorAtLine) <=
+                frontThreshold;
+
+        const double configuredMaxForward =
+            std::max(
+                0.0,
+                brain->get_parameter(
+                    frontIntercept
+                        ? "goalkeeper.prediction.intercept.front_max_forward_distance"
+                        : "goalkeeper.prediction.intercept.max_forward_distance"
+                ).as_double());
+
+        const double ballSeparation =
+            std::max(
+                0.05,
+                brain->get_parameter(
+                    "goalkeeper.prediction.intercept.min_ball_separation"
+                ).as_double());
+
+        const double searchStep =
+            std::max(
+                0.02,
+                brain->get_parameter(
+                    "goalkeeper.prediction.intercept.search_step"
+                ).as_double());
+
+        const double speedMin =
+            std::max(
+                0.05,
+                brain->get_parameter(
+                    "goalkeeper.prediction.intercept.robot_speed_min"
+                ).as_double());
+
+        const double speedMax =
+            std::max(
+                speedMin,
+                brain->get_parameter(
+                    "goalkeeper.prediction.intercept.robot_speed_max"
+                ).as_double());
+
+        const double measuredSpeedGain =
+            std::max(
+                0.1,
+                brain->get_parameter(
+                    "goalkeeper.prediction.intercept.measured_speed_gain"
+                ).as_double());
+
+        reachSpeed =
+            std::clamp(
+                brain->data->goalkeeperMeasuredOdomSpeed *
+                    measuredSpeedGain,
+                speedMin,
+                speedMax);
+
+        const double safetyTime =
+            std::max(
+                0.0,
+                brain->get_parameter(
+                    "goalkeeper.prediction.intercept.safety_time_sec"
+                ).as_double());
+
+        const double ballX =
+            brain->data->ball.posToField.x;
+
+        const double ballY =
+            brain->data->ball.posToField.y;
+
+        const double dxToLine =
+            targetField.x - ballX;
+
+        const double dyToLine =
+            targetField.y - ballY;
+
+        const double distanceToLine =
+            std::hypot(
+                dxToLine,
+                dyToLine);
+
+        const double ballSpeed =
+            std::hypot(
+                brain->data->ballVelocityX,
+                brain->data->ballVelocityY);
+
+        const double deceleration =
+            std::max(
+                0.0,
+                brain->get_parameter(
+                    "goalkeeper.prediction.deceleration"
+                ).as_double());
+
+
+        const auto ballTravelTime =
+            [ballSpeed, deceleration](double distance)
+        {
+            if (distance <= 0.0)
+                return 0.0;
+
+            if (ballSpeed <= 1e-6)
+                return std::numeric_limits<double>::infinity();
+
+            if (deceleration <= 1e-6)
+                return distance / ballSpeed;
+
+            const double discriminant =
+                ballSpeed * ballSpeed -
+                2.0 * deceleration * distance;
+
+            if (discriminant < 0.0)
+                return std::numeric_limits<double>::infinity();
+
+            return
+                (ballSpeed -
+                 std::sqrt(discriminant)) /
+                deceleration;
+        };
+
+
+        if (forwardInterceptEnabled &&
+            distanceToLine > 1e-6 &&
+            ballX >
+                targetField.x + ballSeparation)
+        {
+            const double ballLimitedForward =
+                std::max(
+                    0.0,
+                    ballX -
+                    ballSeparation -
+                    targetField.x);
+
+            const double maxForward =
+                std::min(
+                    configuredMaxForward,
+                    ballLimitedForward);
+
+
+            // Search from the most advanced reachable point backwards.
+            for (double forward = maxForward;
+                 forward >= searchStep * 0.5;
+                 forward -= searchStep)
+            {
+                const double candidateX =
+                    targetField.x + forward;
+
+                const double ratio =
+                    std::clamp(
+                        (candidateX - ballX) /
+                            dxToLine,
+                        0.0,
+                        1.0);
+
+                const double candidateY =
+                    ballY +
+                    ratio * dyToLine;
+
+                const double candidateDistance =
+                    std::hypot(
+                        candidateX - ballX,
+                        candidateY - ballY);
+
+                const double candidateTime =
+                    ballTravelTime(
+                        candidateDistance);
+
+                const double robotDistance =
+                    std::hypot(
+                        candidateX -
+                            brain->data
+                                ->robotPoseToField.x,
+                        candidateY -
+                            brain->data
+                                ->robotPoseToField.y);
+
+                if (std::isfinite(candidateTime) &&
+                    robotDistance / reachSpeed +
+                            safetyTime <=
+                        candidateTime)
+                {
+                    targetField.x =
+                        candidateX;
+
+                    targetField.y =
+                        candidateY;
+
+                    targetTime =
+                        candidateTime;
+
+                    forwardInterceptActive =
+                        true;
+
+                    break;
+                }
+            }
+
+
+            // For a centered shot, do not leave the goalkeeper waiting on the
+            // fixed line solely because the conservative reach model did not
+            // find a candidate.
+            if (frontIntercept &&
+                !forwardInterceptActive &&
+                maxForward > 0.0)
+            {
+                const double frontMinimum =
+                    std::max(
+                        0.0,
+                        brain->get_parameter(
+                            "goalkeeper.prediction.intercept.front_min_forward_distance"
+                        ).as_double());
+
+                const double forward =
+                    std::min(
+                        maxForward,
+                        frontMinimum);
+
+                if (forward > 0.0)
+                {
+                    const double candidateX =
+                        targetField.x +
+                        forward;
+
+                    const double ratio =
+                        std::clamp(
+                            (candidateX - ballX) /
+                                dxToLine,
+                            0.0,
+                            1.0);
+
+                    const double candidateY =
+                        ballY +
+                        ratio * dyToLine;
+
+                    const double candidateDistance =
+                        std::hypot(
+                            candidateX - ballX,
+                            candidateY - ballY);
+
+                    const double candidateTime =
+                        ballTravelTime(
+                            candidateDistance);
+
+                    targetField.x =
+                        candidateX;
+
+                    targetField.y =
+                        candidateY;
+
+                    if (std::isfinite(candidateTime))
+                    {
+                        targetTime =
+                            candidateTime;
+                    }
+
+                    forwardInterceptActive =
+                        true;
+                }
+            }
+        }
+
+
+        // ---------------------------------------------------------------------
+        // Store the result of the FRESH prediction so it can be reused during
+        // a temporary loss of the trajectory fit.
+        // ---------------------------------------------------------------------
+        if (freezeDuringHold &&
+            currentThreat)
+        {
+            cachedTargetField_ =
+                targetField;
+
+            cachedTargetValid_ =
+                true;
+
+            cachedForwardIntercept_ =
+                forwardInterceptActive;
+
+            cachedFrontIntercept_ =
+                forwardInterceptActive &&
+                frontIntercept;
+
+            cachedReachSpeed_ =
+                reachSpeed;
+
+            cachedDeadline_ =
+                now +
+                rclcpp::Duration::from_seconds(
+                    std::max(
+                        0.0,
+                        targetTime));
+        }
+    }
+    
     brain->data->goalkeeperForwardInterceptActive = forwardInterceptActive;
     brain->data->goalkeeperFrontIntercept =
         forwardInterceptActive && frontIntercept;

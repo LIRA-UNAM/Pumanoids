@@ -82,13 +82,30 @@ SCHEMA: dict[str, dict[str, Any]] = {
     "goalkeeper.blocking.position_gain": number("Ganancia de cobertura", "Bloqueo reactivo", 1., 0., 5., .1, "Convierte error de posición en velocidad."),
     "goalkeeper.blocking.orientation_gain": number("Ganancia de orientación", "Bloqueo reactivo", 2., 0., 5., .1, "Convierte error al mirar el balón en giro."),
     "goalkeeper.blocking.dist_to_goalline": number("Distancia a la línea", "Bloqueo reactivo", .80, .4, 1.5, .05, "Profundidad de la línea defensiva desde la portería.", "m"),
-
+    "goalkeeper.blocking.limit_to_goal_mouth": boolean("Limitar cobertura a la portería","Bloqueo reactivo",False,"Limita lateralmente al portero al ancho útil de la portería."),
+    "goalkeeper.blocking.lateral_margin": number("Margen lateral de cobertura","Bloqueo reactivo",.25, 0., 1.5, .05,"Margen adicional fuera de cada poste.","m"),
     "goalkeeper.chase.threshold": number("Umbral de persecución", "Persecución", 1., .2, 3., .05, "Por encima de esta distancia persigue; por debajo ajusta o despeja.", "m"),
     "goalkeeper.chase.vx_limit": number("Velocidad longitudinal", "Persecución", 1.5, 0., 2., .05, "Límite hacia el balón.", "m/s"),
     "goalkeeper.chase.vy_limit": number("Velocidad lateral", "Persecución", .3, 0., 1.7, .05, "Límite lateral durante la persecución.", "m/s"),
     "goalkeeper.chase.vtheta_limit": number("Velocidad de giro", "Persecución", 1., 0., 1.5, .05, "Límite de giro durante la persecución.", "rad/s"),
     "goalkeeper.chase.target_distance": number("Distancia detrás del balón", "Persecución", .4, .1, 1.2, .05, "Separación del punto de aproximación.", "m"),
     "goalkeeper.chase.safe_distance": number("Distancia al rodear", "Persecución", .6, .2, 1.5, .05, "Radio usado al rodear el balón.", "m"),
+    "goalkeeper.chase.defensive_clamp_enabled":
+    boolean(
+        "Limitar Chase del portero",
+        "Persecución",
+        False,
+        "Evita que Chase saque al portero de su zona defensiva."
+    ),
+
+    "goalkeeper.chase.max_depth_from_goalline":
+    number(
+        "Profundidad máxima de Chase",
+        "Persecución",
+        3.0, .4, 6., .1,
+        "Distancia máxima desde la línea de gol durante Chase.",
+        "m"
+    ),
 
     "goalkeeper.adjust.turn_threshold": number("Umbral de giro", "Ajuste y posesión", .2, .02, 1.5, .02, "Ángulo para priorizar el giro.", "rad"),
     "goalkeeper.adjust.range": number("Distancia de ajuste", "Ajuste y posesión", .3, .1, 1., .02, "Separación que intenta mantener antes de despejar.", "m"),
@@ -111,6 +128,39 @@ SCHEMA: dict[str, dict[str, Any]] = {
     "goalkeeper.camera.search_cycle_msec": integer("Ciclo de búsqueda", "Cámara", 3000, 800, 10000, 100, "Duración de un barrido completo.", "ms"),
     "goalkeeper.camera.search_max_pitch_rate": number("Búsqueda vertical", "Cámara", .8, .05, 2., .05, "Velocidad vertical durante búsqueda.", "rad/s"),
     "goalkeeper.camera.search_max_yaw_rate": number("Búsqueda horizontal", "Cámara", 1.4, .05, 2., .05, "Velocidad horizontal durante búsqueda.", "rad/s"),
+    "goalkeeper.camera.front_only_enabled":
+    boolean(
+        "Sólo mirar al frente",
+        "Cámara",
+        False,
+        "Impide que el portero oriente la cabeza hacia atrás."
+    ),
+
+    "goalkeeper.camera.search_yaw_limit":
+    number(
+        "Límite yaw de búsqueda",
+        "Cámara",
+        1.10, .2, 1.55, .05,
+        "Semiancho del barrido frontal.",
+        "rad"
+    ),
+
+    "goalkeeper.camera.tracking_yaw_limit":
+    number(
+        "Límite yaw de seguimiento",
+        "Cámara",
+        1.20, .2, 1.55, .05,
+        "Máximo yaw permitido durante seguimiento.",
+        "rad"
+    ),
+
+    "goalkeeper.camera.use_teammate_ball_hint":
+    boolean(
+        "Usar compañero para orientar cabeza",
+        "Cámara",
+        False,
+        "Usa una posición fiable de equipo para dirigir la atención si está delante."
+    ),
 
     "goalkeeper.kick.type": choice("Tipo de despeje", "Patada", "default", ["default", "visual"], "Selecciona Kick convencional o VisualKick de la SDK."),
     "goalkeeper.kick.alignment_tolerance": number("Alineación para patear", "Patada", 1.5708, .02, 3.1416, .02, "Diferencia máxima entre la dirección robot-balón y el despeje.", "rad"),
@@ -135,6 +185,64 @@ SCHEMA: dict[str, dict[str, Any]] = {
     "obstacle_avoidance.avoid_during_chase": boolean("Evitar durante persecución", "Persecución", True, "Activa el planificador local al perseguir."),
     "obstacle_avoidance.chase_ao_safe_dist": number("Seguridad de persecución", "Persecución", 1.5, .2, 4., .1, "Distancia de seguridad durante Chase.", "m"),
 
+    "goalkeeper.team_ball.use_location_known":
+    boolean(
+        "Usar posición recordada de compañeros",
+        "Balón de equipo",
+        False,
+        "Acepta ballLocationKnown aunque el compañero ya no lo vea."
+    ),
+
+    "goalkeeper.team_ball.max_observation_age_msec":
+    number(
+        "Edad máxima del balón de equipo",
+        "Balón de equipo",
+        1200., 100., 5000., 100.,
+        "Antigüedad máxima de una posición comunicada.",
+        "ms"
+    ),
+
+    "goalkeeper.perception.front_ball_filter_enabled":
+    boolean(
+        "Rechazar balón detrás del cuerpo",
+        "Percepción",
+        False,
+        "Impide aceptar una pelota claramente detrás del goalkeeper."
+    ),
+
+    "goalkeeper.perception.reject_behind_own_goal":
+    boolean(
+        "Ignorar balón detrás del arco",
+        "Percepción",
+        False,
+        "Descarta una pelota localizada detrás de la propia línea de gol."
+    ),
+
+    "obstacle_avoidance.reject_outside_field":
+    boolean(
+        "Ignorar robots fuera del campo",
+        "Obstáculos",
+        False,
+        "Descarta Robot/Person localizados fuera del terreno."
+    ),
+
+    "obstacle_avoidance.field_margin":
+    number(
+        "Margen exterior de obstáculos",
+        "Obstáculos",
+        .20, 0., 2., .05,
+        "Tolerancia respecto al límite del campo.",
+        "m"
+    ),
+
+    "obstacle_avoidance.reject_behind_own_goal":
+    boolean(
+        "Ignorar robots detrás del arco",
+        "Obstáculos",
+        False,
+        "El goalkeeper ignora Robot/Person detrás de su portería."
+    ),
+
     "goalkeeper.prediction.enabled": boolean("Activar predictor", "Predicción", False, "Habilita detección de tiros y el estado block_shot."),
     "goalkeeper.prediction.require_localization": boolean("Exigir localización", "Predicción", True, "Impide mover al portero por una predicción hasta que odom_calibrated sea verdadero."),
     "goalkeeper.prediction.history_msec": number("Ventana histórica", "Predicción", 600., 200., 3000., 50., "Antigüedad máxima de observaciones.", "ms"),
@@ -147,6 +255,22 @@ SCHEMA: dict[str, dict[str, Any]] = {
     "goalkeeper.prediction.min_r_squared": number("Calidad lineal R²", "Predicción", .90, 0., 1., .01, "Calidad mínima del ajuste temporal."),
     "goalkeeper.prediction.max_residual": number("Residual máximo", "Predicción", .20, .01, 1., .01, "Error RMS máximo de la trayectoria.", "m"),
     "goalkeeper.prediction.max_sample_jump": number("Salto máximo", "Predicción", .80, .05, 3., .05, "Reinicia el historial ante saltos de percepción.", "m"),
+    "goalkeeper.prediction.dynamic_jump_filter_enabled":
+    boolean(
+        "Filtro dinámico de saltos",
+        "Predicción",
+        False,
+        "Limita el salto según max_speed × dt más un margen."
+    ),
+
+    "goalkeeper.prediction.max_sample_jump_margin":
+    number(
+        "Margen del salto dinámico",
+        "Predicción",
+        .08, 0., .5, .01,
+        "Margen añadido a max_speed por dt.",
+        "m"
+    ),
     "goalkeeper.prediction.continuity_filter_enabled": boolean("Filtro de continuidad", "Predicción", True, "Activado rechaza saltos grandes entre detecciones consecutivas; desactivado permite cambiar inmediatamente a otro candidato."),
     "goalkeeper.prediction.field_margin": number("Margen exterior del campo", "Predicción", .50, 0., 3., .05, "Descarta posiciones del balón fuera del campo más este margen.", "m"),
     "goalkeeper.prediction.reject_outside_field": boolean("Ignorar balón fuera del campo", "Predicción", False, "Con localización calibrada, rechaza candidatos cuya posición exceda el campo más el margen exterior."),
@@ -159,6 +283,13 @@ SCHEMA: dict[str, dict[str, Any]] = {
     "goalkeeper.prediction.min_time_to_block": number("Tiempo mínimo", "Predicción", .08, 0., 1., .01, "Descarta cruces ya ocurridos o demasiado inmediatos.", "s"),
     "goalkeeper.prediction.max_time_to_block": number("Horizonte máximo", "Predicción", 2.5, .1, 8., .1, "Solo bloquea tiros dentro de este horizonte.", "s"),
     "goalkeeper.prediction.activation_hold_msec": number("Retención de amenaza", "Predicción", 400., 0., 1500., 25., "Evita alternar block_shot por una detección perdida.", "ms"),
+    "goalkeeper.prediction.freeze_target_during_hold":
+    boolean(
+        "Congelar target durante HOLD",
+        "Predicción",
+        False,
+        "Conserva el último target válido durante la retención de amenaza."
+    ),
     "goalkeeper.prediction.post_block_claim_msec": number("Despeje después del bloqueo", "Predicción", 2500., 0., 8000., 100., "Tiempo durante el que el portero puede perseguir y patear un balón cercano después de bloquear.", "ms"),
     "goalkeeper.prediction.intercept.enabled": boolean("Intercepción adelantada", "Intercepción adelantada", False, "Busca un punto alcanzable antes de la línea defensiva; desactivado conserva el bloqueo original sobre la línea fija."),
     "goalkeeper.prediction.intercept.max_forward_distance": number("Adelanto diagonal máximo", "Intercepción adelantada", 1.20, 0., 3., .05, "Máximo avance desde la línea defensiva para interceptar tiros laterales en diagonal.", "m"),
@@ -188,8 +319,19 @@ SCHEMA: dict[str, dict[str, Any]] = {
 }
 
 
-GROUPS = ["Bloqueo reactivo", "Persecución", "Ajuste y posesión", "Cámara", "Patada", "Predicción", "Intercepción adelantada", "Bloqueo predictivo"]
-
+GROUPS = [
+    "Bloqueo reactivo",
+    "Persecución",
+    "Ajuste y posesión",
+    "Cámara",
+    "Balón de equipo",
+    "Percepción",
+    "Obstáculos",
+    "Patada",
+    "Predicción",
+    "Intercepción adelantada",
+    "Bloqueo predictivo",
+]
 # This file is deliberately separate from config_local.yaml: the GUI may
 # overwrite the latter, but never mutates the original recovery profile.
 FACTORY_DEFAULTS_PATH = pathlib.Path(__file__).with_name(
@@ -202,21 +344,53 @@ if set(FACTORY_DEFAULTS) != set(SCHEMA):
     raise RuntimeError(
         f"Perfil original desactualizado; faltan={missing}, sobran={extra}")
 
-# Exact first complete parameter snapshot from the field session started at
-# 2026-08-14 20:24 (parameter_apply at 20:27:39 UTC+8).
-# FACTORY_DEFAULTS remains immutable so the original demo is always recoverable.
+
 RECOMMENDED_PROFILE = dict(FACTORY_DEFAULTS)
+
 RECOMMENDED_PROFILE.update({
+    # Blocking
     "goalkeeper.blocking.vy_limit": .90,
     "goalkeeper.blocking.position_gain": 1.0,
+    "goalkeeper.blocking.limit_to_goal_mouth": True,
+    "goalkeeper.blocking.lateral_margin": .25,
+
+    # Chase
     "goalkeeper.chase.vx_limit": .50,
     "goalkeeper.chase.vy_limit": 1.50,
     "goalkeeper.chase.safe_distance": .60,
+    "goalkeeper.chase.defensive_clamp_enabled": True,
+    "goalkeeper.chase.max_depth_from_goalline": 3.0,
+
+    # Adjust
     "goalkeeper.adjust.range": .30,
-    "goalkeeper.adjust.vx_limit": 1.50,
+    "goalkeeper.adjust.vx_limit": .30,
     "goalkeeper.adjust.vy_limit": .20,
-    "goalkeeper.claim.max_ball_range": 3.0,
-    "goalkeeper.claim.lateral_margin": 1.0,
+
+    # Claim
+    "goalkeeper.claim.max_ball_range": 1.70,
+    "goalkeeper.claim.extra_depth": .50,
+    "goalkeeper.claim.lateral_margin": .50,
+
+    # Camera
+    "goalkeeper.camera.front_only_enabled": True,
+    "goalkeeper.camera.search_yaw_limit": 1.10,
+    "goalkeeper.camera.tracking_yaw_limit": 1.20,
+    "goalkeeper.camera.use_teammate_ball_hint": True,
+
+    # Team ball
+    "goalkeeper.team_ball.use_location_known": True,
+    "goalkeeper.team_ball.max_observation_age_msec": 1200.0,
+
+    # Perception
+    "goalkeeper.perception.front_ball_filter_enabled": True,
+    "goalkeeper.perception.reject_behind_own_goal": True,
+
+    # Obstacles
+    "obstacle_avoidance.reject_outside_field": True,
+    "obstacle_avoidance.field_margin": .20,
+    "obstacle_avoidance.reject_behind_own_goal": True,
+
+    # Kick
     "goalkeeper.kick.type": "visual",
     "goalkeeper.kick.alignment_tolerance": 1.5707963268,
     "goalkeeper.kick.default.speed_limit": .50,
@@ -226,19 +400,35 @@ RECOMMENDED_PROFILE.update({
     "goalkeeper.kick.default.ball_move_threshold": .30,
     "goalkeeper.kick.visual.pre_delay_msec": 200.0,
     "goalkeeper.kick.visual.post_delay_msec": 450.0,
+
     "obstacle_avoidance.chase_ao_safe_dist": 1.5,
+
+    # Prediction
     "goalkeeper.prediction.enabled": True,
     "goalkeeper.prediction.continuity_filter_enabled": True,
-    "goalkeeper.prediction.intercept.enabled": True,
+    "goalkeeper.prediction.dynamic_jump_filter_enabled": True,
+    "goalkeeper.prediction.max_sample_jump_margin": .08,
+
     "goalkeeper.prediction.reject_outside_field": True,
+    "goalkeeper.prediction.field_margin": .15,
+
     "goalkeeper.prediction.history_msec": 600.0,
     "goalkeeper.prediction.max_samples": 20,
     "goalkeeper.prediction.recency_weight": 2.0,
-    "goalkeeper.prediction.step_interval_msec": 100.0,
-    "goalkeeper.prediction.step_count": 30,
+
+    "goalkeeper.prediction.step_interval_msec": 50.0,
+    "goalkeeper.prediction.step_count": 60,
+
     "goalkeeper.prediction.max_time_to_block": 3.0,
     "goalkeeper.prediction.activation_hold_msec": 400.0,
+    "goalkeeper.prediction.freeze_target_during_hold": True,
     "goalkeeper.prediction.post_block_claim_msec": 2500.0,
+
+    # Forward interception
+    "goalkeeper.prediction.intercept.enabled": True,
+    "goalkeeper.prediction.intercept.search_step": .05,
+
+    # Predictive block
     "goalkeeper.prediction.block.vx_limit": .65,
     "goalkeeper.prediction.block.vy_limit": 1.50,
     "goalkeeper.prediction.block.reaction_margin_sec": .10,

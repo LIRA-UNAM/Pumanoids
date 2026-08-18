@@ -631,6 +631,8 @@ Brain::Brain() : rclcpp::Node("brain_node")
     declare_parameter<double>("goalkeeper.blocking.dist_to_goalline", 0.80);
     declare_parameter<string>("goalkeeper.mode", "attack");
     declare_parameter<double>("goalkeeper.ready.dist_to_goalline", 0.80);
+    declare_parameter<bool>("goalkeeper.blocking.limit_to_goal_mouth", false);
+    declare_parameter<double>("goalkeeper.blocking.lateral_margin", 0.25);
     declare_parameter<double>("goalkeeper.ready.dist_tolerance", 0.50);
     declare_parameter<double>("goalkeeper.ready.theta_tolerance", 0.10);
     declare_parameter<double>("goalkeeper.ready.long_range_threshold", 1.0);
@@ -645,6 +647,8 @@ Brain::Brain() : rclcpp::Node("brain_node")
     declare_parameter<double>("goalkeeper.chase.vtheta_limit", 1.0);
     declare_parameter<double>("goalkeeper.chase.target_distance", 0.4);
     declare_parameter<double>("goalkeeper.chase.safe_distance", 0.6);
+    declare_parameter<bool>("goalkeeper.chase.defensive_clamp_enabled", false);
+    declare_parameter<double>("goalkeeper.chase.max_depth_from_goalline", 3.0);
     declare_parameter<double>("goalkeeper.adjust.turn_threshold", 0.2);
     declare_parameter<double>("goalkeeper.adjust.range", 0.3);
     declare_parameter<double>("goalkeeper.adjust.vx_limit", 0.3);
@@ -660,6 +664,10 @@ Brain::Brain() : rclcpp::Node("brain_node")
     declare_parameter<int>("goalkeeper.camera.search_cycle_msec", 3000);
     declare_parameter<double>("goalkeeper.camera.search_max_pitch_rate", 0.80);
     declare_parameter<double>("goalkeeper.camera.search_max_yaw_rate", 1.40);
+    declare_parameter<bool>("goalkeeper.camera.front_only_enabled", false);
+    declare_parameter<double>("goalkeeper.camera.search_yaw_limit", 1.10);
+    declare_parameter<double>("goalkeeper.camera.tracking_yaw_limit", 1.20);
+    declare_parameter<bool>("goalkeeper.camera.use_teammate_ball_hint", false);
     declare_parameter<string>("goalkeeper.kick.type", "default");
     declare_parameter<double>("goalkeeper.kick.alignment_tolerance", 1.5707963268);
     declare_parameter<double>("goalkeeper.kick.default.speed_limit", 1.2);
@@ -679,6 +687,11 @@ Brain::Brain() : rclcpp::Node("brain_node")
     declare_parameter<double>("goalkeeper.claim.extra_depth", 1.0);
     declare_parameter<double>("goalkeeper.claim.lateral_margin", 0.5);
     declare_parameter<bool>("goalkeeper.claim.require_team_lead", true);
+    declare_parameter<bool>("goalkeeper.team_ball.use_location_known", false);
+    declare_parameter<double>("goalkeeper.team_ball.max_observation_age_msec", 1200.0);
+
+    declare_parameter<bool>("goalkeeper.perception.front_ball_filter_enabled", false);
+    declare_parameter<bool>("goalkeeper.perception.reject_behind_own_goal", false);
 
     declare_parameter<bool>("goalkeeper.prediction.enabled", false);
     declare_parameter<bool>("goalkeeper.prediction.require_localization", true);
@@ -692,6 +705,8 @@ Brain::Brain() : rclcpp::Node("brain_node")
     declare_parameter<double>("goalkeeper.prediction.min_r_squared", 0.90);
     declare_parameter<double>("goalkeeper.prediction.max_residual", 0.20);
     declare_parameter<double>("goalkeeper.prediction.max_sample_jump", 0.80);
+    declare_parameter<bool>("goalkeeper.prediction.dynamic_jump_filter_enabled", false);
+    declare_parameter<double>("goalkeeper.prediction.max_sample_jump_margin", 0.08);
     declare_parameter<bool>("goalkeeper.prediction.continuity_filter_enabled", true);
     declare_parameter<double>("goalkeeper.prediction.field_margin", 0.50);
     declare_parameter<bool>("goalkeeper.prediction.reject_outside_field", false);
@@ -704,6 +719,7 @@ Brain::Brain() : rclcpp::Node("brain_node")
     declare_parameter<double>("goalkeeper.prediction.min_time_to_block", 0.08);
     declare_parameter<double>("goalkeeper.prediction.max_time_to_block", 2.50);
     declare_parameter<double>("goalkeeper.prediction.activation_hold_msec", 400.0);
+    declare_parameter<bool>("goalkeeper.prediction.freeze_target_during_hold", false);
     declare_parameter<double>("goalkeeper.prediction.post_block_claim_msec", 2500.0);
     declare_parameter<bool>("goalkeeper.prediction.intercept.enabled", false);
     declare_parameter<double>("goalkeeper.prediction.intercept.max_forward_distance", 1.20);
@@ -732,6 +748,9 @@ Brain::Brain() : rclcpp::Node("brain_node")
     declare_parameter<double>("goalkeeper.prediction.block.urgent_vtheta_limit", 0.0);
 
     declare_parameter<int>("obstacle_avoidance.depth_sample_step", 8);
+    declare_parameter<bool>("obstacle_avoidance.reject_outside_field", false);
+    declare_parameter<double>("obstacle_avoidance.field_margin", 0.20);
+    declare_parameter<bool>("obstacle_avoidance.reject_behind_own_goal", false);
     declare_parameter<int>("obstacle_avoidance.depth_confirm_frames", 2);
     declare_parameter<int>("obstacle_avoidance.depth_clear_frames", 2);
     declare_parameter<double>("obstacle_avoidance.ground_height", 0.0);
@@ -1324,6 +1343,31 @@ void Brain::refreshTeamCommunicationSnapshot()
     snapshot.isLead = data->tmImLead;
     snapshot.ballDetected = data->ballDetected;
     snapshot.ballLocationKnown = tree->getEntry<bool>("ball_location_known");
+    double ballAgeMsec =
+    std::numeric_limits<double>::infinity();
+
+const auto now =
+    get_clock()->now();
+
+if (data->ball.timePoint.nanoseconds() > 0 &&
+    data->ball.timePoint.get_clock_type() ==
+        now.get_clock_type())
+{
+    ballAgeMsec =
+        std::max(
+            0.0,
+            msecsSince(
+                data->ball.timePoint));
+}
+
+snapshot.ballObservationAgeMs =
+    std::isfinite(ballAgeMsec)
+        ? static_cast<uint32_t>(
+            std::min(
+                ballAgeMsec,
+                static_cast<double>(
+                    UINT32_MAX - 1)))
+        : UINT32_MAX;
     snapshot.ballConfidence = data->ball.confidence;
     snapshot.ballRange = data->ball.range;
     snapshot.cost = data->tmMyCost;
@@ -2601,49 +2645,258 @@ void Brain::handleCooperation() {
     log_(format("Self: cost: %.1f, isLead: %d", data->tmMyCost, data->tmImLead));
 
 
-    static rclcpp::Time lastTmBallPosTime = get_clock()->now();
-    const double TM_BALL_TIMEOUT = 1000.;
-    const double RANGE_THRESHOLD = config->tmBallDistThreshold;
-    int trustedTMIdx = -1;
-    double minRange = 1e6;
-    log_(format("Find ball info among %d alive TMs", aliveTmIdxs.size()));
-    for (int i = 0; i < aliveTmIdxs.size(); i++) {
-        auto status = teamStatuses[aliveTmIdxs[i]];
-        log_(format("TM %d, ballDetected: %d, ballRange: %.1f", i + 1, status.ballDetected, status.ballRange));
-        if (status.ballDetected && status.ballRange < minRange) {
-            log_(format("tm ball range(%.1f) < minRange(%.1f)", status.ballRange, minRange));
-            double dist = norm(status.ballPosToField.x - data->robotPoseToField.x, status.ballPosToField.y - data->robotPoseToField.y);
-            if (dist > RANGE_THRESHOLD) {
-                log_(format("tm ball dist to me(%.1f) > threshold(%.1f), TM %d can be trusted", dist, RANGE_THRESHOLD, i+ 1));
-                minRange = status.ballRange;
-                trustedTMIdx = aliveTmIdxs[i];
-            }  else {
-                log_(format("tm ball dist to me(%.1f) < threshold(%.1f), TM %d can NOT be trusted", dist, RANGE_THRESHOLD, i+ 1));
-            }
-        }
+    static rclcpp::Time lastTmBallObservationTime =
+    get_clock()->now();
+
+const double RANGE_THRESHOLD =
+    config->tmBallDistThreshold;
+
+const bool isGoalkeeper =
+    tree->getEntry<string>(
+        "player_role") ==
+    "goal_keeper";
+
+const bool useKnownTmBall =
+    isGoalkeeper &&
+    get_parameter(
+        "goalkeeper.team_ball.use_location_known"
+    ).as_bool();
+
+const double maxKnownAgeMsec =
+    std::max(
+        0.0,
+        get_parameter(
+            "goalkeeper.team_ball.max_observation_age_msec"
+        ).as_double());
+
+const bool rejectOutsideField =
+    get_parameter(
+        "goalkeeper.prediction.reject_outside_field"
+    ).as_bool();
+
+const double ballFieldMargin =
+    std::max(
+        0.0,
+        get_parameter(
+            "goalkeeper.prediction.field_margin"
+        ).as_double());
+
+const bool rejectBehindOwnGoal =
+    isGoalkeeper &&
+    get_parameter(
+        "goalkeeper.perception.reject_behind_own_goal"
+    ).as_bool();
+
+constexpr double kOwnGoalBackMargin =
+    0.10;
+
+const double halfLength =
+    config->fieldDimensions.length /
+    2.0;
+
+const double halfWidth =
+    config->fieldDimensions.width /
+    2.0;
+
+const bool fieldFilterReady =
+    tree->getEntry<bool>(
+        "odom_calibrated");
+
+int trustedTMIdx = -1;
+
+int bestPriority =
+    std::numeric_limits<int>::max();
+
+double bestObservationAge =
+    std::numeric_limits<double>::infinity();
+
+double bestRange =
+    std::numeric_limits<double>::infinity();
+
+
+for (int tmIdx : aliveTmIdxs)
+{
+    const auto &status =
+        teamStatuses[tmIdx];
+
+    const double packetAgeMsec =
+        std::max(
+            0.0,
+            msecsSince(
+                status.timeLastCom));
+
+    const double observationAgeMsec =
+        status.ballObservationAgeMs ==
+                UINT32_MAX
+            ? std::numeric_limits<
+                  double>::infinity()
+            : static_cast<double>(
+                  status.ballObservationAgeMs) +
+                  packetAgeMsec;
+
+    const bool directDetection =
+        status.ballDetected;
+
+    const bool rememberedPosition =
+        useKnownTmBall &&
+        status.ballLocationKnown &&
+        std::isfinite(
+            observationAgeMsec) &&
+        observationAgeMsec <=
+            maxKnownAgeMsec;
+
+    if (!directDetection &&
+        !rememberedPosition)
+    {
+        continue;
     }
-    if (trustedTMIdx >= 0) {
-        log_(format("Reliable tm ball found. PlayerID = %d", trustedTMIdx + 1));
-        data->tmBall.posToField = teamStatuses[trustedTMIdx].ballPosToField;
-        updateRelativePos(data->tmBall);
 
-        tree->setEntry<bool>("tm_ball_pos_reliable", true);
-        lastTmBallPosTime = get_clock()->now();
-        if (!tree->getEntry<bool>("ball_location_known")) {
-            log_("update ball.posToField");
-            data->ball.posToField = data->tmBall.posToField;
-            updateRelativePos(data->ball);
-        }
-    } else {
-        log_("TM reported NO BALL or can not be trusted");
-        if (msecsSince(lastTmBallPosTime) > TM_BALL_TIMEOUT) {
-            log_("TM ball timeout reached");
-            tree->setEntry<bool>("tm_ball_pos_reliable", false);
-        }
+    if (!std::isfinite(
+            status.ballPosToField.x) ||
+        !std::isfinite(
+            status.ballPosToField.y))
+    {
+        continue;
     }
 
-    updatePlayerRoleForTeamAvailability(teamStatuses);
+    if (isGoalkeeper &&
+        rejectOutsideField &&
+        fieldFilterReady)
+    {
+        const bool outsideField =
+            std::abs(
+                status.ballPosToField.x) >
+                halfLength +
+                ballFieldMargin ||
+            std::abs(
+                status.ballPosToField.y) >
+                halfWidth +
+                ballFieldMargin;
 
+        if (outsideField)
+            continue;
+    }
+
+    if (rejectBehindOwnGoal &&
+        fieldFilterReady &&
+        status.ballPosToField.x <
+            -halfLength -
+            kOwnGoalBackMargin)
+    {
+        continue;
+    }
+
+    const double distToMe =
+        std::hypot(
+            status.ballPosToField.x -
+                data->robotPoseToField.x,
+            status.ballPosToField.y -
+                data->robotPoseToField.y);
+
+    // Preserve the existing protection against replacing a nearby local ball
+    // with a remote estimate.
+    if (distToMe <=
+        RANGE_THRESHOLD)
+    {
+        continue;
+    }
+
+    // Priority 0: teammate currently sees the ball.
+    // Priority 1: teammate remembers a sufficiently recent position.
+    const int priority =
+        directDetection ? 0 : 1;
+
+    const bool better =
+        priority < bestPriority ||
+        (priority == bestPriority &&
+         observationAgeMsec <
+             bestObservationAge) ||
+        (priority == bestPriority &&
+         std::abs(
+             observationAgeMsec -
+             bestObservationAge) <
+             1.0 &&
+         status.ballRange <
+             bestRange);
+
+    if (!better)
+        continue;
+
+    bestPriority =
+        priority;
+
+    bestObservationAge =
+        observationAgeMsec;
+
+    bestRange =
+        status.ballRange;
+
+    trustedTMIdx =
+        tmIdx;
+}
+
+
+if (trustedTMIdx >= 0)
+{
+    const auto &status =
+        teamStatuses[trustedTMIdx];
+
+    data->tmBall.posToField =
+        status.ballPosToField;
+
+    data->tmBall.confidence =
+        status.ballConfidence;
+
+    const double ageMsec =
+        std::isfinite(
+            bestObservationAge)
+        ? bestObservationAge
+        : 0.0;
+
+    data->tmBall.timePoint =
+        get_clock()->now() -
+        rclcpp::Duration::from_seconds(
+            ageMsec /
+            1000.0);
+
+    updateRelativePos(
+        data->tmBall);
+
+    tree->setEntry<bool>(
+        "tm_ball_pos_reliable",
+        true);
+
+    lastTmBallObservationTime =
+        data->tmBall.timePoint;
+
+    // Keep compatibility with behaviors that use data->ball as their
+    // field-position fallback, but DO NOT set ballDetected.
+    if (!tree->getEntry<bool>(
+            "ball_location_known"))
+    {
+        data->ball.posToField =
+            data->tmBall.posToField;
+
+        updateRelativePos(
+            data->ball);
+    }
+}
+else
+{
+    const double timeout =
+        isGoalkeeper
+            ? maxKnownAgeMsec
+            : 1000.0;
+
+    if (msecsSince(
+            lastTmBallObservationTime) >
+        timeout)
+    {
+        tree->setEntry<bool>(
+            "tm_ball_pos_reliable",
+            false);
+    }
+}
     constexpr double COST_RANK_RESOLUTION = 0.05;
     const string selfRole = tree->getEntry<string>("player_role");
     const double selfCost = std::isfinite(data->tmMyCost) ? data->tmMyCost : 1e9;
@@ -4832,20 +5085,48 @@ void Brain::recordBallPredictionObservation(const GameObject &ball)
 
     const bool continuityFilterEnabled = get_parameter(
         "goalkeeper.prediction.continuity_filter_enabled").as_bool();
+    const bool dynamicJumpFilterEnabled = get_parameter(
+    "goalkeeper.prediction.dynamic_jump_filter_enabled").as_bool();
     const double maxJump = std::max(
         0.05, get_parameter(
             "goalkeeper.prediction.max_sample_jump").as_double());
+            const double maxBallSpeed = std::max(
+    0.0,
+    get_parameter(
+        "goalkeeper.prediction.max_speed").as_double());
+
+const double jumpMargin = std::max(
+    0.0,
+    get_parameter(
+        "goalkeeper.prediction.max_sample_jump_margin").as_double());
     std::lock_guard<std::mutex> lock(goalkeeperPredictionMutex_);
     if (!goalkeeperBallObservations_.empty()) {
-        const auto &last = goalkeeperBallObservations_.back();
-        const double dt = timeSec - last.timeSec;
-        if (dt <= 1e-4) return;
-        const double jump = std::hypot(
-            ball.posToField.x - last.x, ball.posToField.y - last.y);
-        if (dt > 1.0 || (continuityFilterEnabled && jump > maxJump)) {
-            goalkeeperBallObservations_.clear();
-        }
+    const auto &last = goalkeeperBallObservations_.back();
+
+    const double dt = timeSec - last.timeSec;
+
+    if (dt <= 1e-4)
+        return;
+
+    const double jump = std::hypot(
+        ball.posToField.x - last.x,
+        ball.posToField.y - last.y);
+
+    const double allowedJump = dynamicJumpFilterEnabled
+        ? std::min(
+            maxJump,
+            maxBallSpeed * dt + jumpMargin)
+        : maxJump;
+
+    data->goalkeeperLastSampleJump = jump;
+    data->goalkeeperLastAllowedSampleJump = allowedJump;
+
+    if (dt > 1.0 ||
+        (continuityFilterEnabled && jump > allowedJump))
+    {
+        goalkeeperBallObservations_.clear();
     }
+}
 
     goalkeeperBallObservations_.push_back(
         {timeSec, ball.posToField.x, ball.posToField.y});
@@ -5010,6 +5291,8 @@ void Brain::updateBallPrediction()
         : 0.0;
     const bool currentThreat = prediction.threatensGoal && remainingSec >= 0.0 &&
         remainingSec <= predictionConfig.maxTimeToBlock;
+    data->ballPredictionCurrentThreat = currentThreat;
+    data->ballPredictionHeldThreat = false;
     if (currentThreat) {
         data->ballWillBreach = true;
         data->ballBreachPoint = {prediction.interceptX, prediction.interceptY};
@@ -5020,6 +5303,7 @@ void Brain::updateBallPrediction()
         data->ballInterceptTime = data->ballBreachTime;
         goalkeeperLastThreatTime_ = now;
     } else {
+        data->ballPredictionHeldThreat = keepLastThreat;
         const double holdMsec = std::max(
             0.0, get_parameter(
                 "goalkeeper.prediction.activation_hold_msec").as_double());
@@ -5027,10 +5311,17 @@ void Brain::updateBallPrediction()
             goalkeeperLastThreatTime_.nanoseconds() > 0 &&
             msecsSince(goalkeeperLastThreatTime_) <= holdMsec &&
             data->ballTimeToIntercept > 0.0;
-        if (!keepLastThreat) {
-            data->ballWillBreach = false;
-            data->ballTimeToIntercept = 0.0;
+        if (keepLastThreat && data->ballInterceptTime.nanoseconds() > 0){           
+            data->ballTimeToIntercept = std::max( 0.0,(data->ballInterceptTime - now).seconds());
+}
+        if (!keepLastThreat ||
+            data->ballTimeToIntercept <= 0.0)
+        {
+         data->ballWillBreach = false;
+         data->ballTimeToIntercept = 0.0;
+         data->ballPredictionHeldThreat = false;
         }
+
     }
     const double postBlockClaimMsec = std::max(
         0.0, get_parameter(
@@ -5267,7 +5558,21 @@ void Brain::publishGoalkeeperStatus()
            << ",\"prediction_reason\":\""
            << data->ballPredictionReason << "\""
            << ",\"threatens_goal\":"
-           << (data->ballWillBreach ? "true" : "false")
+           << ",\"prediction_current_threat\":"
+           << (data->ballPredictionCurrentThreat ? "true" : "false")
+           << ",\"prediction_held_threat\":"
+           << (data->ballPredictionHeldThreat
+                    ? "true" : "false")
+
+           << ",\"sample_jump\":"
+           << data->goalkeeperLastSampleJump
+
+           << ",\"allowed_sample_jump\":"
+           << data->goalkeeperLastAllowedSampleJump
+
+           << ",\"block_target_source\":\""
+           << data->goalkeeperBlockTargetSource
+           << "\""
            << ",\"ball_detected\":"
            << (data->ballDetected ? "true" : "false")
            << ",\"ball_location_known\":"
@@ -7198,7 +7503,50 @@ void Brain::detectProcessBalls(const vector<GameObject> &ballObjs)
         msecsSince(oldBall.timePoint) <= trackingWindowMsec &&
         std::isfinite(oldBall.posToField.x) &&
         std::isfinite(oldBall.posToField.y);
+    const double maxTrackingJump = std::max(
+    0.05,
+    get_parameter(
+        "goalkeeper.prediction.max_sample_jump").as_double());
 
+const bool dynamicJumpFilterEnabled = get_parameter(
+    "goalkeeper.prediction.dynamic_jump_filter_enabled").as_bool();
+
+const double maxBallSpeed = std::max(
+    0.0,
+    get_parameter(
+        "goalkeeper.prediction.max_speed").as_double());
+
+const double jumpMargin = std::max(
+    0.0,
+    get_parameter(
+        "goalkeeper.prediction.max_sample_jump_margin").as_double());
+
+    const bool isGoalkeeper =
+    tree->getEntry<string>(
+        "player_role") ==
+    "goal_keeper";
+
+const bool frontBallFilterEnabled =
+    isGoalkeeper &&
+    get_parameter(
+        "goalkeeper.perception.front_ball_filter_enabled"
+    ).as_bool();
+
+const bool rejectBehindOwnGoal =
+    isGoalkeeper &&
+    get_parameter(
+        "goalkeeper.perception.reject_behind_own_goal"
+    ).as_bool();
+
+// These are geometric safety tolerances, not tuning parameters.
+constexpr double kGoalkeeperMinBallXRobot =
+    -0.05;
+
+constexpr double kOwnGoalBackMargin =
+    0.10;
+
+const double ownGoalX =
+    -fieldHalfLength;
     // Select the most likely real ball.
     for (int i = 0; i < ballObjs.size(); i++)
     {
@@ -7207,6 +7555,12 @@ void Brain::detectProcessBalls(const vector<GameObject> &ballObjs)
         // Reject overhead lights misclassified as balls.
         if (ballObj.posToRobot.x < -0.5 || ballObj.posToRobot.x > 15.0)
             continue;
+        if (frontBallFilterEnabled &&
+    ballObj.posToRobot.x <
+        kGoalkeeperMinBallXRobot)
+{
+    continue;
+}
 
         // Reject the candidate itself when its localized field position is
         // implausible. The old commented code called isBallOut(), which checks
@@ -7222,7 +7576,25 @@ void Brain::detectProcessBalls(const vector<GameObject> &ballObjs)
             goalkeeperLastRejectedOutsideBallConfidence_ = ballObj.confidence;
             continue;
         }
+        if (rejectBehindOwnGoal &&
+    fieldFilterReady &&
+    ballObj.posToField.x <
+        ownGoalX -
+        kOwnGoalBackMargin)
+{
+    goalkeeperRejectedOutsideBallCount_++;
 
+    goalkeeperLastRejectedOutsideBallX_ =
+        ballObj.posToField.x;
+
+    goalkeeperLastRejectedOutsideBallY_ =
+        ballObj.posToField.y;
+
+    goalkeeperLastRejectedOutsideBallConfidence_ =
+        ballObj.confidence;
+
+    continue;
+}
         // Increase confidence when a detection is close in position and time to the previous ball.
         // double c = ballObj.confidence;
         // double oldC = oldBall.confidence;
@@ -7249,17 +7621,42 @@ void Brain::detectProcessBalls(const vector<GameObject> &ballObjs)
         // Scope this only to an enabled goalkeeper predictor so striker and
         // other demo roles retain their original ball selection behavior.
         if (previousBallRecent) {
-            const double jump = std::hypot(
-                ballObj.posToField.x - oldBall.posToField.x,
-                ballObj.posToField.y - oldBall.posToField.y);
-            if (jump > maxTrackingJump) {
-                goalkeeperRejectedBallJumpCount_++;
-                goalkeeperLastRejectedBallJumpDistance_ = jump;
-                goalkeeperLastRejectedBallJumpX_ = ballObj.posToField.x;
-                goalkeeperLastRejectedBallJumpY_ = ballObj.posToField.y;
-                continue;
-            }
-        }
+    const double jump = std::hypot(
+        ballObj.posToField.x - oldBall.posToField.x,
+        ballObj.posToField.y - oldBall.posToField.y);
+
+    double dt = 0.0;
+
+    if (ballObj.timePoint.nanoseconds() > 0 &&
+        oldBall.timePoint.nanoseconds() > 0 &&
+        ballObj.timePoint.get_clock_type() ==
+            oldBall.timePoint.get_clock_type())
+    {
+        dt = std::max(
+            0.0,
+            (ballObj.timePoint - oldBall.timePoint).seconds());
+    }
+
+    const double allowedJump =
+        dynamicJumpFilterEnabled && dt > 1e-4
+        ? std::min(
+            maxTrackingJump,
+            maxBallSpeed * dt + jumpMargin)
+        : maxTrackingJump;
+
+    data->goalkeeperLastSampleJump = jump;
+    data->goalkeeperLastAllowedSampleJump = allowedJump;
+
+    if (jump > allowedJump) {
+        goalkeeperRejectedBallJumpCount_++;
+        goalkeeperLastRejectedBallJumpDistance_ = jump;
+        goalkeeperLastRejectedBallJumpX_ =
+            ballObj.posToField.x;
+        goalkeeperLastRejectedBallJumpY_ =
+            ballObj.posToField.y;
+        continue;
+    }
+}
 
         // TODO: Reject detections on bodies and account for occlusion.
         // Account for occlusion so an occluded ball remains trusted longer than one that disappears in open view.
@@ -7451,7 +7848,49 @@ void Brain::detectProcessRobots(const vector<GameObject> &robotObjs) {
     const double maxFootprintWidth = std::max(
         0.0,
         get_parameter("obstacle_avoidance.max_robot_footprint_width").as_double());
+        const bool rejectRobotsOutsideField =
+    get_parameter(
+        "obstacle_avoidance.reject_outside_field"
+    ).as_bool();
 
+const double obstacleFieldMargin =
+    std::max(
+        0.0,
+        get_parameter(
+            "obstacle_avoidance.field_margin"
+        ).as_double());
+
+const bool rejectRobotsBehindOwnGoal =
+    get_parameter(
+        "obstacle_avoidance.reject_behind_own_goal"
+    ).as_bool();
+
+const auto fd =
+    config->fieldDimensions;
+
+const double fieldHalfLength =
+    fd.length / 2.0;
+
+const double fieldHalfWidth =
+    fd.width / 2.0;
+
+const bool isGoalkeeper =
+    tree->getEntry<string>(
+        "player_role") ==
+    "goal_keeper";
+
+const bool obstacleFieldFilterReady =
+    tree->getEntry<bool>(
+        "odom_calibrated") &&
+    std::abs(data->robotPoseToField.x) <=
+        fieldHalfLength +
+        obstacleFieldMargin &&
+    std::abs(data->robotPoseToField.y) <=
+        fieldHalfWidth +
+        obstacleFieldMargin;
+
+constexpr double kOwnGoalBackMargin =
+    0.10;
     // Reject malformed projections before they enter the tracker.  Without
     // this guard a single ground-plane failure can be remembered as a real
     // obstacle for the complete memory window.
@@ -7477,7 +7916,33 @@ void Brain::detectProcessRobots(const vector<GameObject> &robotObjs) {
             !validBox) {
             continue;
         }
+        const bool outsideField =
+    std::abs(robot.posToField.x) >
+        fieldHalfLength +
+        obstacleFieldMargin ||
+    std::abs(robot.posToField.y) >
+        fieldHalfWidth +
+        obstacleFieldMargin;
 
+if (rejectRobotsOutsideField &&
+    obstacleFieldFilterReady &&
+    outsideField)
+{
+    continue;
+}
+
+const bool behindOwnGoal =
+    robot.posToField.x <
+        -fieldHalfLength -
+        kOwnGoalBackMargin;
+
+if (isGoalkeeper &&
+    rejectRobotsBehindOwnGoal &&
+    obstacleFieldFilterReady &&
+    behindOwnGoal)
+{
+    continue;
+}
         if (robot.obstacleFootprintValid) {
             const double width = std::hypot(
                 robot.obstacleLeftToField.x - robot.obstacleRightToField.x,
@@ -7620,11 +8085,53 @@ void Brain::detectProcessRobots(const vector<GameObject> &robotObjs) {
         robotsNew.push_back(robot);
     }
 
-    for (size_t i = 0; i < robots.size(); ++i) {
-        if (!matched[i] && msecsSince(robots[i].timePoint) < kMemoryMsecs) {
-            robotsNew.push_back(robots[i]);
-        }
+    for (size_t i = 0;
+     i < robots.size();
+     ++i)
+{
+    if (matched[i])
+        continue;
+
+    if (msecsSince(
+            robots[i].timePoint) >=
+        kMemoryMsecs)
+    {
+        continue;
     }
+
+    const auto &remembered =
+        robots[i];
+
+    const bool outsideField =
+        std::abs(
+            remembered.posToField.x) >
+            fieldHalfLength +
+            obstacleFieldMargin ||
+        std::abs(
+            remembered.posToField.y) >
+            fieldHalfWidth +
+            obstacleFieldMargin;
+
+    if (rejectRobotsOutsideField &&
+        obstacleFieldFilterReady &&
+        outsideField)
+    {
+        continue;
+    }
+
+    if (isGoalkeeper &&
+        rejectRobotsBehindOwnGoal &&
+        obstacleFieldFilterReady &&
+        remembered.posToField.x <
+            -fieldHalfLength -
+            kOwnGoalBackMargin)
+    {
+        continue;
+    }
+
+    robotsNew.push_back(
+        remembered);
+}
 
     data->setRobots(mergeNearbyRobots(robotsNew));
 }

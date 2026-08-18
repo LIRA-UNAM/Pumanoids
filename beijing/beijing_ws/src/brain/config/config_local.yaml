@@ -21,13 +21,16 @@ brain_node:
         position_gain: 1.0
         orientation_gain: 2.0
         dist_to_goalline: 0.8
+        limit_to_goal_mouth: true
+        lateral_margin: 0.25
       chase:
         threshold: 1.0
         vx_limit: 0.5
         vy_limit: 1.5
         vtheta_limit: 1.0
         target_distance: 0.4
-        safe_distance: 0.6
+        defensive_clamp_enabled: true
+        max_depth_from_goalline: 3.0
       adjust:
         turn_threshold: 0.2
         range: 0.3
@@ -40,6 +43,13 @@ brain_node:
         extra_depth: 0.5
         lateral_margin: 0.5
         require_team_lead: true
+      team_ball:
+        use_location_known: true
+        max_observation_age_msec: 1200.0
+
+      perception:
+        front_ball_filter_enabled: true
+        reject_behind_own_goal: true
       camera:
         track_tolerance_ratio: 0.22
         center_tolerance_factor: 0.8
@@ -50,7 +60,11 @@ brain_node:
         min_command_change: 0.004
         search_cycle_msec: 3000
         search_max_pitch_rate: 0.8
-        search_max_yaw_rate: 1.4
+        
+        front_only_enabled: true
+        search_yaw_limit: 1.10
+        tracking_yaw_limit: 1.20
+        use_teammate_ball_hint: true
       kick:
         type: "visual"
         alignment_tolerance: 1.5707963268
@@ -83,8 +97,10 @@ brain_node:
         min_r_squared: 0.9
         max_residual: 0.2
         max_sample_jump: 0.8
+        dynamic_jump_filter_enabled: true
+        max_sample_jump_margin: 0.08
         continuity_filter_enabled: true
-        field_margin: 0.5
+        field_margin: 0.15
         reject_outside_field: true
         min_ball_confidence: 50.0
         recency_weight: 2.0
@@ -95,6 +111,7 @@ brain_node:
         min_time_to_block: 0.08
         max_time_to_block: 3.0
         activation_hold_msec: 400.0
+        freeze_target_during_hold: true
         post_block_claim_msec: 2500.0
         intercept:
           enabled: true
@@ -128,6 +145,9 @@ brain_node:
     RLVisionKick:
       visual_kick_version: "kV2"
     obstacle_avoidance:
+      reject_outside_field: true
+      field_margin: 0.20
+      reject_behind_own_goal: true
       avoid_during_kick: false
       kick_ao_safe_dist: 1.5
       enable_fallen_robot_visual_kick_exit: true
