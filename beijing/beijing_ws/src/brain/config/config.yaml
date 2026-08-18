@@ -8,7 +8,7 @@ brain_node:
       initial_goalkeeper_id: 1 # Normal-play fallback before valid GameController data; 0 means unassigned in a penalty shootout
       player_start_pos: "right" # right | left; used for entry-field localization
       treat_person_as_robot: false # Debug option. Keep false during official matches.
-      number_of_players: 2
+      number_of_players: 5
     
     ball_predictor: 
       step_interval: 100. 
