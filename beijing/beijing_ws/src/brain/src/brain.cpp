@@ -5302,26 +5302,37 @@ void Brain::updateBallPrediction()
         data->ballBreachTime = now + rclcpp::Duration::from_seconds(remainingSec);
         data->ballInterceptTime = data->ballBreachTime;
         goalkeeperLastThreatTime_ = now;
-    } else {
-        data->ballPredictionHeldThreat = keepLastThreat;
+        } else {
         const double holdMsec = std::max(
-            0.0, get_parameter(
-                "goalkeeper.prediction.activation_hold_msec").as_double());
-        const bool keepLastThreat = data->ballWillBreach &&
+            0.0,
+            get_parameter(
+                "goalkeeper.prediction.activation_hold_msec"
+            ).as_double());
+
+        const bool keepLastThreat =
+            data->ballWillBreach &&
             goalkeeperLastThreatTime_.nanoseconds() > 0 &&
             msecsSince(goalkeeperLastThreatTime_) <= holdMsec &&
             data->ballTimeToIntercept > 0.0;
-        if (keepLastThreat && data->ballInterceptTime.nanoseconds() > 0){           
-            data->ballTimeToIntercept = std::max( 0.0,(data->ballInterceptTime - now).seconds());
-}
+
+        data->ballPredictionHeldThreat = keepLastThreat;
+
+        if (keepLastThreat &&
+            data->ballInterceptTime.nanoseconds() > 0)
+        {
+            data->ballTimeToIntercept =
+                std::max(
+                    0.0,
+                    (data->ballInterceptTime - now).seconds());
+        }
+
         if (!keepLastThreat ||
             data->ballTimeToIntercept <= 0.0)
         {
-         data->ballWillBreach = false;
-         data->ballTimeToIntercept = 0.0;
-         data->ballPredictionHeldThreat = false;
+            data->ballWillBreach = false;
+            data->ballTimeToIntercept = 0.0;
+            data->ballPredictionHeldThreat = false;
         }
-
     }
     const double postBlockClaimMsec = std::max(
         0.0, get_parameter(
@@ -5558,6 +5569,7 @@ void Brain::publishGoalkeeperStatus()
            << ",\"prediction_reason\":\""
            << data->ballPredictionReason << "\""
            << ",\"threatens_goal\":"
+           << (data->ballWillBreach ? "true" : "false")
            << ",\"prediction_current_threat\":"
            << (data->ballPredictionCurrentThreat ? "true" : "false")
            << ",\"prediction_held_threat\":"

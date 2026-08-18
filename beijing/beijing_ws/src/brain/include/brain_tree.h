@@ -688,10 +688,23 @@ public:
     GoalkeeperBlockShot(const std::string &name, const NodeConfig &config,
                         Brain *_brain)
         : SyncActionNode(name, config), brain(_brain) {}
+
     static BT::PortsList providedPorts() { return {}; }
+
     BT::NodeStatus tick() override;
+
 private:
     Brain *brain;
+
+    bool cachedTargetValid_ = false;
+    Pose2D cachedTargetField_{0.0, 0.0, 0.0};
+
+    bool cachedForwardIntercept_ = false;
+    bool cachedFrontIntercept_ = false;
+
+    double cachedReachSpeed_ = 0.0;
+
+    rclcpp::Time cachedDeadline_;
 };
 
 class Assist : public SyncActionNode
