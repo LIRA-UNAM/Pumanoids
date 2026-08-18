@@ -56,6 +56,10 @@ def handle_configuration(context, *args, **kwargs):
     if team_id :
         config['game.team_id'] = int(team_id)
 
+    number_of_players = context.perform_substitution(LaunchConfiguration('num_players'))
+        if team_id :
+            config['game.number_of_players'] = int(number_of_players)
+
     player_id = context.perform_substitution(LaunchConfiguration('id'))
     if player_id:
         config['game.player_id'] = int(player_id)
@@ -108,6 +112,11 @@ def generate_launch_description():
         'team',
         default_value='0',
         description='Override game.team_id from config.yaml'
+        ),
+        DeclareLaunchArgument(
+        'num_players',
+        default_value='5',
+        description='Override game.number_of_players from config.yaml'
         ),
         DeclareLaunchArgument(
             'tree',
