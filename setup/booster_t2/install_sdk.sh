@@ -36,6 +36,10 @@ if [ -d "$SCRIPTS_DIR" ]; then
     cd "$SCRIPTS_DIR/.."
     echo "Running scripts/install.sh..."
     sudo scripts/install.sh
+
+    echo "Installing workspace dependencies (beijing_ws/src)..."
+    rosdep install --from-paths beijing_ws/src --ignore-src -r -y
+
     echo "Sourcing ROS kilted..."
    ( source /opt/ros/kilted/setup.bash)
     echo "Pumanoids installed successfully."
