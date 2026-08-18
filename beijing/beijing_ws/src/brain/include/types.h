@@ -248,6 +248,8 @@ struct TMStatus {
     bool isAlive = false; // On the field, unpenalized, and communication is active
     bool ballDetected = false;
     bool ballLocationKnown = false;
+    uint32_t ballObservationAgeMs =
+    UINT32_MAX;
     double ballConfidence = 0.;
     double ballRange = 0.;
     double cost = 0.; // Estimated cost from the current state to reaching a kickable ball position

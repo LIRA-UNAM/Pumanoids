@@ -58,6 +58,16 @@ public:
     NodeStatus tick() override { return NodeStatus::SUCCESS; } 
 private:
     Brain *brain;
+
+    bool cachedTargetValid_ = false;
+    Pose2D cachedTargetField_;
+
+    bool cachedForwardIntercept_ = false;
+    bool cachedFrontIntercept_ = false;
+
+    double cachedReachSpeed_ = 0.0;
+
+    rclcpp::Time cachedDeadline_;
 };
 
 // Calculate the kick direction.
@@ -140,6 +150,9 @@ private:
     double lastCommandYaw_ = 0.0;
     std::chrono::steady_clock::time_point lastTickTime_;
     std::chrono::steady_clock::time_point lastCommandTime_;
+    bool fallbackScanInitialized_ = false;
+    std::chrono::steady_clock::time_point
+    fallbackScanStartTime_;
 };
 
 class CamFindBall : public SyncActionNode
@@ -675,10 +688,23 @@ public:
     GoalkeeperBlockShot(const std::string &name, const NodeConfig &config,
                         Brain *_brain)
         : SyncActionNode(name, config), brain(_brain) {}
+
     static BT::PortsList providedPorts() { return {}; }
+
     BT::NodeStatus tick() override;
+
 private:
     Brain *brain;
+
+    bool cachedTargetValid_ = false;
+    Pose2D cachedTargetField_{0.0, 0.0, 0.0};
+
+    bool cachedForwardIntercept_ = false;
+    bool cachedFrontIntercept_ = false;
+
+    double cachedReachSpeed_ = 0.0;
+
+    rclcpp::Time cachedDeadline_;
 };
 
 class Assist : public SyncActionNode

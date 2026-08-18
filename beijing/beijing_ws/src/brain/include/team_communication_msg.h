@@ -8,7 +8,7 @@
 
 #define VALIDATION_COMMUNICATION 31204
 #define VALIDATION_DISCOVERY 41203
-#define TEAM_COMMUNICATION_PROTOCOL_VERSION 5
+#define TEAM_COMMUNICATION_PROTOCOL_VERSION 6
 struct TeamCommunicationMsg
 {
     int validation = VALIDATION_COMMUNICATION; // validate msg, to determine if it's sent by us.
@@ -25,6 +25,7 @@ struct TeamCommunicationMsg
     bool isLead; // Currently controlling the ball
     bool ballDetected;
     bool ballLocationKnown;
+    uint32_t ballObservationAgeMs;
     double ballConfidence;
     double ballRange;
     double cost; // Estimated cost from the current state to reaching a kickable ball position

@@ -40,6 +40,8 @@ brain_node:
         position_gain: 1.00
         orientation_gain: 2.00
         dist_to_goalline: 0.80
+        limit_to_goal_mouth: false
+        lateral_margin: 0.25
       chase:
         threshold: 1.0
         vx_limit: 1.5
@@ -47,6 +49,8 @@ brain_node:
         vtheta_limit: 1.0
         target_distance: 0.4
         safe_distance: 0.6
+        defensive_clamp_enabled: false
+        max_depth_from_goalline: 3.0
       adjust:
         turn_threshold: 0.2
         range: 0.3
@@ -64,6 +68,10 @@ brain_node:
         search_cycle_msec: 3000
         search_max_pitch_rate: 0.80
         search_max_yaw_rate: 1.40
+        front_only_enabled: false
+        search_yaw_limit: 1.10
+        tracking_yaw_limit: 1.20
+        use_teammate_ball_hint: false
       kick:
         type: "default" # default | visual
         alignment_tolerance: 1.5707963268
@@ -87,6 +95,13 @@ brain_node:
         extra_depth: 1.0
         lateral_margin: 0.5
         require_team_lead: true
+      team_ball:
+        use_location_known: false
+        max_observation_age_msec: 1200.0
+
+      perception:
+        front_ball_filter_enabled: false
+        reject_behind_own_goal: false
       prediction:
         enabled: false
         require_localization: true
@@ -100,6 +115,8 @@ brain_node:
         min_r_squared: 0.90
         max_residual: 0.20
         max_sample_jump: 0.80
+        dynamic_jump_filter_enabled: false
+        max_sample_jump_margin: 0.08
         continuity_filter_enabled: true
         field_margin: 0.50
         reject_outside_field: false # Original demo behavior; enable after validating localization.
@@ -112,6 +129,7 @@ brain_node:
         min_time_to_block: 0.08
         max_time_to_block: 2.50
         activation_hold_msec: 400.0
+        freeze_target_during_hold: false
         post_block_claim_msec: 2500.0 # Temporarily clear a nearby ball after blocking, even without team lead
         intercept:
           enabled: false # Original behavior: wait on the fixed defensive line.
@@ -246,6 +264,9 @@ brain_node:
         assist_waypoint_no_progress_ms: 1000.0 # Flip the detour side and replan when progress stalls
 
     obstacle_avoidance:
+      reject_outside_field: false
+      field_margin: 0.20
+      reject_behind_own_goal: false
       depth_sample_step: 8 # Pixel sampling stride, not a sample count; do not use 400 for 544x448 images
       depth_confirm_frames: 2 # Require consecutive hits before using a depth obstacle
       depth_clear_frames: 2 # Require consecutive misses before clearing a depth obstacle

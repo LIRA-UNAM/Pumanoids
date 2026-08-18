@@ -429,6 +429,7 @@ void BrainCommunication::unicastCommunication() {
         msg.isLead = snapshot.isLead;
         msg.ballDetected = snapshot.ballDetected;
         msg.ballLocationKnown = snapshot.ballLocationKnown;
+        msg.ballObservationAgeMs = snapshot.ballObservationAgeMs;
         msg.ballConfidence = snapshot.ballConfidence;
         msg.ballRange = snapshot.ballRange;
         msg.cost = snapshot.cost;
@@ -794,6 +795,7 @@ void BrainCommunication::spinCommunicationReceiver() {
         tmStatus.isAlive = msg.isAlive;
         tmStatus.ballDetected = msg.ballDetected;
         tmStatus.ballLocationKnown = msg.ballLocationKnown;
+        tmStatus.ballObservationAgeMs = msg.ballObservationAgeMs;
         tmStatus.ballConfidence = msg.ballConfidence;
         tmStatus.ballRange = msg.ballRange;
         tmStatus.cost = msg.cost;

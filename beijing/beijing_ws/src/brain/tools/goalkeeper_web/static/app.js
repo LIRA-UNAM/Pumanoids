@@ -304,6 +304,28 @@ function statusView(status) {
   $("localizationState").textContent = status.localization_ready ? "lista" : status.localization_required ? "no calibrada" : "no requerida";
   $("predictionReason").textContent = reasonLabel(status.prediction_reason);
   $("ballDetected").textContent = status.ball_detected ? "detectado" : "no detectado";
+    $("predictionCurrentThreat").textContent =
+    typeof status.prediction_current_threat === "boolean"
+      ? status.prediction_current_threat ? "SÍ · trayectoria actual" : "no"
+      : "—";
+
+  $("predictionHeldThreat").textContent =
+    typeof status.prediction_held_threat === "boolean"
+      ? status.prediction_held_threat ? "SÍ · retenida por HOLD" : "no"
+      : "—";
+
+  $("blockTargetSource").textContent =
+    status.block_target_source || "none";
+
+  $("sampleJump").textContent =
+    Number.isFinite(Number(status.sample_jump))
+      ? `${format(status.sample_jump)} m`
+      : "—";
+
+  $("allowedSampleJump").textContent =
+    Number.isFinite(Number(status.allowed_sample_jump))
+      ? `${format(status.allowed_sample_jump)} m`
+      : "—";
   $("reactionStage").textContent = reactionStageLabel(status.reaction_stage);
   $("reactionStage").classList.toggle("critical", status.reaction_stage === "command_stopped_before_motion");
   $("ballMeasurementAge").textContent = formatMs(status.ball_measurement_age_msec);
@@ -322,6 +344,15 @@ function statusView(status) {
   $("ballKnown").textContent = typeof status.ball_location_known === "boolean"
     ? status.ball_location_known ? status.ball_detected ? "visible ahora" : "posición recordada" : "desconocida"
     : "—";
+  $("localBallReliable").textContent =
+    typeof status.ball_location_known === "boolean"
+      ? status.ball_location_known ? "sí" : "no"
+      : "—";
+
+  $("teamBallReliable").textContent =
+    typeof status.team_ball_reliable === "boolean"
+      ? status.team_ball_reliable ? "sí" : "no"
+      : "—";
   $("claimState").textContent = typeof status.goalkeeper_may_claim === "boolean"
     ? status.goalkeeper_may_claim ? `sí (≤ ${format(status.claim_max_ball_range)} m)` : `no (umbral ${format(status.claim_max_ball_range)} m)`
     : "—";
@@ -442,12 +473,16 @@ async function updateTelemetry() {
     [...result.events].reverse().forEach(event => {
       const row = document.createElement("tr");
       const stamp = event.received_at_iso ? new Date(event.received_at_iso).toLocaleTimeString() : "—";
-      [stamp, event.decision || "—", reactionStageLabel(event.reaction_stage),
-       formatMs(event.decision_to_command_msec), formatMs(event.command_to_motion_msec),
-       motionVector(event.command_sent_x, event.command_sent_y, event.command_sent_theta),
-       Number.isFinite(Number(event.odom_speed)) ? `${format(event.odom_speed)} m/s` : "—",
-       event.goalkeeper_may_claim ? "sí" : "no",
-       reasonLabel(event.prediction_reason), event.sample_count ?? "—"].forEach(value => {
+    [stamp, event.decision || "—", reactionStageLabel(event.reaction_stage),
+      formatMs(event.decision_to_command_msec), formatMs(event.command_to_motion_msec),
+      motionVector(event.command_sent_x, event.command_sent_y, event.command_sent_theta),
+      Number.isFinite(Number(event.odom_speed)) ? `${format(event.odom_speed)} m/s` : "—",
+      event.goalkeeper_may_claim ? "sí" : "no",
+      event.prediction_current_threat ? "sí" : "no",
+      event.prediction_held_threat ? "sí" : "no",
+      event.block_target_source || "—",
+      reasonLabel(event.prediction_reason),
+      event.sample_count ?? "—"].forEach(value => {
         const cell = document.createElement("td");
         cell.textContent = value;
         row.appendChild(cell);

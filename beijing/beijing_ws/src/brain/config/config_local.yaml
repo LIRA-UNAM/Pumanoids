@@ -21,6 +21,8 @@ brain_node:
         position_gain: 2.0
         orientation_gain: 0.6
         dist_to_goalline: 0.8
+        limit_to_goal_mouth: true
+        lateral_margin: 0.25
       chase:
         threshold: 1.2
         vx_limit: 1.7
@@ -35,11 +37,18 @@ brain_node:
         vy_limit: 0.2
         vtheta_limit: 1.0
       claim:
-        max_ball_range: 3.0
+        max_ball_range: 1.7
         max_cost: 5.0
-        extra_depth: 1.0
-        lateral_margin: 1.0
+        extra_depth: 0.5
+        lateral_margin: 0.5
         require_team_lead: true
+      team_ball:
+        use_location_known: true
+        max_observation_age_msec: 1200.0
+
+      perception:
+        front_ball_filter_enabled: true
+        reject_behind_own_goal: true
       camera:
         track_tolerance_ratio: 0.12
         center_tolerance_factor: 0.75
@@ -50,7 +59,11 @@ brain_node:
         min_command_change: 0.004
         search_cycle_msec: 3000
         search_max_pitch_rate: 0.8
-        search_max_yaw_rate: 1.4
+        
+        front_only_enabled: true
+        search_yaw_limit: 1.10
+        tracking_yaw_limit: 1.20
+        use_teammate_ball_hint: true
       kick:
         type: "visual"
         alignment_tolerance: 0.8
@@ -81,18 +94,21 @@ brain_node:
         min_r_squared: 0.9
         max_residual: 0.2
         max_sample_jump: 0.8
+        dynamic_jump_filter_enabled: true
+        max_sample_jump_margin: 0.08
         continuity_filter_enabled: true
-        field_margin: 0.5
+        field_margin: 0.15
         reject_outside_field: true
-        min_ball_confidence: 40.0
+        min_ball_confidence: 50.0
         recency_weight: 2.0
         deceleration: 0.4
-        step_interval_msec: 100.0
-        step_count: 30
+        step_interval_msec: 50.0
+        step_count: 60
         goal_margin: 0.15
         min_time_to_block: 0.08
         max_time_to_block: 3.0
         activation_hold_msec: 400.0
+        freeze_target_during_hold: true
         post_block_claim_msec: 2500.0
         intercept:
           enabled: true
@@ -124,6 +140,9 @@ brain_node:
     RLVisionKick:
       visual_kick_version: "kV2"
     obstacle_avoidance:
+      reject_outside_field: true
+      field_margin: 0.20
+      reject_behind_own_goal: true
       avoid_during_kick: false
       kick_ao_safe_dist: 1.5
       enable_fallen_robot_visual_kick_exit: true

@@ -46,6 +46,8 @@ struct TeamOutboundSnapshot
     bool isLead = false;
     bool ballDetected = false;
     bool ballLocationKnown = false;
+    uint32_t ballObservationAgeMs =
+    UINT32_MAX;
     double ballConfidence = 0.0;
     double ballRange = 0.0;
     double cost = 0.0;
@@ -171,6 +173,11 @@ public:
     bool ballPredictionValid = false;
     bool ballPredictionFitComputed = false;
     bool ballMovingTowardOwnGoal = false;
+    bool ballPredictionCurrentThreat = false;
+    bool ballPredictionHeldThreat = false;
+    double goalkeeperLastSampleJump = 0.0;
+    double goalkeeperLastAllowedSampleJump = 0.0;
+    string goalkeeperBlockTargetSource = "none";
     bool goalkeeperPostBlockClearance = false;
     bool goalkeeperUrgentBlock = false;
     bool goalkeeperForwardInterceptActive = false;
