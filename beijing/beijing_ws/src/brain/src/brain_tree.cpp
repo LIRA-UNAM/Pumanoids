@@ -2531,6 +2531,7 @@ NodeStatus StrikerDecide::tick() {
         visualKickCostEligible &&
         !brain->tree->getEntry<bool>("ball_out") &&
         !brain->data->lose_ball &&
+        !brain->data->isKickingOff &&
         ballRange < autoVisualKickEnableDistMax &&
         ballRange > autoVisualKickEnableDistMin &&
         fabs(ballYaw) < autoVisualKickEnableAngle
@@ -3568,7 +3569,8 @@ NodeStatus SelfLocate::tick()
             thetaMax = currentPose.theta + maxHeadingDelta;
         } else {
             int msec = static_cast<int>(brain->msecsSince(brain->data->lastSuccessfulLocalizeTime));
-            double maxDriftSpeed = 0.1;
+            //double maxDriftSpeed = 0.1;
+            double maxDriftSpeed = std::max(0.1, brain->config->vxLimit * 1.2);
             double maxDrift = msec / 1000.0 * maxDriftSpeed;
 
             xMin = max(-brain->config->fieldDimensions.length / 2 - 2, brain->data->robotPoseToField.x - maxDrift);
