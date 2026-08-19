@@ -2494,7 +2494,7 @@ NodeStatus StrikerDecide::tick() {
     const bool visualKickNormalPlayEligible =
         brain->data->tmImLead &&
         visualKickNormalPlayRegion;
-    const bool visualKickCostEligible = brain->data->tmMyCost < 7.0;
+    const bool visualKickCostEligible = brain->data->tmMyCost < 9.0;
     const bool visualKickContextAllowed =
         freekick_policy::visualKickContextAllowed(
             freeKickExecution,
@@ -3017,7 +3017,7 @@ NodeStatus RLVisionKick::onRunning()
     double rangeThreshold = getInput<double>("range").value();
 
     bool ballTooFar = brain->data->ballDetected && brain->data->ball.range > rangeThreshold;
-    bool costTooHigh = brain->data->tmMyCost > 8.0;
+    bool costTooHigh = brain->data->tmMyCost > 10.0;
     bool elapsedEnough = elapsed > minMsecKick;
     bool elapsedTimeout = elapsed > maxMsecKick;
     bool loseBall = brain->data->lose_ball;
