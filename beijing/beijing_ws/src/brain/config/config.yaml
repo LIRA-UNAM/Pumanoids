@@ -28,8 +28,8 @@ brain_node:
       odom_theta_alignment_min_concentration: 0.75 # Circular-mean concentration; values closer to 1 are more stable
       vx_factor: 0.90 
       yaw_offset: 0.0 
-      vx_limit: 2.8
-      vy_limit: 2.0
+      vx_limit: 2.6
+      vy_limit: 1.9
       vtheta_limit: 1.5 
       min_vx: 0.4 # Command dead-zone compensation for nonzero vx (m/s)
       min_vy: 0.4 # Command dead-zone compensation for nonzero vy (m/s)
@@ -135,34 +135,34 @@ brain_node:
       ball_exclusion_height: 0.3 
       occupancy_threshold: 200
       collision_threshold: 0.3 
-      self_robot_radius: 0.25 # Local robot collision radius used to inflate obstacles to centerline clearance (m)
+      self_robot_radius: 0.35 # Local robot collision radius used to inflate obstacles to centerline clearance (m)
       safe_distance: 0.5 
       avoid_secs: 2.0 
       enable_freekick_avoid: true 
       enable_ball_obstacle: true # Treat a fresh ball position as a safety obstacle during READY and set-play placement
       ball_obstacle_radius: 0.3 # Reserved radius around the ball; the local robot radius is added separately (m)
       ball_obstacle_max_age_msecs: 500.0 # Ignore stale ball positions for obstacle avoidance
-      avoid_person: true # Always treat Person detections as safety obstacles without changing match semantics
+      avoid_person: false # Always treat Person detections as safety obstacles without changing match semantics
       freekick_start_placing_safe_distance: 0.5 
-      obstacle_memory_msecs: 500. 
+      obstacle_memory_msecs: 500.0
       robot_obstacle_memory_msecs: 1000.0 # Short-term memory for detected robots
       robot_confirm_frames: 2 # Require consecutive detections before obstacle avoidance
       robot_match_distance: 0.7 # Cross-frame robot association distance (m)
       robot_merge_distance: 0.30 # Merge duplicate tracks that cannot be physically separate (m)
       robot_min_confidence: 40.0 # Detection confidence required for robot tracking (0-100)
       robot_tracking_alpha: 0.65 # New-observation weight in the position low-pass filter
-      robot_obstacle_distance: 4.0 # Maximum distance for detected robots to affect avoidance (m)
+      robot_obstacle_distance: 2.0 # Maximum distance for detected robots to affect avoidance (m)
       robot_obstacle_min_distance: 0.20 # Reject detections closer than this as self-detections (m)
       robot_depth_fusion_distance: 0.5 # Deduplication distance between RGB robots and depth cells (m)
       robot_depth_fusion_max_age_msecs: 250.0 # Use only fresh visual robots for depth deduplication
-      upright_robot_radius: 0.25 # Safety radius for upright robots (m)
-      fallen_robot_radius: 0.85 # Safety radius for fallen robots (m)
+      upright_robot_radius: 0.35 # Safety radius for upright robots (m)
+      fallen_robot_radius: 0.6 # Safety radius for fallen robots (m)
       max_robot_footprint_width: 1.8 # Cap footprint width inflated by near-horizon projection (m)
       max_robot_footprint_radius_increase: 0.15 # Maximum footprint contribution to the final safety radius (m)
-      robot_path_clearance: 0.05 # Additional visibility-graph clearance around robots (m)
+      robot_path_clearance: 0.09 # Additional visibility-graph clearance around robots (m)
       robot_avoidance_speed: 1.20 # Hard translational speed limit during avoidance (m/s)
-      robot_avoidance_min_speed: 0.32 # Minimum non-emergency detour speed (m/s)
-      robot_avoidance_min_vy: 0.40 # Robot-frame lateral dead-zone floor during detours (m/s)
+      robot_avoidance_min_speed: 1.2 # Minimum non-emergency detour speed (m/s)
+      robot_avoidance_min_vy: 0.6 # Robot-frame lateral dead-zone floor during detours (m/s)
       robot_avoidance_reverse_speed: 0.4 # Reverse-speed limit when rear perception is restricted (m/s)
       robot_avoidance_switch_penalty: 0.8 # Cost of switching detour sides
       avoidance_direction_lock_msecs: 1500.0 # Minimum avoidance-direction hold time
