@@ -87,7 +87,7 @@ brain_node:
       auto_visual_kick_enable_dist_max: 6.0
       auto_visual_kick_enable_angle: 1.4 #1.2217304763960306 # 70-degree half-angle (rad)
       freekick:
-        execution_timeout_ms: 10000.0 # Team-wide timeout from free-kick release to completion
+        execution_timeout_ms: 25000.0 # Team-wide timeout for non-center restarts
         plan_select_ms: 250.0 # Wait for several tactical packets after STOP before freezing the authoritative plan
       cooperation:
         enable_role_switch: true 
