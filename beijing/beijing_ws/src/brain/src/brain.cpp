@@ -564,7 +564,7 @@ Brain::Brain() : rclcpp::Node("brain_node")
     declare_parameter<double>("strategy.search.vtheta_limit", 0.8);
     declare_parameter<double>("strategy.search.arrival_tolerance", 0.65);
     declare_parameter<bool>("strategy.abort_kick_when_ball_moved", false);
-    declare_parameter<double>("strategy.freekick.execution_timeout_ms", 10000.0);
+    declare_parameter<double>("strategy.freekick.execution_timeout_ms", 25000.0);
     declare_parameter<double>("strategy.freekick.plan_select_ms", 250.0);
     declare_parameter<bool>("strategy.enable_bypass", false);
     declare_parameter<bool>("strategy.enable_shoot", false);
@@ -3639,9 +3639,15 @@ void Brain::updateKickoffMemory() {
         return posChange > threshold;
     };
     static rclcpp::Time kickOffTime;
-    const double TIMEOUT = 1000 * 10;
+    static double activeRestartTimeoutMs = 10000.0;
+    const double centerKickoffTimeoutMs = std::max(
+        1000.0,
+        get_parameter("strategy.cooperation.kickoff_timeout_ms").as_double());
+    const double otherRestartTimeoutMs = std::max(
+        1000.0,
+        get_parameter("strategy.freekick.execution_timeout_ms").as_double());
     auto timeReached = [=]() {
-        return msecsSince(kickOffTime) > TIMEOUT;
+        return msecsSince(kickOffTime) > activeRestartTimeoutMs;
     };
     const bool setPlayActive =
         data->realGameSubState != "NONE" && data->realGameSubState != "TIMEOUT";
@@ -3669,6 +3675,11 @@ void Brain::updateKickoffMemory() {
     } else if (isWaitingForFreekickKickoff || isWaitingForKickoff) {
         ballPos = data->ball.posToRobot;
         kickOffTime = get_clock()->now();
+        // Latch the timeout while the restart is armed. The GameController may
+        // change sub-state before the waiting period ends.
+        activeRestartTimeoutMs = isWaitingForFreekickKickoff
+            ? otherRestartTimeoutMs
+            : centerKickoffTimeoutMs;
         tree->setEntry<bool>("wait_for_opponent_kickoff", true);
     } else if (tree->getEntry<bool>("wait_for_opponent_kickoff")) {
         if (ballMoved() || timeReached()) {

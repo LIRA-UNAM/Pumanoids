@@ -2494,7 +2494,7 @@ NodeStatus StrikerDecide::tick() {
     const bool visualKickNormalPlayEligible =
         brain->data->tmImLead &&
         visualKickNormalPlayRegion;
-    const bool visualKickCostEligible = brain->data->tmMyCost < 7.0;
+    const bool visualKickCostEligible = brain->data->tmMyCost < 9.0;
     const bool visualKickContextAllowed =
         freekick_policy::visualKickContextAllowed(
             freeKickExecution,
@@ -2531,6 +2531,7 @@ NodeStatus StrikerDecide::tick() {
         visualKickCostEligible &&
         !brain->tree->getEntry<bool>("ball_out") &&
         !brain->data->lose_ball &&
+        !brain->data->isKickingOff &&
         ballRange < autoVisualKickEnableDistMax &&
         ballRange > autoVisualKickEnableDistMin &&
         fabs(ballYaw) < autoVisualKickEnableAngle
@@ -3017,7 +3018,7 @@ NodeStatus RLVisionKick::onRunning()
     double rangeThreshold = getInput<double>("range").value();
 
     bool ballTooFar = brain->data->ballDetected && brain->data->ball.range > rangeThreshold;
-    bool costTooHigh = brain->data->tmMyCost > 8.0;
+    bool costTooHigh = brain->data->tmMyCost > 10.0;
     bool elapsedEnough = elapsed > minMsecKick;
     bool elapsedTimeout = elapsed > maxMsecKick;
     bool loseBall = brain->data->lose_ball;
@@ -3568,7 +3569,8 @@ NodeStatus SelfLocate::tick()
             thetaMax = currentPose.theta + maxHeadingDelta;
         } else {
             int msec = static_cast<int>(brain->msecsSince(brain->data->lastSuccessfulLocalizeTime));
-            double maxDriftSpeed = 0.1;
+            //double maxDriftSpeed = 0.1;
+            double maxDriftSpeed = std::max(0.1, brain->config->vxLimit * 1.2);
             double maxDrift = msec / 1000.0 * maxDriftSpeed;
 
             xMin = max(-brain->config->fieldDimensions.length / 2 - 2, brain->data->robotPoseToField.x - maxDrift);

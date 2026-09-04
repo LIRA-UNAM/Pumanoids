@@ -76,7 +76,10 @@
                         <ReactiveSequence _while="gc_game_sub_state=='STOP'">
                             <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
                             <SubTree ID="Locate" _autoremap="true" _while="ball_location_known"/>
-                            <SetVelocity />
+
+                            <!-- Va a la posición de tiro libre según si ataca o defiende -->
+                            <GoToFreekickPosition side="attack" _while="gc_is_sub_state_kickoff_side" vx_limit="1.0" vy_limit="0.4" />
+                             <GoToFreekickPosition side="defense" _while="!gc_is_sub_state_kickoff_side" vx_limit="1.0" vy_limit="0.4" />
                         </ReactiveSequence>
                         <ReactiveSequence _while="gc_game_sub_state=='EXECUTE'">
                             <ReactiveSequence _while="freekick_plan_unavailable">

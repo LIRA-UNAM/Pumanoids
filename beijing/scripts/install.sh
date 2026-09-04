@@ -190,7 +190,7 @@ else
 
     echo "[4/4] Installing workspace dependencies"
     rosdep install \
-        --from-paths "$REPO_ROOT/src" \
+        --from-paths "$REPO_ROOT/beijing_ws/src" \
         --ignore-src \
         -r \
         -y \

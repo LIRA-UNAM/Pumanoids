@@ -20,7 +20,7 @@ systemctl stop booster-rtc-speech.service
 sudo systemctl disable --now booster-agent-manager.service
 
 echo "[START ROBOCUP NODES]"
-source ./install/setup.bash
+source ./beijing_ws/install/setup.bash
 unset FASTRTPS_DEFAULT_PROFILES_FILE
 export FASTDDS_DEFAULT_PROFILES_FILE=/opt/booster/BoosterRos2/fastdds_profile_udp_only.xml
 # export RMW_FASTRTPS_USE_SHM=0
