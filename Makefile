@@ -3,8 +3,8 @@ SHELL := /bin/bash
 
 # Define the relative paths to project within main_folder
 PUMANOIDS_PROJECT_PATH := $(CURDIR)/colcon_ws
-SIM_PROJECT_PATH := $(CURDIR)/simulation_ws
 T1_PROJECT_PATH := $(CURDIR)/t1_ws
+K1_PROJECT_PATH := $(CURDIR)/k1_ws
 DEMO_PATH := $(CURDIR)/beijing/beijing_ws
 # Define the launch file
 
@@ -14,16 +14,17 @@ all: build source
 # Rule to clean project's build and devel folders
 clean:
 	@echo "Cleaning All Projects and Workspaces..."
-	@sleep 1
 	@echo "Cleaning colcon_ws..."
 	@rm -rf $(PUMANOIDS_PROJECT_PATH)/build $(PUMANOIDS_PROJECT_PATH)/install $(PUMANOIDS_PROJECT_PATH)/log
 	@sleep 1
-	@echo "Cleaning simulation_ws..."
-	@rm -rf $(SIM_PROJECT_PATH)/build $(SIM_PROJECT_PATH)/install $(SIM_PROJECT_PATH)/log
-	@sleep 1
 	@echo "Cleaning t1_ws..."
 	@rm -rf $(T1_PROJECT_PATH)/build $(T1_PROJECT_PATH)/install $(T1_PROJECT_PATH)/log
-
+	@sleep 1
+	@echo "Cleaning k1_ws..."
+	@rm -rf $(K1_PROJECT_PATH)/build $(K1_PROJECT_PATH)/install $(K1_PROJECT_PATH)/log
+	@sleep 1
+	@echo "Cleaning beijing_ws..."
+	@rm -rf $(DEMO_PATH)/build $(DEMO_PATH)/install $(DEMO_PATH)/log
 # Rule to build project
 build:
 	@echo "Building Pumanoids..."
