@@ -198,10 +198,12 @@ public:
     if (error.empty() && !effort_limit_.empty() && effort_limit_.size() != n) {
       error = "effort_limit must be empty or have len(joint_names) entries";
     }
-    if (error.empty() && cmd_type_ != LowCmd::CMD_TYPE_SERIAL &&
-      cmd_type_ != LowCmd::CMD_TYPE_PARALLEL)
-    {
-      error = "cmd_type must be 0 (parallel) or 1 (serial)";
+    // The T1 ankles are a parallel linkage (two crank motors per ankle). The
+    // policy commands ankle pitch/roll; only SERIAL commands make the firmware
+    // map them onto the cranks (PARALLEL would send them to the cranks as is).
+    if (error.empty() && cmd_type_ != LowCmd::CMD_TYPE_SERIAL) {
+      error = "cmd_type must be 1 (serial): the policy commands ankle pitch/roll, not the "
+        "parallel-ankle crank motors";
     }
     if (!error.empty()) {
       throw std::invalid_argument(error);
@@ -209,6 +211,9 @@ public:
     std::unordered_map<std::string, size_t> index;
     for (size_t i = 0; i < n; ++i) {
       index[joint_names_[i]] = i;
+      if (joint_names_[i].find("_Ankle_") != std::string::npos) {
+        ankle_index_.push_back(i);
+      }
     }
     for (const auto & name : action_joint_names_) {
       auto it = index.find(name);
@@ -988,14 +993,18 @@ private:
     tilt_deg_ = tilt_deg(g[0], g[1], g[2]);
     last_imu_ = SteadyClock::now();
 
-    const auto & motors =
-      cmd_type_ == LowCmd::CMD_TYPE_SERIAL ? msg.motor_state_serial : msg.motor_state_parallel;
+    // Serial = joint space: the firmware converts the parallel-ankle crank
+    // angles (motor_state_parallel) into ankle pitch/roll.
+    const auto & motors = msg.motor_state_serial;
     const size_t n = joint_names_.size();
     if (motors.size() < n) {
       RCLCPP_ERROR_THROTTLE(
-        get_logger(), *get_clock(), 2000, "LowState has %zu %s motor states, expected %zu",
-        motors.size(), cmd_type_ == LowCmd::CMD_TYPE_SERIAL ? "serial" : "parallel", n);
+        get_logger(), *get_clock(), 2000, "LowState has %zu serial motor states, expected %zu",
+        motors.size(), n);
       return;
+    }
+    if (!ankle_checked_ && msg.motor_state_parallel.size() >= n) {
+      check_ankle_space(msg);
     }
     const bool session = running();
     for (size_t i = 0; i < n; ++i) {
@@ -1008,6 +1017,33 @@ private:
       }
     }
     last_js_ = SteadyClock::now();
+  }
+
+  // Once, on the first LowState: the serial ankle entries must differ from the
+  // parallel ones (crank angles), i.e. the firmware reports ankle pitch/roll.
+  void check_ankle_space(const LowState & msg)
+  {
+    ankle_checked_ = true;
+    bool differ = false;
+    std::string values;
+    for (size_t i : ankle_index_) {
+      const double s = msg.motor_state_serial[i].q, p = msg.motor_state_parallel[i].q;
+      differ = differ || std::abs(s - p) > 1e-4;
+      char buf[96];
+      std::snprintf(
+        buf, sizeof(buf), "%s%s %+.3f (crank %+.3f)", values.empty() ? "" : ", ",
+        joint_names_[i].c_str(), s, p);
+      values += buf;
+    }
+    if (differ) {
+      ankle_space_ = "serial (pitch/roll)";
+      RCLCPP_INFO(get_logger(), "Ankles in joint space (serial): %s", values.c_str());
+    } else {
+      ankle_space_ = "UNVERIFIED";
+      RCLCPP_WARN(
+        get_logger(), "Serial ankle states equal the parallel (crank) ones: the firmware may not "
+        "convert the parallel ankles. Do not walk. %s", values.c_str());
+    }
   }
 
   // Booster remote controller. Buttons act on the press (rising edge) only; a
@@ -1406,7 +1442,7 @@ private:
       remote_status() + ",\"models_dir\":\"" + json_safe(models_dir_) + "\",\"models\":" +
       json_list(models_) + ",\"models_error\":\"" + json_safe(models_error_) +
       "\",\"model_warnings\":\"" + json_safe(model_warnings_) + "\",\"rpc_result\":\"" +
-      rpc_result_ + "\"}";
+      rpc_result_ + "\",\"ankle_space\":\"" + ankle_space_ + "\"}";
     std_msgs::msg::String msg;
     msg.data = json;
     status_pub_->publish(msg);
@@ -1488,6 +1524,9 @@ private:
   std::string models_error_;
   std::string model_warnings_;  // metadata mismatches of the loaded model
   std::string rpc_result_;  // last ChangeMode request / response
+  std::vector<size_t> ankle_index_;  // ankle pitch/roll joints (parallel linkage)
+  bool ankle_checked_{false};
+  std::string ankle_space_{"not checked (no LowState yet)"};
   std::unique_ptr<ObservationBuilder> obs_builder_;
   std::unique_ptr<OnnxPolicy> policy_;
   std::vector<float> obs_;

@@ -136,7 +136,11 @@ t1_ppowalk_policy_node:
     max_target_delta: 0.0
     # Publish LowCmd (robot must be in Custom mode). Toggled from the GUI.
     enable_lowcmd: false
-    cmd_type: 1        # LowCmd.CMD_TYPE_SERIAL (also selects motor_state_serial)
+    # LowCmd.CMD_TYPE_SERIAL, required: the ankles are a parallel linkage (two
+    # crank motors each) and the policy commands ankle pitch/roll. In SERIAL mode
+    # the firmware maps pitch/roll onto the cranks and motor_state_serial reports
+    # pitch/roll (motor_state_parallel holds the crank angles).
+    cmd_type: 1
     custom_mode: 3     # RobotMode kCustom (ChangeMode, api 2000)
     prepare_mode: 1    # RobotMode kPrepare
 

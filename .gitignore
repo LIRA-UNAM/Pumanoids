@@ -65,3 +65,6 @@ colcon_ws/face_detector_env/
 *.pt
 *.engine
 *.onnx
+
+# CLAUDE SETTINGS
+.claude/

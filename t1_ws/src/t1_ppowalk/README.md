@@ -86,12 +86,29 @@ All values come from the task code (`tasks/velocity/config/t1/env_cfgs.py`,
 Typical run: hang the robot, Enter Custom mode, enable motor output, BACK (−) to
 move home, lower it until it stands, START (+), steer with the sticks.
 
+## Ankles (parallel linkage)
+
+Each T1 ankle is driven by two crank motors (SDK `kCrankUp/Down{Left,Right}`,
+slots 15/16 and 21/22) through a parallel linkage, while the policy (trained on
+`t1.xml`) uses ankle pitch/roll joints. No transform is needed in this node: with
+`cmd_type` SERIAL (enforced; the node refuses PARALLEL) the firmware maps the
+pitch/roll targets onto the cranks, and `LowState.motor_state_serial` reports
+pitch/roll (`motor_state_parallel` holds the crank angles; every other joint is
+identical in both arrays). Checked on the robot: serial left ankle −0.131 / +0.019
+vs cranks +0.142 / +0.160. On the first LowState the node verifies that the
+serial and parallel ankle entries differ and shows the result in the GUI
+("Ankle space"); "UNVERIFIED" means the firmware did not convert them: do not walk.
+
 ## To confirm on the robot
 
-Not verifiable without the Booster SDK; all are parameters:
-`low_cmd_topic` (`joint_ctrl`), `custom_mode` (3), `cmd_type` (1 = serial), and
-that BACK / START arrive as the `back` / `start` fields (check the GUI's live
-remote panel before walking).
+* `low_cmd_topic` (`/joint_ctrl` = SDK `rt/joint_ctrl`) and `/low_state` exist on
+  the robot. Still to confirm: `custom_mode` (3) and that BACK / START arrive as
+  the `back` / `start` fields (check the GUI's live remote panel before walking).
+* Ankle signs, robot damped and hanging: toes down -> ankle pitch increases,
+  left (+y) edge of the foot up -> ankle roll increases (`t1.xml` axes).
+* SERIAL-mode gains: the firmware's mapping of the ankle kp/kd onto the cranks is
+  not documented. While hanging, Home must hold the ankles at pitch −0.2 / roll 0
+  without going limp or oscillating.
 
 ## Export a policy
 

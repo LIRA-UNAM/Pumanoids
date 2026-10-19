@@ -165,6 +165,10 @@
     document.getElementById("model-check").textContent = !policy.online || !policy.policy_loaded ? "—"
       : policy.model_warnings ? `WARNING: ${policy.model_warnings}` : "matches the parameters";
     document.getElementById("rpc-result").textContent = !policy.online ? "—" : policy.rpc_result || "none sent";
+    document.getElementById("ankle-space").textContent = !policy.online ? "—"
+      : policy.ankle_space === "UNVERIFIED"
+        ? "UNVERIFIED: serial ankle states equal the crank angles, do not walk"
+        : policy.ankle_space;
     document.getElementById("custom-mode").disabled = !policy.online;
     document.getElementById("prepare-mode").disabled = !policy.online || mode === "RUNNING" || mode === "RAMPING";
 
