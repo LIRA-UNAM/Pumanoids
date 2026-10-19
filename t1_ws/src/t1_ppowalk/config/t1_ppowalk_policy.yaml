@@ -1,0 +1,255 @@
+# Hyperparameters of the mjlab task "Pumas-Velocity-{Flat,Rough}-Booster-T1-PPO[-DA]"
+# (mjlab-biped-playground/src/playground/tasks/velocity/config/t1/env_cfgs.py and
+# asset_zoo/robots/booster_t1/t1_constants.py, t1.xml), IMU-only actor
+# (base_lin_vel and height_scan removed). Values dumped from the compiled task;
+# the node cross-checks them against the ONNX metadata when a model is loaded.
+t1_ppowalk_policy_node:
+  ros__parameters:
+    # policy_path is NOT set here: it comes from the launch argument.
+    # Folder whose *.onnx files the GUI offers in its model dropdown; empty =
+    # the folder of policy_path (~/t1_ppowalk_models with `make t1walk`).
+    models_dir: ""
+
+    # Observation joint order = natural joint order of t1.xml, which is also the
+    # T1 serial motor order (LowState.motor_state_serial / LowCmd.motor_cmd).
+    joint_names:
+      - AAHead_yaw
+      - Head_pitch
+      - Left_Shoulder_Pitch
+      - Left_Shoulder_Roll
+      - Left_Elbow_Pitch
+      - Left_Elbow_Yaw
+      - Right_Shoulder_Pitch
+      - Right_Shoulder_Roll
+      - Right_Elbow_Pitch
+      - Right_Elbow_Yaw
+      - Waist
+      - Left_Hip_Pitch
+      - Left_Hip_Roll
+      - Left_Hip_Yaw
+      - Left_Knee_Pitch
+      - Left_Ankle_Pitch
+      - Left_Ankle_Roll
+      - Right_Hip_Pitch
+      - Right_Hip_Roll
+      - Right_Hip_Yaw
+      - Right_Knee_Pitch
+      - Right_Ankle_Pitch
+      - Right_Ankle_Roll
+
+    # Policy action joints, in action order: every joint but the neck, in the
+    # natural joint order (mjlab's find_joints_by_actuator_names keeps the
+    # natural order, not the order of the patterns in env_cfgs.py).
+    action_joint_names:
+      - Left_Shoulder_Pitch
+      - Left_Shoulder_Roll
+      - Left_Elbow_Pitch
+      - Left_Elbow_Yaw
+      - Right_Shoulder_Pitch
+      - Right_Shoulder_Roll
+      - Right_Elbow_Pitch
+      - Right_Elbow_Yaw
+      - Waist
+      - Left_Hip_Pitch
+      - Left_Hip_Roll
+      - Left_Hip_Yaw
+      - Left_Knee_Pitch
+      - Left_Ankle_Pitch
+      - Left_Ankle_Roll
+      - Right_Hip_Pitch
+      - Right_Hip_Roll
+      - Right_Hip_Yaw
+      - Right_Knee_Pitch
+      - Right_Ankle_Pitch
+      - Right_Ankle_Roll
+
+    # HOME_KEYFRAME: joint_pos obs = q - default, and the action offset.
+    default_joint_pos: [
+      0.0, 0.0,                    # neck
+      0.0, -1.4, 0.0, -0.4,        # left arm
+      0.0, 1.4, 0.0, 0.4,          # right arm
+      0.0,                         # waist
+      -0.2, 0.0, 0.0, 0.4, -0.2, 0.0,   # left leg
+      -0.2, 0.0, 0.0, 0.4, -0.2, 0.0]   # right leg
+
+    # Target = default + action_scale * action (T1_ACTION_SCALE = 0.25 * effort / kp).
+    action_scale: [
+      0.322761, 0.322761, 0.322761, 0.322761,   # left arm
+      0.322761, 0.322761, 0.322761, 0.322761,   # right arm
+      0.211914,                                 # waist
+      0.265918, 0.211914, 0.211914, 0.258874, 0.372996, 0.372996,   # left leg
+      0.265918, 0.211914, 0.211914, 0.258874, 0.372996, 0.372996]   # right leg
+    action_clip: 0.0  # clamp raw actions to +-action_clip; 0 = off (no clip in training)
+
+    observation_terms: [base_ang_vel, projected_gravity, joint_pos, joint_vel, actions, command]
+    observation_scales: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    num_obs: 76  # 3 + 3 + 23 + 23 + 21 + 3
+
+    policy_rate_hz: 50.0    # sim dt 0.005 x decimation 4
+    command_rate_hz: 200.0  # 1 / sim dt: the target is held for 4 PD substeps
+    num_threads: 1
+    data_timeout_s: 0.1
+
+    # Training PD gains: kp = I_reflected * (2*pi*5 Hz)^2, kd = 2 * 2.0 * I * w.
+    kp: [
+      1.7765, 1.7765,
+      27.8844, 27.8844, 27.8844, 27.8844,
+      27.8844, 27.8844, 27.8844, 27.8844,
+      47.1890,
+      51.7076, 47.1890, 47.1890, 62.7719, 33.5124, 33.5124,
+      51.7076, 47.1890, 47.1890, 62.7719, 33.5124, 33.5124]
+    kd: [
+      0.2262, 0.2262,
+      3.5504, 3.5504, 3.5504, 3.5504,
+      3.5504, 3.5504, 3.5504, 3.5504,
+      6.0083,
+      6.5836, 6.0083, 6.0083, 7.9924, 4.2669, 4.2669,
+      6.5836, 6.0083, 6.0083, 7.9924, 4.2669, 4.2669]
+    # Actuator torque limits of the task (Nm). Informational: the simulation
+    # clamps the PD torque to them, LowCmd position mode has no torque cap.
+    effort_limit: [
+      7.0, 7.0,
+      36.0, 36.0, 36.0, 36.0,
+      36.0, 36.0, 36.0, 36.0,
+      40.0,
+      55.0, 40.0, 40.0, 65.0, 50.0, 50.0,
+      55.0, 40.0, 40.0, 65.0, 50.0, 50.0]
+    # Hard joint ranges of t1.xml; targets are clamped to them (safety only: the
+    # simulation does not clamp targets, the joint limits stop the motion).
+    position_lower: [
+      -1.57, -0.35,
+      -3.31, -1.74, -2.27, -2.44,
+      -3.31, -1.57, -2.27, 0.0,
+      -1.57,
+      -1.8, -0.2, -1.0, 0.0, -0.87, -0.44,
+      -1.8, -1.57, -1.0, 0.0, -0.87, -0.44]
+    position_upper: [
+      1.57, 1.22,
+      1.22, 1.57, 2.27, 0.0,
+      1.22, 1.74, 2.27, 2.44,
+      1.57,
+      1.57, 1.57, 1.0, 2.34, 0.35, 0.44,
+      1.57, 0.2, 1.0, 2.34, 0.35, 0.44]
+    # Damped joints (IDLE, non-commanded, motor errors, stale LowState): kp = 0.
+    damping_kd: 1.0
+    # Clamp |target - measured| per joint (rad); 0 = off.
+    max_target_delta: 0.0
+    # Publish LowCmd (robot must be in Custom mode). Toggled from the GUI.
+    enable_lowcmd: false
+    cmd_type: 1        # LowCmd.CMD_TYPE_SERIAL (also selects motor_state_serial)
+    custom_mode: 3     # RobotMode kCustom (ChangeMode, api 2000)
+    prepare_mode: 1    # RobotMode kPrepare
+
+    # GUI velocity command (vx m/s, vy m/s, wz rad/s; used while use_remote
+    # and use_cmd_vel are off) and the limits of every command source: the
+    # final curriculum stage (= play ranges) of the twist command.
+    cmd_vx: 0.0
+    cmd_vy: 0.0
+    cmd_wz: 0.0
+    lin_vel_x_min: -1.5
+    lin_vel_x_max: 1.5
+    lin_vel_y_min: -0.7
+    lin_vel_y_max: 0.7
+    ang_vel_z_min: -0.7
+    ang_vel_z_max: 0.7
+    # Calibration offsets added to the command (GUI, remote or cmd_vel) to cancel the
+    # real robot's drift. Applied only while motion is commanded (a zero
+    # command means "stand still" in training) unless offsets_when_standing.
+    # The sum is clamped to the limits above.
+    cmd_vx_offset: 0.0
+    cmd_vy_offset: 0.0
+    cmd_wz_offset: 0.0
+    offsets_when_standing: false
+    # Booster remote controller (booster_interface/RemoteControllerState).
+    # use_remote: the sticks command the velocity: left stick front/back = vx,
+    # left/right = vy, right stick left/right = wz; full deflection = the
+    # limits above, |stick| <= remote_deadzone = exactly 0 (stand still). If
+    # the remote data stops for remote_timeout_s the command falls back to 0.
+    # remote_start: START (+) starts the policy, with the same checks as the
+    # GUI Start (upright within max_start_tilt_deg, leg motors healthy, fresh
+    # data, model loaded). remote_home: BACK (-) runs Home.
+    # With use_remote and use_cmd_vel both false the GUI sliders command it.
+    use_remote: true
+    remote_start: true
+    remote_home: true
+    remote_deadzone: 0.1
+    remote_timeout_s: 0.5
+    remote_topic: /remote_controller_state
+    # Or take the command from geometry_msgs/Twist (exclusive with use_remote);
+    # if those messages stop for cmd_vel_timeout_s the command falls back to 0.
+    use_cmd_vel: false
+    cmd_vel_topic: /cmd_vel
+    cmd_vel_timeout_s: 0.5
+
+    # Start is only allowed while the IMU tilt is at most this (degrees).
+    max_start_tilt_deg: 20.0
+    # After Start, blend from the current pose into the policy targets.
+    start_ramp_s: 1.0
+
+    # Joints commanded with kp/kd; every other joint is damped. Must include
+    # every action joint and every always_commanded_joints entry. Default: all
+    # 23 (the training env drives every joint; the neck is held at 0).
+    command_joints:
+      - AAHead_yaw
+      - Head_pitch
+      - Left_Shoulder_Pitch
+      - Left_Shoulder_Roll
+      - Left_Elbow_Pitch
+      - Left_Elbow_Yaw
+      - Right_Shoulder_Pitch
+      - Right_Shoulder_Roll
+      - Right_Elbow_Pitch
+      - Right_Elbow_Yaw
+      - Waist
+      - Left_Hip_Pitch
+      - Left_Hip_Roll
+      - Left_Hip_Yaw
+      - Left_Knee_Pitch
+      - Left_Ankle_Pitch
+      - Left_Ankle_Roll
+      - Right_Hip_Pitch
+      - Right_Hip_Roll
+      - Right_Hip_Yaw
+      - Right_Knee_Pitch
+      - Right_Ankle_Pitch
+      - Right_Ankle_Roll
+    always_commanded_joints: [Waist]
+
+    # Targets of commanded joints the policy does not drive (the neck): its own
+    # PD holds HOME_KEYFRAME = 0 in training.
+    held_joint_targets: [
+      0.0, 0.0,
+      0.0, 0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0, 0.0,
+      0.0,
+      0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+    # Observation pinning: these joints' joint_pos/joint_vel observation is
+    # reported at their hold target, at rest (as in training), instead of the
+    # measurement. Applied automatically to every non-commanded joint and, with
+    # detect_offline, to every motor reporting error flags
+    # (MotorState.reserve[0] != 0; latched for the whole run and damped).
+    # Start is refused while a leg motor reports errors.
+    # Extra joints to pin manually go in obs_pinned_joints (string list); it is
+    # left out here because ROS 2 cannot type an empty YAML list. The GUI's
+    # "Pin obs" column edits it live.
+    detect_offline: true
+
+    # Home (GUI button or BACK on the remote): slow cosine move of the commanded
+    # joints to home_pose = HOME_KEYFRAME (the zero pose would put the elbow
+    # yaws on their range limit).
+    home_pose: [
+      0.0, 0.0,
+      0.0, -1.4, 0.0, -0.4,
+      0.0, 1.4, 0.0, 0.4,
+      0.0,
+      -0.2, 0.0, 0.0, 0.4, -0.2, 0.0,
+      -0.2, 0.0, 0.0, 0.4, -0.2, 0.0]
+    home_max_vel: 0.3          # rad/s, peak joint speed
+    home_min_duration_s: 2.0
+
+    publish_debug: true
+    low_state_topic: /low_state
+    low_cmd_topic: joint_ctrl
+    rpc_service: /booster_rpc_service
