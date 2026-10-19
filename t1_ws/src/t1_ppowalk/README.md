@@ -8,14 +8,17 @@ separate bridge). Port of G1-Software's `ppowalk` / `ppowalk_gui`; the web GUI i
 `t1_ppowalk_gui` (http://<robot-ip>:8084).
 
 ```bash
-make t1walk                                    # uses ~/t1_ppowalk_models/t1_ppowalk.onnx
+make t1walk                                    # no model loaded: pick one in the GUI
+make t1walk T1_MODELS_DIR=/abs/folder          # another models folder
 make t1walk T1_WALK_POLICY=/abs/path/model.onnx T1_WALK_ARGS="enable_lowcmd:=true"
 ```
 
 `booster_interface` comes from `colcon_ws`: build and source it before `t1_ws`
-(`make t1walk` does both). Every `*.onnx` in the models folder (`models_dir`; by
-default the folder of the launched model) is offered in the GUI's Model
-dropdown. A model that is not 76 -> 21 is rejected; a model whose mjlab metadata
+(`make t1walk` does both). Every `*.onnx` in the models folder (`models_dir`,
+default `~/t1_ppowalk_models`; rescanned every second, so copied models show up
+without a restart) is offered in the GUI's Model dropdown. Choosing one loads it
+while the policy is stopped; the next Start uses it. A model that is not 76 -> 21
+is rejected and the current one stays loaded; a model whose mjlab metadata
 (joint names, default pose, action scale, kp, kd, observation terms) disagrees
 with the parameters is loaded with a warning in the GUI ("Model metadata check").
 

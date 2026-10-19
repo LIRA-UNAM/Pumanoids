@@ -5,10 +5,12 @@
 # the node cross-checks them against the ONNX metadata when a model is loaded.
 t1_ppowalk_policy_node:
   ros__parameters:
-    # policy_path is NOT set here: it comes from the launch argument.
-    # Folder whose *.onnx files the GUI offers in its model dropdown; empty =
-    # the folder of policy_path (~/t1_ppowalk_models with `make t1walk`).
-    models_dir: ""
+    # policy_path is NOT set here: it comes from the (optional) launch argument;
+    # by default no model is loaded and one is picked in the GUI's dropdown.
+    # Folder whose *.onnx files the GUI offers in its model dropdown ("~"
+    # expanded; empty = the folder of policy_path). Overridden by the launch
+    # argument models_dir.
+    models_dir: "~/t1_ppowalk_models"
 
     # Observation joint order = natural joint order of t1.xml, which is also the
     # T1 serial motor order (LowState.motor_state_serial / LowCmd.motor_cmd).

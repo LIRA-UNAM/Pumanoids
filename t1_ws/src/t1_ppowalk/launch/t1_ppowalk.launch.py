@@ -1,7 +1,8 @@
 """Run the T1 ppowalk (velocity) policy node and its web GUI.
 
 Example:
-  ros2 launch t1_ppowalk t1_ppowalk.launch.py policy_path:=/abs/path/model.onnx
+  ros2 launch t1_ppowalk t1_ppowalk.launch.py   # pick a model in the GUI's dropdown
+  ros2 launch t1_ppowalk t1_ppowalk.launch.py models_dir:=/abs/folder policy_path:=/abs/model.onnx
   # GUI: http://<robot-ip>:8084
 """
 
@@ -23,8 +24,11 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument(
+            'models_dir', default_value='~/t1_ppowalk_models',
+            description='Folder whose *.onnx models the GUI dropdown offers'),
+        DeclareLaunchArgument(
             'policy_path', default_value='',
-            description='Exported ONNX velocity policy (empty: Home works, Start is refused)'),
+            description='Optional model loaded at startup (empty: choose one in the GUI)'),
         DeclareLaunchArgument(
             'policy_params',
             default_value=os.path.join(share, 'config', 't1_ppowalk_policy.yaml')),
@@ -41,6 +45,7 @@ def generate_launch_description():
             parameters=[
                 LaunchConfiguration('policy_params'),
                 {'policy_path': LaunchConfiguration('policy_path'),
+                 'models_dir': LaunchConfiguration('models_dir'),
                  'enable_lowcmd': ParameterValue(
                      LaunchConfiguration('enable_lowcmd'), value_type=bool)},
             ],
