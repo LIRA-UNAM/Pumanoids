@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T1 PPO Walk</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div id="conn-lost" class="conn-lost" hidden>
+  CONNECTION LOST &mdash; reconnecting&hellip; The robot keeps running: use the Booster app / remote damping to stop it if needed.
+</div>
+
+<header class="topbar">
+  <div class="title">
+    <h1>T1 PPO Walk &mdash; Control &amp; Live Parameters</h1>
+    <span id="status" class="status">connecting&hellip;</span>
+  </div>
+  <div id="upright" class="upright upright-unknown">
+    <span id="upright-label">IMU &mdash;</span>
+    <small id="upright-tilt"></small>
+  </div>
+</header>
+
+<section id="state" class="state state-offline">
+  <div class="state-main">
+    <span class="state-label">Policy</span>
+    <span id="policy-mode" class="state-value">offline</span>
+    <span id="state-message" class="state-reason"></span>
+  </div>
+  <div class="progress"><div id="progress-bar"></div></div>
+  <div class="state-grid">
+    <div><span>Motor output state</span><b id="bridge-state">offline</b></div>
+    <div><span>Motor output</span><b id="motor-output">&mdash;</b></div>
+    <div><span>Sensor data</span><b id="data-fresh">&mdash;</b></div>
+    <div><span>Step</span><b id="policy-step">&mdash;</b></div>
+    <div><span>Inference</span><b id="inference">&mdash;</b></div>
+    <div><span>Command in use</span><b id="command-live">&mdash;</b></div>
+    <div><span>Remote controller</span><b id="remote-state">&mdash;</b></div>
+    <div><span>Motors with errors (damped)</span><b id="offline" class="path">&mdash;</b></div>
+    <div class="wide"><span>Commanded joints</span><b id="commanded" class="path">&mdash;</b></div>
+    <div class="wide"><span>Pinned observations</span><b id="pinned" class="path">&mdash;</b></div>
+    <div class="wide"><span>Model</span><b id="model-path" class="path">&mdash;</b></div>
+    <div class="wide"><span>Model metadata check</span><b id="model-check" class="path">&mdash;</b></div>
+    <div class="wide"><span>Robot mode request</span><b id="rpc-result" class="path">&mdash;</b></div>
+  </div>
+  <div class="controls big">
+    <button id="home" class="secondary" title="Move slowly to the home pose and hold it">&#8962; Home</button>
+    <button id="start" class="go">&#9654; Start policy</button>
+    <button id="stop" class="secondary" title="Stop the policy and hold the current pose">&#9632; Stop (hold)</button>
+    <button id="release" class="secondary" title="Damp every joint (kp = 0)">Release</button>
+    <button id="motor-toggle" class="warn">Enable motor output</button>
+    <button id="custom-mode" class="secondary" title="ChangeMode to Custom (low-level control) through the Booster RPC service">Enter Custom mode</button>
+    <button id="prepare-mode" class="secondary" title="ChangeMode back to Prepare (the built-in controller takes over)">Exit to Prepare</button>
+  </div>
+  <p id="start-hint" class="hint"></p>
+  <p id="remote-event" class="hint"></p>
+</section>
+
+<main class="columns">
+  <section class="panel panel-command">
+    <div class="panel-header">
+      <h2>Velocity command</h2>
+      <button id="zero" class="secondary">Zero</button>
+    </div>
+    <div class="param-row source-row">
+      <label>Command source</label>
+      <div id="source" class="groups">
+        <label><input type="radio" name="source" value="remote"> Remote controller</label>
+        <label><input type="radio" name="source" value="gui"> GUI sliders</label>
+        <label><input type="radio" name="source" value="cmd_vel"> /cmd_vel topic</label>
+      </div>
+    </div>
+    <div id="command" class="params"></div>
+    <p id="command-hint" class="hint">Sent to the policy while it runs (cmd_vx / cmd_vy / cmd_wz). Slider ranges follow the limits in the policy panel.</p>
+    <h3>Remote controller</h3>
+    <div class="state-grid remote-grid">
+      <div><span>Left stick (lx, ly)</span><b id="remote-left">&mdash;</b></div>
+      <div><span>Right stick (rx, ry)</span><b id="remote-right">&mdash;</b></div>
+      <div><span>Buttons held</span><b id="remote-buttons">&mdash;</b></div>
+    </div>
+    <div id="params-remote" class="params"></div>
+    <p class="hint">With the remote as source: left stick front/back = forward/back (vx), left/right = sideways (vy); right stick left/right = turn (wz). Full deflection reaches the velocity limits; inside the deadzone the command is exactly 0. <b>START (+)</b> runs the same Start as the button above, with the same checks (robot upright within the max tilt, leg motors healthy, fresh data, model loaded). <b>BACK (&minus;)</b> runs Home (it also stops a running policy).</p>
+    <h3>Calibration offsets</h3>
+    <div id="params-offsets" class="params"></div>
+    <p class="hint">Added to the command to cancel the robot's drift (e.g. a negative vy offset if it walks slightly left when going straight). Applied only while motion is commanded unless the checkbox is set; the sum is clamped to the limits.</p>
+    <p class="hint">Sent to the policy: <b id="command-effective">&mdash;</b></p>
+  </section>
+
+  <section class="panel panel-policy">
+    <div class="panel-header">
+      <h2>Policy <small id="policy-node"></small></h2>
+      <button class="refresh">Refresh</button>
+    </div>
+    <div id="params-policy" class="params"></div>
+    <h3>Observation scales</h3>
+    <div id="obs-scales" class="params"></div>
+    <h3>Model</h3>
+    <div class="params">
+      <div class="param-row">
+        <label for="policy-select">Policy file</label>
+        <select id="policy-select"><option value="">(none)</option></select>
+      </div>
+    </div>
+    <p id="models-hint" class="hint"></p>
+  </section>
+
+  <section class="panel panel-bridge">
+    <div class="panel-header">
+      <h2>Motor output <small id="bridge-node"></small></h2>
+      <button class="refresh">Refresh</button>
+    </div>
+    <div id="params-bridge" class="params"></div>
+  </section>
+
+  <section class="panel panel-joints">
+    <div class="panel-header">
+      <h2>Per-joint parameters</h2>
+      <div class="controls">
+        <button id="home-zero" class="secondary" title="Set the home pose to all zeros">Home = zero</button>
+        <button id="home-default" class="secondary" title="Set the home pose to the policy default pose">Home = default pose</button>
+        <button class="refresh">Refresh</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="joint-table"></table>
+    </div>
+  </section>
+</main>
+
+<div id="modal" class="modal" hidden>
+  <div class="modal-box">
+    <p id="modal-text"></p>
+    <div class="modal-buttons">
+      <button id="modal-cancel" class="secondary">Cancel</button>
+      <button id="modal-ok" class="warn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

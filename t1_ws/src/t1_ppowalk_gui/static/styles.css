@@ -1,0 +1,525 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+  --red: #dc2626;
+  --amber: #d97706;
+  --green: #16a34a;
+  --gray: #6b7280;
+}
+
+body {
+  margin: 0;
+  padding: 0 2rem 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  background: Canvas;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.3);
+}
+
+h1 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+h2 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+h2 small {
+  font-weight: normal;
+  opacity: 0.6;
+  font-size: 0.8rem;
+}
+
+h3 {
+  font-size: 0.9rem;
+  margin: 1rem 0 0.4rem;
+}
+
+.status {
+  display: block;
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin-top: 0.2rem;
+}
+
+button {
+  font: inherit;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(127, 127, 127, 0.5);
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+button.go {
+  background: var(--green);
+  border-color: var(--green);
+  color: white;
+}
+
+button.warn {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: white;
+}
+
+.conn-lost {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  margin: 0 -2rem;
+  padding: 0.6rem 2rem;
+  background: var(--red);
+  color: white;
+  font-weight: 700;
+}
+
+.state {
+  margin: 1rem 0 1.25rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border-left: 8px solid var(--state);
+  background: color-mix(in srgb, var(--state) 10%, transparent);
+}
+
+.state-offline,
+.state-disabled {
+  --state: var(--gray);
+}
+
+.state-damping {
+  --state: var(--amber);
+}
+
+.state-tracking {
+  --state: var(--green);
+}
+
+@keyframes blink {
+  50% {
+    background: color-mix(in srgb, var(--state) 25%, transparent);
+  }
+}
+
+.state-main {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.state-label {
+  opacity: 0.7;
+}
+
+.state-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--state);
+}
+
+.state-reason {
+  font-weight: 600;
+}
+
+.state-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.4rem 1rem;
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+}
+
+.state-grid span {
+  display: block;
+  opacity: 0.65;
+  font-size: 0.8rem;
+}
+
+.state-grid .path {
+  word-break: break-all;
+  font-weight: normal;
+  font-size: 0.8rem;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.hint {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  margin: 0.6rem 0 0;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.panel-joints {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 860px) {
+  body {
+    padding: 0 1rem 1rem;
+  }
+
+  .columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  border: 1px solid var(--accent-border);
+  border-top: 4px solid var(--accent);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background: var(--accent-bg);
+}
+
+.panel-policy {
+  --accent: #2f6fed;
+  --accent-border: rgba(47, 111, 237, 0.35);
+  --accent-bg: rgba(47, 111, 237, 0.06);
+}
+
+.panel-bridge {
+  --accent: #d97706;
+  --accent-border: rgba(217, 119, 6, 0.35);
+  --accent-bg: rgba(217, 119, 6, 0.06);
+}
+
+.panel-joints {
+  --accent: #6d28d9;
+  --accent-border: rgba(109, 40, 217, 0.35);
+  --accent-bg: rgba(109, 40, 217, 0.05);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.params {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.param-row {
+  display: grid;
+  grid-template-columns: 1fr 9rem;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.param-row label {
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+input {
+  font: inherit;
+  padding: 0.3rem 0.4rem;
+  border-radius: 0.3rem;
+  border: 1px solid rgba(127, 127, 127, 0.5);
+  min-width: 0;
+  transition: background-color 0.3s;
+}
+
+input[type="checkbox"] {
+  justify-self: start;
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+input.applied {
+  background-color: rgba(22, 163, 74, 0.25);
+}
+
+input.rejected {
+  background-color: rgba(220, 38, 38, 0.35);
+}
+
+.warning {
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.3rem;
+  background: rgba(217, 119, 6, 0.2);
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.85rem;
+}
+
+thead td {
+  font-weight: 600;
+  padding: 0.3rem;
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 0.15rem 0.3rem;
+  white-space: nowrap;
+}
+
+tbody tr:nth-child(odd) {
+  background: rgba(127, 127, 127, 0.07);
+}
+
+td input {
+  width: 6rem;
+}
+
+td.col-policy {
+  border-left: 3px solid rgba(47, 111, 237, 0.5);
+}
+
+td.col-bridge {
+  border-left: 3px solid rgba(217, 119, 6, 0.5);
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal[hidden],
+.conn-lost[hidden] {
+  display: none;
+}
+
+.modal-box {
+  max-width: 28rem;
+  padding: 1.25rem;
+  border-radius: 0.5rem;
+  background: Canvas;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* ---- motion recorder additions ---- */
+
+.state-idle,
+.state-holding {
+  --state: var(--gray);
+}
+
+.state-recording {
+  --state: var(--red);
+}
+
+.state-going_home,
+.state-approaching,
+.state-returning,
+.state-paused {
+  --state: var(--amber);
+}
+
+.state-playing {
+  --state: var(--green);
+}
+
+.panel-record {
+  --accent: #dc2626;
+  --accent-border: rgba(220, 38, 38, 0.35);
+  --accent-bg: rgba(220, 38, 38, 0.05);
+}
+
+.panel-play {
+  --accent: #16a34a;
+  --accent-border: rgba(22, 163, 74, 0.35);
+  --accent-bg: rgba(22, 163, 74, 0.05);
+}
+
+.progress {
+  height: 0.5rem;
+  margin-top: 0.6rem;
+  border-radius: 0.25rem;
+  background: rgba(127, 127, 127, 0.2);
+  overflow: hidden;
+}
+
+#progress-bar {
+  height: 100%;
+  width: 0;
+  background: var(--state);
+  transition: width 0.1s linear;
+}
+
+.controls.big {
+  margin-top: 0.9rem;
+}
+
+.controls.big button {
+  min-width: 7rem;
+  padding: 0.6rem 1rem;
+}
+
+button.rec {
+  color: white;
+  background: var(--red);
+  border-color: var(--red);
+}
+
+button.rec.recording {
+  animation: blink 1s step-start infinite;
+}
+
+select {
+  font: inherit;
+  padding: 0.3rem;
+  border-radius: 0.3rem;
+  min-width: 0;
+}
+
+.param-row:has(select),
+.param-row:has(.groups) {
+  grid-template-columns: 8rem 1fr;
+}
+
+.groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+}
+
+.tag {
+  margin-left: 0.3rem;
+  padding: 0 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  background: var(--red);
+}
+
+.groups label.unavailable {
+  opacity: 0.4;
+}
+
+.state-grid .wide {
+  grid-column: 1 / -1;
+}
+
+/* ---- ppowalk additions ---- */
+
+.state-homing,
+.state-ramping {
+  --state: var(--amber);
+}
+
+.state-running {
+  --state: var(--green);
+}
+
+.upright {
+  flex-shrink: 0;
+  min-width: 11rem;
+  padding: 0.6rem 1rem;
+  border-radius: 0.75rem;
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.3rem;
+  color: white;
+}
+
+.upright small {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.upright-ok {
+  background: var(--green);
+}
+
+.upright-bad {
+  background: var(--red);
+}
+
+.upright-unknown {
+  background: var(--gray);
+}
+
+.panel-command {
+  --accent: #0891b2;
+  --accent-border: rgba(8, 145, 178, 0.35);
+  --accent-bg: rgba(8, 145, 178, 0.06);
+}
+
+.param-row.command-row {
+  grid-template-columns: 9rem 1fr 6rem;
+}
+
+input[type="range"] {
+  width: 100%;
+}
+
+td.col-flag,
+thead td.col-flag {
+  text-align: center;
+  border-left: 3px solid rgba(8, 145, 178, 0.5);
+}
+
+td.col-flag input {
+  width: auto;
+}
+
+.source-row .groups label {
+  white-space: nowrap;
+}
+
+.remote-grid {
+  margin: 0.25rem 0 0.5rem;
+}
+
+.command-row input:disabled {
+  opacity: 0.45;
+}
+
+/* Let grid panels shrink below the joint table's width (it scrolls inside
+   .table-wrap) so narrow screens get no horizontal page scroll. */
+.columns > * {
+  min-width: 0;
+}
