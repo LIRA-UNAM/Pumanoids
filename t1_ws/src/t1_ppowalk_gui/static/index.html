@@ -40,26 +40,41 @@
     <div><span>Motors with errors (damped)</span><b id="offline" class="path">&mdash;</b></div>
     <div class="wide"><span>Commanded joints</span><b id="commanded" class="path">&mdash;</b></div>
     <div class="wide"><span>Pinned observations</span><b id="pinned" class="path">&mdash;</b></div>
-    <div class="wide"><span>Model</span><b id="model-path" class="path">&mdash;</b></div>
-    <div class="wide"><span>Model metadata check</span><b id="model-check" class="path">&mdash;</b></div>
     <div class="wide"><span>Robot mode request</span><b id="rpc-result" class="path">&mdash;</b></div>
     <div class="wide"><span>Ankle space (parallel linkage)</span><b id="ankle-space" class="path">&mdash;</b></div>
   </div>
   <div class="controls big">
-    <button id="home" class="secondary" title="Move slowly to the home pose and hold it">&#8962; Home</button>
-    <button id="start" class="go">&#9654; Start policy</button>
-    <button id="stop" class="secondary" title="Stop the policy and hold the current pose">&#9632; Stop (hold)</button>
-    <button id="release" class="secondary" title="Damp every joint (kp = 0)">Release</button>
-    <button id="motor-toggle" class="warn">Enable motor output</button>
-    <button id="custom-mode" class="secondary" title="ChangeMode to Custom (low-level control) through the Booster RPC service">Enter Custom mode</button>
-    <button id="prepare-mode" class="secondary" title="ChangeMode back to Prepare (the built-in controller takes over)">Exit to Prepare</button>
+    <div class="model-tile">
+      <label for="policy-select">Model</label>
+      <select id="policy-select"><option value="">(none)</option></select>
+      <small id="model-check">&mdash;</small>
+      <b id="model-path" hidden></b>
+    </div>
+    <button id="home" class="secondary" title="Move slowly to the home pose and hold it"><span class="icon">&#8962;</span>Home</button>
+    <button id="start" class="go"><span class="icon">&#9654;</span>Start policy</button>
+    <button id="stop" class="secondary" title="Stop the policy and hold the current pose"><span class="icon">&#9632;</span>Stop (hold)</button>
+    <button id="release" class="secondary" title="Damp every joint (kp = 0)"><span class="icon">&#9661;</span>Release</button>
+    <button id="motor-toggle" class="warn"><span class="icon">&#9889;</span><span class="label">Enable motor output</span></button>
+    <button id="custom-mode" class="secondary" title="ChangeMode to Custom (low-level control) through the Booster RPC service"><span class="icon">&#9881;</span>Enter Custom mode</button>
+    <button id="prepare-mode" class="secondary" title="ChangeMode back to Prepare (the built-in controller takes over)"><span class="icon">&#8634;</span>Exit to Prepare</button>
+    <div class="motor-tile">
+      <span class="tile-title">Motor output</span>
+      <div id="params-bridge" class="params"></div>
+    </div>
   </div>
   <p id="start-hint" class="hint"></p>
+  <p id="models-hint" class="hint"></p>
   <p id="remote-event" class="hint"></p>
 </section>
 
-<main class="columns">
-  <section class="panel panel-command">
+<nav class="tabs" role="tablist" aria-label="Parameter groups">
+  <button role="tab" id="tab-command" class="tab tab-command" aria-controls="panel-command" aria-selected="true">Velocity command</button>
+  <button role="tab" id="tab-policy" class="tab tab-policy" aria-controls="panel-policy" aria-selected="false" tabindex="-1">Policy</button>
+  <button role="tab" id="tab-joints" class="tab tab-joints" aria-controls="panel-joints" aria-selected="false" tabindex="-1">Per-joint parameters</button>
+</nav>
+
+<main class="tab-panels">
+  <section id="panel-command" class="panel panel-command" role="tabpanel" aria-labelledby="tab-command">
     <div class="panel-header">
       <h2>Velocity command</h2>
       <button id="zero" class="secondary">Zero</button>
@@ -73,7 +88,7 @@
       </div>
     </div>
     <div id="command" class="params"></div>
-    <p id="command-hint" class="hint">Sent to the policy while it runs (cmd_vx / cmd_vy / cmd_wz). Slider ranges follow the limits in the policy panel.</p>
+    <p id="command-hint" class="hint">Sent to the policy while it runs (cmd_vx / cmd_vy / cmd_wz). Slider ranges follow the limits in the Policy tab.</p>
     <h3>Remote controller</h3>
     <div class="state-grid remote-grid">
       <div><span>Left stick (lx, ly)</span><b id="remote-left">&mdash;</b></div>
@@ -88,7 +103,7 @@
     <p class="hint">Sent to the policy: <b id="command-effective">&mdash;</b></p>
   </section>
 
-  <section class="panel panel-policy">
+  <section id="panel-policy" class="panel panel-policy" role="tabpanel" aria-labelledby="tab-policy" hidden>
     <div class="panel-header">
       <h2>Policy <small id="policy-node"></small></h2>
       <button class="refresh">Refresh</button>
@@ -96,25 +111,9 @@
     <div id="params-policy" class="params"></div>
     <h3>Observation scales</h3>
     <div id="obs-scales" class="params"></div>
-    <h3>Model</h3>
-    <div class="params">
-      <div class="param-row">
-        <label for="policy-select">Policy file</label>
-        <select id="policy-select"><option value="">(none)</option></select>
-      </div>
-    </div>
-    <p id="models-hint" class="hint"></p>
   </section>
 
-  <section class="panel panel-bridge">
-    <div class="panel-header">
-      <h2>Motor output <small id="bridge-node"></small></h2>
-      <button class="refresh">Refresh</button>
-    </div>
-    <div id="params-bridge" class="params"></div>
-  </section>
-
-  <section class="panel panel-joints">
+  <section id="panel-joints" class="panel panel-joints" role="tabpanel" aria-labelledby="tab-joints" hidden>
     <div class="panel-header">
       <h2>Per-joint parameters</h2>
       <div class="controls">

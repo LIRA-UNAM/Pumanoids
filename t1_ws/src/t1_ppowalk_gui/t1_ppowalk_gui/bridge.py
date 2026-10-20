@@ -60,9 +60,9 @@ COMMAND_SOURCES = {"remote": (True, False), "gui": (False, False), "cmd_vel": (F
 # Motor output parameters (the "bridge" panel). The T1 policy node publishes
 # LowCmd itself, so these live on the policy node too.
 BRIDGE_SPECS = [
-    _num("damping_kd", "Damping Kd (IDLE / Release / not commanded)", "N·m·s/rad",
-         0.0, 20.0, 0.1),
-    _num("max_target_delta", "Max |target - q| (0 = off)", "rad", 0.0, 6.0, 0.01),
+    # Shown in the top group's Motor output tile: keep the labels short.
+    _num("damping_kd", "Damping Kd", "N·m·s/rad", 0.0, 20.0, 0.1),
+    _num("max_target_delta", "Max |target − q|", "rad, 0 = off", 0.0, 6.0, 0.01),
 ]
 
 # Per-joint arrays of the joint table. "index_by" names the parameter whose

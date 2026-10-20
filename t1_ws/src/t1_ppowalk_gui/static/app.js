@@ -25,7 +25,7 @@
   };
 
   const SOURCE_HINTS = {
-    gui: "Sent to the policy while it runs (cmd_vx / cmd_vy / cmd_wz). Slider ranges follow the limits in the policy panel.",
+    gui: "Sent to the policy while it runs (cmd_vx / cmd_vy / cmd_wz). Slider ranges follow the limits in the Policy tab.",
     remote: "The remote's sticks command the velocity (see Remote controller below); the sliders are inactive.",
     cmd_vel: "The command comes from geometry_msgs/Twist on /cmd_vel; the sliders are inactive.",
   };
@@ -58,7 +58,6 @@
     if (message.type === "hello") {
       state.config = message.config;
       document.getElementById("policy-node").textContent = message.config.policy_node;
-      document.getElementById("bridge-node").textContent = message.config.bridge_node;
       buildScalarForm("policy", message.config.policy_specs);
       buildScalarForm("policy", message.config.offset_specs, "params-offsets");
       buildScalarForm("policy", message.config.remote_specs || [], "params-remote");
@@ -199,7 +198,8 @@
     document.getElementById("release").disabled = !policy.online || mode === "IDLE";
     renderModels(policy, idle);
     const toggle = document.getElementById("motor-toggle");
-    toggle.textContent = bridge.enable_lowcmd ? "Disable motor output" : "Enable motor output";
+    toggle.querySelector(".label").textContent =
+      bridge.enable_lowcmd ? "Disable motor output" : "Enable motor output";
     toggle.disabled = !bridge.online;
   }
 
@@ -621,6 +621,34 @@
     apply("policy", "home_pose", (state.values.policy.default_joint_pos || []).slice()).then(() => showValues());
   });
   document.querySelectorAll("button.refresh").forEach((b) => b.addEventListener("click", readParameters));
+
+  // Parameter groups as tabs. Hidden panels keep updating; the selected tab is
+  // remembered per browser.
+  const TAB_KEY = "t1_ppowalk_gui.tab";
+  const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+  function selectTab(tab, focus) {
+    for (const t of tabs) {
+      const on = t === tab;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+    }
+    if (focus) tab.focus();
+    try { localStorage.setItem(TAB_KEY, tab.id); } catch (err) { /* storage unavailable */ }
+  }
+  tabs.forEach((tab, i) => {
+    tab.addEventListener("click", () => selectTab(tab, false));
+    tab.addEventListener("keydown", (event) => {
+      const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
+      if (step) {
+        event.preventDefault();
+        selectTab(tabs[(i + step + tabs.length) % tabs.length], true);
+      }
+    });
+  });
+  let savedTab = null;
+  try { savedTab = document.getElementById(localStorage.getItem(TAB_KEY)); } catch (err) { /* ignore */ }
+  selectTab(tabs.includes(savedTab) ? savedTab : tabs[0], false);
   for (const radio of document.querySelectorAll('input[name="source"]')) {
     radio.addEventListener("change", () => {
       if (radio.checked) changeSource(radio.value);

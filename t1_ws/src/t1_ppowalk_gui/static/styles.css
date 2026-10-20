@@ -170,25 +170,61 @@ button.warn {
   margin: 0.6rem 0 0;
 }
 
-.columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  align-items: start;
-}
-
-.panel-joints {
-  grid-column: 1 / -1;
-}
-
 @media (max-width: 860px) {
   body {
     padding: 0 1rem 1rem;
   }
+}
 
-  .columns {
-    grid-template-columns: 1fr;
-  }
+/* Parameter groups as tabs: one panel at a time, full width. */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.3);
+}
+
+.tab {
+  padding: 0.55rem 1.1rem;
+  border: 1px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-radius: 0.4rem 0.4rem 0 0;
+  background: transparent;
+  opacity: 0.7;
+}
+
+.tab:hover {
+  opacity: 1;
+}
+
+.tab[aria-selected="true"] {
+  font-weight: 700;
+  opacity: 1;
+  border-bottom-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.tab-command {
+  --accent: #0891b2;
+  --accent-bg: rgba(8, 145, 178, 0.08);
+}
+
+.tab-policy {
+  --accent: #2f6fed;
+  --accent-bg: rgba(47, 111, 237, 0.08);
+}
+
+.tab-joints {
+  --accent: #6d28d9;
+  --accent-bg: rgba(109, 40, 217, 0.07);
+}
+
+.tab-panels {
+  margin-top: 1rem;
+}
+
+.tab-panels > [hidden] {
+  display: none;
 }
 
 .panel {
@@ -391,9 +427,95 @@ td.col-bridge {
   margin-top: 0.9rem;
 }
 
+/* Top group: square buttons (height = width) and the model tile. */
+.controls.big {
+  --tile: 7.5rem;
+  align-items: stretch;
+}
+
 .controls.big button {
-  min-width: 7rem;
-  padding: 0.6rem 1rem;
+  width: var(--tile);
+  aspect-ratio: 1 / 1;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  text-align: center;
+  line-height: 1.15;
+}
+
+.controls.big button .icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.model-tile,
+.motor-tile {
+  box-sizing: border-box;
+  width: 18rem;
+  max-width: 100%;
+  height: var(--tile);
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(127, 127, 127, 0.5);
+  border-radius: 0.4rem;
+  background: Canvas;
+}
+
+.model-tile label,
+.motor-tile .tile-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  opacity: 0.75;
+}
+
+/* Motor output tile: amber accent (the motor output colour), compact rows. */
+.motor-tile {
+  border-left: 4px solid var(--amber);
+}
+
+.motor-tile .param-row {
+  grid-template-columns: 1fr 5rem;
+  gap: 0.5rem;
+}
+
+.motor-tile .param-row label {
+  font-size: 0.8rem;
+}
+
+/* Policy tab: parameters in three columns. */
+.panel-policy .params {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 2rem;
+}
+
+@media (max-width: 1100px) {
+  .panel-policy .params {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .panel-policy .params {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.model-tile select {
+  width: 100%;
+}
+
+.model-tile small {
+  font-size: 0.75rem;
+  opacity: 0.75;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 button.rec {
@@ -518,8 +640,8 @@ td.col-flag input {
   opacity: 0.45;
 }
 
-/* Let grid panels shrink below the joint table's width (it scrolls inside
+/* Let the panel shrink below the joint table's width (it scrolls inside
    .table-wrap) so narrow screens get no horizontal page scroll. */
-.columns > * {
+.tab-panels > * {
   min-width: 0;
 }
