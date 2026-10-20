@@ -121,7 +121,7 @@ public:
     policy_rate_hz_ = declare_parameter<double>("policy_rate_hz", 50.0);
     command_rate_hz_ = declare_parameter<double>("command_rate_hz", 200.0);
     num_threads_ = static_cast<int>(declare_parameter<int>("num_threads", 1));
-    data_timeout_ = declare_parameter<double>("data_timeout_s", 0.1);
+    data_timeout_ = declare_parameter<double>("data_timeout_s", 0.2);
     // Motor output (replaces the G1 low-level bridge).
     kp_ = declare_parameter<std::vector<double>>("kp", std::vector<double>{});
     kd_ = declare_parameter<std::vector<double>>("kd", std::vector<double>{});
