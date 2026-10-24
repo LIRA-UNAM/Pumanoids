@@ -18,6 +18,9 @@ def _num(name, label, unit, lo, hi, step):
 POLICY_SPECS = [
     _num("max_start_tilt_deg", "Max tilt to allow Start", "deg", 1.0, 90.0, 1.0),
     _num("start_ramp_s", "Start ramp (blend into policy)", "s", 0.0, 10.0, 0.1),
+    _num("switch_max_ang_vel", "Policy switch: max body angular velocity", "rad/s", 0.01, 5.0, 0.05),
+    _num("switch_max_joint_vel", "Policy switch: max leg joint velocity", "rad/s", 0.01, 10.0, 0.05),
+    _num("switch_settle_s", "Policy switch: time at rest", "s", 0.0, 5.0, 0.1),
     _num("home_max_vel", "Home: peak joint speed", "rad/s", 0.05, 2.0, 0.05),
     _num("home_min_duration_s", "Home: minimum duration", "s", 0.0, 20.0, 0.5),
     _num("action_clip", "Action clip (0 = off)", "", 0.0, 100.0, 0.1),

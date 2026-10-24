@@ -191,6 +191,12 @@ t1_ppowalk_policy_node:
     max_start_tilt_deg: 20.0
     # After Start, blend from the current pose into the policy targets.
     start_ramp_s: 1.0
+    # Switching the running policy (GUI model dropdown) is only allowed at a
+    # standstill: zero requested velocity, body angular velocity and leg joint
+    # velocities within these limits, continuously for switch_settle_s.
+    switch_max_ang_vel: 0.3      # rad/s
+    switch_max_joint_vel: 0.5    # rad/s
+    switch_settle_s: 0.5
 
     # Joints commanded with kp/kd; every other joint is damped. Must include
     # every action joint and every always_commanded_joints entry. Default: all

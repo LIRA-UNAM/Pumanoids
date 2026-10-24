@@ -610,12 +610,90 @@ select {
   --accent-bg: rgba(8, 145, 178, 0.06);
 }
 
-.param-row.command-row {
-  grid-template-columns: 9rem 1fr 6rem;
+.joysticks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  align-items: flex-start;
+  gap: 1rem;
+  margin: 0.75rem 0;
 }
 
-input[type="range"] {
-  width: 100%;
+.joystick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.joystick small {
+  opacity: 0.7;
+}
+
+/* JS sets --u (right) and --v (up) in [-1, 1]; --reach must match makePad(). */
+.pad {
+  --pad-size: min(180px, 40vw);
+  --knob-size: calc(var(--pad-size) * 0.32);
+  --reach: calc((var(--pad-size) - var(--knob-size)) / 2 - 4px);
+  --u: 0;
+  --v: 0;
+  position: relative;
+  box-sizing: border-box;
+  width: var(--pad-size);
+  height: var(--pad-size);
+  border: 2px solid var(--accent-border);
+  border-radius: 50%;
+  background:
+    linear-gradient(var(--accent-border), var(--accent-border)) center / 1px 100% no-repeat,
+    linear-gradient(var(--accent-border), var(--accent-border)) center / 100% 1px no-repeat,
+    var(--accent-bg);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.pad.track {
+  height: calc(var(--knob-size) + 12px);
+  border-radius: calc(var(--knob-size) / 2 + 6px);
+  background:
+    linear-gradient(var(--accent-border), var(--accent-border)) center / 1px 100% no-repeat,
+    var(--accent-bg);
+}
+
+.knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--knob-size);
+  height: var(--knob-size);
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transform: translate(calc(-50% + var(--u) * var(--reach)), calc(-50% - var(--v) * var(--reach)));
+  transition: transform 150ms ease-out;
+  pointer-events: none;
+}
+
+.pad.dragging {
+  cursor: grabbing;
+}
+
+.pad.dragging .knob {
+  transition: none;
+}
+
+.pad.disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.hint.blocked {
+  color: var(--amber);
+}
+
+.pad-readout {
+  font-variant-numeric: tabular-nums;
 }
 
 td.col-flag,
@@ -634,10 +712,6 @@ td.col-flag input {
 
 .remote-grid {
   margin: 0.25rem 0 0.5rem;
-}
-
-.command-row input:disabled {
-  opacity: 0.45;
 }
 
 /* Let the panel shrink below the joint table's width (it scrolls inside

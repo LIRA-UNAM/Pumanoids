@@ -83,12 +83,12 @@
       <label>Command source</label>
       <div id="source" class="groups">
         <label><input type="radio" name="source" value="remote"> Remote controller</label>
-        <label><input type="radio" name="source" value="gui"> GUI sliders</label>
+        <label><input type="radio" name="source" value="gui"> GUI joysticks</label>
         <label><input type="radio" name="source" value="cmd_vel"> /cmd_vel topic</label>
       </div>
     </div>
     <div id="command" class="params"></div>
-    <p id="command-hint" class="hint">Sent to the policy while it runs (cmd_vx / cmd_vy / cmd_wz). Slider ranges follow the limits in the Policy tab.</p>
+    <p id="command-hint" class="hint">Sent to the policy while it runs (cmd_vx / cmd_vy / cmd_wz). Drag a joystick to command, release to stop; full deflection reaches the limits in the Policy tab.</p>
     <h3>Remote controller</h3>
     <div class="state-grid remote-grid">
       <div><span>Left stick (lx, ly)</span><b id="remote-left">&mdash;</b></div>

@@ -17,7 +17,13 @@ make t1walk T1_WALK_POLICY=/abs/path/model.onnx T1_WALK_ARGS="enable_lowcmd:=tru
 (`make t1walk` does both). Every `*.onnx` in the models folder (`models_dir`,
 default `~/t1_ppowalk_models`; rescanned every second, so copied models show up
 without a restart) is offered in the GUI's Model dropdown. Choosing one loads it
-while the policy is stopped; the next Start uses it. A model that is not 76 -> 21
+while the policy is stopped; the next Start uses it. While the policy runs,
+choosing one switches to it live (no Home / Start), but only at a standstill:
+zero requested velocity, body angular velocity <= `switch_max_ang_vel`
+(0.3 rad/s) and leg joint velocities <= `switch_max_joint_vel` (0.5 rad/s)
+for `switch_settle_s` (0.5 s). The new policy blends in over `start_ramp_s`.
+Otherwise the dropdown shows why and the node refuses the `policy_path`
+change. A model that is not 76 -> 21
 is rejected and the current one stays loaded; a model whose mjlab metadata
 (joint names, default pose, action scale, kp, kd, observation terms) disagrees
 with the parameters is loaded with a warning in the GUI ("Model metadata check").
@@ -67,7 +73,8 @@ All values come from the task code (`tasks/velocity/config/t1/env_cfgs.py`,
 * **Stop:** holds the current pose (stays stiff). **Release:** damps everything
   (a standing robot collapses).
 * **Velocity command:** one source at a time (GUI "Command source"): the remote
-  sticks (default), the GUI sliders, or `geometry_msgs/Twist` on `/cmd_vel`.
+  sticks (default), the GUI joysticks (left = vx/vy, right = wz; releasing a
+  stick sends 0), or `geometry_msgs/Twist` on `/cmd_vel`.
   Calibration offsets `cmd_{vx,vy,wz}_offset` cancel drift.
 * If LowState goes stale while running, the node holds the last pose (and the
   LowCmd falls back to damping). There is no software e-stop: keep the Booster
@@ -112,6 +119,43 @@ serial and parallel ankle entries differ and shows the result in the GUI
 * SERIAL-mode gains: the firmware's mapping of the ankle kp/kd onto the cranks is
   not documented. While hanging, Home must hold the ankles at pitch −0.2 / roll 0
   without going limp or oscillating.
+
+## Control loop timing
+
+Two causes of LowCmd gaps (jitter on the robot) are handled at the ROS 2 level,
+without kernel changes:
+
+* **Executor isolation.** The control loop (LowState subscription + one
+  `command_rate_hz` timer that runs the policy every
+  `command_rate_hz / policy_rate_hz` ticks, so that ratio must be an integer) runs
+  in its own callback group on a dedicated executor thread. Parameter services
+  (`ros2 param`, tab completion), parameter sets from the GUI (incl. loading a
+  model), the GUI services, remote / `cmd_vel`, `~/status` and the model scan run
+  on the main executor. They share state under one mutex that is only held for
+  short sections.
+* **DDS shared memory.** With Fast DDS's shared-memory transport, every short-lived
+  participant (each `ros2 param ...` / `ros2 topic ...` call, tab completion
+  included) can block all writers of a node for ~330 ms: the discovery thread
+  holds the participant's send mutex while `SharedMemTransport::find_port()`
+  retries to open that process's port (found with gdb: LowCmd `publish()` waiting
+  in `RTPSWriter::send_nts`). The launch file therefore gives the policy node the
+  UDPv4-only profile `config/fastdds_udp_only.xml` (`dds_profile:=none` reverts to
+  the Fast DDS defaults). To also keep the CLI from stalling the robot's own
+  processes, use the same profile in shells where you run `ros2` commands on the
+  robot:
+
+  ```bash
+  export FASTRTPS_DEFAULT_PROFILES_FILE=$(ros2 pkg prefix t1_ppowalk)/share/t1_ppowalk/config/fastdds_udp_only.xml
+  ```
+
+  The profile is ignored with `ROS_LOCALHOST_ONLY=1` or
+  `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST` (rmw_fastrtps then sets the transports
+  itself).
+
+`~/status` reports the loop timing in `control`: `max_jitter_ms` (max |tick period
+− nominal|), `max_exec_ms` (tick duration) and `max_lock_wait_ms`, each since the
+previous status message, plus `late_ticks` (ticks more than 1 ms late since start).
+The loop still runs at normal OS priority, so a heavily loaded CPU can delay it.
 
 ## Export a policy
 

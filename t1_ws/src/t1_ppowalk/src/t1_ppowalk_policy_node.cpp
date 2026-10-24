@@ -33,9 +33,15 @@
 //   RUNNING  policy targets
 // Models: the *.onnx files of models_dir (default: the folder of policy_path)
 // are listed in ~/status for the GUI's dropdown, which loads one by setting
-// policy_path (only while the policy is stopped; a model whose input/output
-// sizes do not match is rejected and the current one stays loaded; metadata
-// that disagrees with the parameters is reported as a warning).
+// policy_path (a model whose input/output sizes do not match is rejected and
+// the current one stays loaded; metadata that disagrees with the parameters is
+// reported as a warning). While the policy runs, a new model is switched in
+// live, but only at a standstill: zero requested velocity, body angular velocity
+// <= switch_max_ang_vel and leg joint velocities <= switch_max_joint_vel for
+// switch_settle_s (checked before the model load and again at the commit). The
+// switch restarts the last-action observation and blends from the last target
+// into the new policy over start_ramp_s (RAMPING), like Start. ~/status reports
+// switch_ok / switch_reason for the GUI.
 //
 // The policy can only be started while the IMU reports the robot upright
 // (tilt <= max_start_tilt_deg). The tilt is computed continuously from the IMU
@@ -48,6 +54,19 @@
 // service, with all its checks (upright, leg motors healthy, fresh data, model
 // loaded); with remote_home, pressing BACK (-) runs the same Home as ~/home.
 // A refused press is logged and reported in ~/status.
+//
+// Threading: the control loop runs on its own thread so that nothing else the
+// node serves can delay it. The control callback group (LowState subscription
+// + one command_rate_hz timer that runs the policy every
+// command_rate_hz / policy_rate_hz ticks) is spun by a dedicated executor; the
+// default group (parameter services, on_set_parameters, the GUI services, the
+// remote / cmd_vel subscriptions, ~/status and the model scan) by the main
+// executor. A `ros2 param` call (or its tab completion) or a GUI parameter set
+// therefore never runs on the control thread. Both threads share the node state
+// under one mutex, held only for short sections: slow work (loading a model,
+// rebuilding the observation builder, scanning models_dir, publishing ~/status)
+// happens outside the lock. ~/status reports the control loop timing (max
+// period jitter and execution time since the last status, late ticks).
 
 #include <algorithm>
 #include <array>
@@ -57,11 +76,14 @@
 #include <cstdlib>
 #include <filesystem>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <set>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "booster_interface/msg/low_cmd.hpp"
@@ -164,6 +186,10 @@ public:
     // Safety / motion.
     max_start_tilt_deg_ = declare_parameter<double>("max_start_tilt_deg", 30.0);
     start_ramp_s_ = declare_parameter<double>("start_ramp_s", 1.0);
+    // Standstill required to switch the running policy (policy_path).
+    switch_max_ang_vel_ = declare_parameter<double>("switch_max_ang_vel", 0.3);
+    switch_max_joint_vel_ = declare_parameter<double>("switch_max_joint_vel", 0.5);
+    switch_settle_s_ = declare_parameter<double>("switch_settle_s", 0.5);
     home_pose_ = declare_parameter<std::vector<double>>("home_pose", std::vector<double>{});
     home_max_vel_ = declare_parameter<double>("home_max_vel", 0.3);
     command_joint_names_ = declare_parameter<std::vector<std::string>>(
@@ -260,9 +286,13 @@ public:
       throw std::invalid_argument(error);
     }
     error = check_remote(use_remote_, use_cmd_vel_, remote_deadzone_, remote_timeout_);
+    if (error.empty()) {
+      error = check_rates(policy_rate_hz_, command_rate_hz_);
+    }
     if (!error.empty()) {
       throw std::invalid_argument(error);
     }
+    policy_decimation_ = decimation(policy_rate_hz_, command_rate_hz_);
     apply_command_joints(command_joint_names_);
     manual_pin_ = name_mask(pinned_names_);
     offline_now_.assign(n, false);
@@ -300,12 +330,18 @@ public:
     low_cmd_msg_.cmd_type = static_cast<int8_t>(cmd_type_);
     low_cmd_msg_.motor_cmd.resize(n);
 
+    // Control callback group: not added to the main executor with the node; main()
+    // spins it on a dedicated thread (see control_callback_group()).
+    control_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
+    rclcpp::SubscriptionOptions control_options;
+    control_options.callback_group = control_group_;
     low_state_sub_ = create_subscription<LowState>(
       low_state_topic, rclcpp::SensorDataQoS(),
-      [this](LowState::ConstSharedPtr msg) {on_low_state(*msg);});
+      [this](LowState::ConstSharedPtr msg) {on_low_state(*msg);}, control_options);
     cmd_vel_sub_ = create_subscription<geometry_msgs::msg::Twist>(
       cmd_vel_topic, 10,
       [this](geometry_msgs::msg::Twist::ConstSharedPtr msg) {
+        std::lock_guard<std::mutex> lock(mutex_);
         cmd_vel_ = {msg->linear.x, msg->linear.y, msg->angular.z};
         last_cmd_vel_ = SteadyClock::now();
       });
@@ -321,22 +357,28 @@ public:
     }
     rpc_client_ = create_client<RpcService>(rpc_service);
 
-    auto service = [this](const std::string & name, auto handler) {
+    // Mode services run under the state lock; the custom-mode services only send
+    // an async RPC request and take the lock themselves where they need it.
+    auto service = [this](const std::string & name, auto handler, bool locked) {
         return create_service<std_srvs::srv::Trigger>(
-          "~/" + name, [this, handler](
+          "~/" + name, [this, handler, locked](
             const std::shared_ptr<std_srvs::srv::Trigger::Request>,
             std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
+            std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
+            if (locked) {
+              lock.lock();
+            }
             res->success = (this->*handler)(res->message);
           });
       };
-    start_srv_ = service("start", &T1PpowalkPolicyNode::start);
-    stop_srv_ = service("stop", &T1PpowalkPolicyNode::stop);
-    release_srv_ = service("release", &T1PpowalkPolicyNode::release);
-    home_srv_ = service("home", &T1PpowalkPolicyNode::home);
-    custom_srv_ = service("enter_custom_mode", &T1PpowalkPolicyNode::enter_custom_mode);
-    prepare_srv_ = service("exit_custom_mode", &T1PpowalkPolicyNode::exit_custom_mode);
+    start_srv_ = service("start", &T1PpowalkPolicyNode::start, true);
+    stop_srv_ = service("stop", &T1PpowalkPolicyNode::stop, true);
+    release_srv_ = service("release", &T1PpowalkPolicyNode::release, true);
+    home_srv_ = service("home", &T1PpowalkPolicyNode::home, true);
+    custom_srv_ = service("enter_custom_mode", &T1PpowalkPolicyNode::enter_custom_mode, false);
+    prepare_srv_ = service("exit_custom_mode", &T1PpowalkPolicyNode::exit_custom_mode, false);
 
-    create_timers();
+    create_control_timer();
     status_timer_ = create_wall_timer(std::chrono::milliseconds(100), [this]() {publish_status();});
     scan_models();
     models_timer_ = create_wall_timer(std::chrono::seconds(1), [this]() {scan_models();});
@@ -358,6 +400,10 @@ public:
       RCLCPP_WARN(get_logger(), "Model metadata: %s", model_warnings_.c_str());
     }
   }
+
+  // Callback group of the control loop (LowState + control timer). It is not
+  // part of the node's default executor: main() spins it on its own thread.
+  rclcpp::CallbackGroup::SharedPtr control_callback_group() const {return control_group_;}
 
 private:
   enum class Mode { kIdle, kHoming, kHolding, kRamping, kRunning };
@@ -438,6 +484,28 @@ private:
       return "remote_timeout_s must be > 0";
     }
     return "";
+  }
+
+  // The policy runs every N-th control tick, so the command rate must be an
+  // integer multiple of the policy rate (e.g. 200 Hz / 50 Hz = 4, as in training).
+  static std::string check_rates(double policy_rate, double command_rate)
+  {
+    if (policy_rate <= 0.0 || command_rate <= 0.0 || policy_rate > 1000.0 ||
+      command_rate > 2000.0)
+    {
+      return "policy_rate_hz must be in (0, 1000] and command_rate_hz in (0, 2000]";
+    }
+    const double ratio = command_rate / policy_rate;
+    if (ratio < 1.0 - 1e-9 || std::abs(ratio - std::round(ratio)) > 1e-6) {
+      return "command_rate_hz must be an integer multiple of policy_rate_hz (the policy runs "
+             "every N-th control tick)";
+    }
+    return "";
+  }
+
+  static int decimation(double policy_rate, double command_rate)
+  {
+    return static_cast<int>(std::lround(command_rate / policy_rate));
   }
 
   // models_dir, or the folder of the given policy path if empty; "~" expanded.
@@ -676,12 +744,47 @@ private:
     return out;
   }
 
-  void create_timers()
+  // One timer at command_rate_hz in the control group. Replacing it (rate
+  // change) from the main thread is safe: the executor holds the old timer
+  // while its callback runs.
+  void create_control_timer()
   {
-    policy_timer_ = create_wall_timer(
-      std::chrono::duration<double>(1.0 / policy_rate_hz_), [this]() {policy_step();});
-    command_timer_ = create_wall_timer(
-      std::chrono::duration<double>(1.0 / command_rate_hz_), [this]() {publish_command();});
+    if (control_timer_) {
+      control_timer_->cancel();
+    }
+    control_timer_ = create_wall_timer(
+      std::chrono::duration<double>(1.0 / command_rate_hz_), [this]() {control_tick();},
+      control_group_);
+  }
+
+  // Control thread, every 1 / command_rate_hz: the policy every
+  // policy_decimation_ ticks (first tick after Start included), then LowCmd.
+  void control_tick()
+  {
+    const auto now = SteadyClock::now();
+    std::lock_guard<std::mutex> lock(mutex_);
+    window_max_lock_wait_ms_ = std::max(
+      window_max_lock_wait_ms_,
+      std::chrono::duration<double, std::milli>(SteadyClock::now() - now).count());
+    const double period_ms = 1000.0 / command_rate_hz_;
+    if (last_tick_) {
+      const double dt_ms = std::chrono::duration<double, std::milli>(now - *last_tick_).count();
+      window_max_jitter_ms_ = std::max(window_max_jitter_ms_, std::abs(dt_ms - period_ms));
+      if (dt_ms > period_ms + kLateTickMs) {
+        ++late_ticks_;
+      }
+    }
+    last_tick_ = now;
+    ++ticks_;
+    if (policy_countdown_ <= 0) {
+      policy_step();
+      policy_countdown_ = policy_decimation_;
+    }
+    --policy_countdown_;
+    publish_command();
+    window_max_exec_ms_ = std::max(
+      window_max_exec_ms_,
+      std::chrono::duration<double, std::milli>(SteadyClock::now() - now).count());
   }
 
   rcl_interfaces::msg::SetParametersResult on_set_parameters(
@@ -694,6 +797,15 @@ private:
     rcl_interfaces::msg::SetParametersResult result;
     result.successful = false;
 
+    // Runs on the main thread, the only writer of the parameter members, so they
+    // are read here without the lock. Validation and the slow work (model load,
+    // observation builder) happen unlocked; only the final commit takes the lock.
+    // The control thread never enters RAMPING/RUNNING by itself (only Start does,
+    // on this thread), so a policy stopped here stays stopped until the commit.
+    const bool was_running = [this]() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return running();
+      }();
     auto action_scale = action_scale_;
     auto default_joint_pos = default_joint_pos_;
     auto observation_scales = observation_scales_;
@@ -710,6 +822,8 @@ private:
     double action_clip = action_clip_, data_timeout = data_timeout_;
     double policy_rate = policy_rate_hz_, command_rate = command_rate_hz_;
     double max_tilt = max_start_tilt_deg_, ramp = start_ramp_s_;
+    double switch_ang = switch_max_ang_vel_, switch_joint = switch_max_joint_vel_;
+    double switch_settle = switch_settle_s_;
     double home_vel = home_max_vel_, home_min = home_min_duration_;
     double cmd_vel_timeout = cmd_vel_timeout_;
     bool use_cmd_vel = use_cmd_vel_;
@@ -775,6 +889,12 @@ private:
           max_tilt = p.as_double();
         } else if (name == "start_ramp_s") {
           ramp = p.as_double();
+        } else if (name == "switch_max_ang_vel") {
+          switch_ang = p.as_double();
+        } else if (name == "switch_max_joint_vel") {
+          switch_joint = p.as_double();
+        } else if (name == "switch_settle_s") {
+          switch_settle = p.as_double();
         } else if (name == "home_max_vel") {
           home_vel = p.as_double();
         } else if (name == "home_min_duration_s") {
@@ -859,6 +979,10 @@ private:
         "max_target_delta >= 0; data_timeout_s, home_max_vel, cmd_vel_timeout_s > 0";
       return result;
     }
+    if (switch_ang <= 0.0 || switch_joint <= 0.0 || switch_settle < 0.0) {
+      result.reason = "switch_max_ang_vel, switch_max_joint_vel > 0; switch_settle_s >= 0";
+      return result;
+    }
     if (max_tilt <= 0.0 || max_tilt > 90.0) {
       result.reason = "max_start_tilt_deg must be in (0, 90]";
       return result;
@@ -867,10 +991,8 @@ private:
     if (!result.reason.empty()) {
       return result;
     }
-    if (policy_rate <= 0.0 || command_rate <= 0.0 || policy_rate > 1000.0 ||
-      command_rate > 2000.0)
-    {
-      result.reason = "policy_rate_hz must be in (0, 1000] and command_rate_hz in (0, 2000]";
+    result.reason = check_rates(policy_rate, command_rate);
+    if (!result.reason.empty()) {
       return result;
     }
     for (int k = 0; k < 3; ++k) {
@@ -879,7 +1001,7 @@ private:
         return result;
       }
     }
-    if (command_joints_changed && running()) {
+    if (command_joints_changed && was_running) {
       result.reason = "command_joints can only be changed while the policy is stopped";
       return result;
     }
@@ -892,9 +1014,16 @@ private:
     }
     std::unique_ptr<OnnxPolicy> policy;
     if (policy_path && *policy_path != policy_path_) {
-      if (running()) {
-        result.reason = "policy_path can only be changed while the policy is stopped";
-        return result;
+      if (was_running) {
+        // Early refusal before the slow model load; checked again at the commit.
+        const std::string blocker = [this]() {
+            std::lock_guard<std::mutex> lock(mutex_);
+            return switch_blocker();
+          }();
+        if (!blocker.empty()) {
+          result.reason = "policy switch refused: " + blocker;
+          return result;
+        }
       }
       policy = load_policy(*policy_path, result.reason);
       if (!policy) {
@@ -902,62 +1031,113 @@ private:
       }
     }
 
-    action_scale_ = std::move(action_scale);
-    home_pose_ = std::move(home_pose);
-    kp_ = std::move(kp);
-    kd_ = std::move(kd);
-    position_lower_ = std::move(lower);
-    position_upper_ = std::move(upper);
-    damping_kd_ = damping_kd;
-    max_target_delta_ = max_target_delta;
-    if (enable_lowcmd != enable_lowcmd_) {
+    const bool loaded_policy = policy != nullptr;
+    const bool rates_changed = policy_rate != policy_rate_hz_ || command_rate != command_rate_hz_;
+    // Logged after the commit: logging publishes to /rosout, kept out of the lock.
+    const bool lowcmd_changed = enable_lowcmd != enable_lowcmd_;
+    const bool remote_changed = use_remote != use_remote_ || remote_start != remote_start_ ||
+      remote_home != remote_home_;
+    // The replaced model and observation builder are destroyed after the lock is
+    // released (tearing down an ONNX Runtime session is not instantaneous).
+    std::unique_ptr<OnnxPolicy> old_policy;
+    std::unique_ptr<ObservationBuilder> old_obs_builder;
+    bool switched = false;
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      // The robot may have started moving during the model load.
+      if (policy && running()) {
+        const std::string blocker = switch_blocker();
+        if (!blocker.empty()) {
+          result.reason = "policy switch refused: " + blocker;
+          return result;
+        }
+        switched = true;
+      }
+      action_scale_ = std::move(action_scale);
+      home_pose_ = std::move(home_pose);
+      kp_ = std::move(kp);
+      kd_ = std::move(kd);
+      position_lower_ = std::move(lower);
+      position_upper_ = std::move(upper);
+      damping_kd_ = damping_kd;
+      max_target_delta_ = max_target_delta;
+      enable_lowcmd_ = enable_lowcmd;
+      custom_mode_ = custom_mode;
+      prepare_mode_ = prepare_mode;
+      cmd_ = cmd;
+      cmd_min_ = cmd_min;
+      cmd_max_ = cmd_max;
+      cmd_offset_ = cmd_offset;
+      offsets_when_standing_ = offsets_when_standing;
+      action_clip_ = action_clip;
+      data_timeout_ = data_timeout;
+      max_start_tilt_deg_ = max_tilt;
+      start_ramp_s_ = ramp;
+      switch_max_ang_vel_ = switch_ang;
+      switch_max_joint_vel_ = switch_joint;
+      switch_settle_s_ = switch_settle;
+      home_max_vel_ = home_vel;
+      home_min_duration_ = home_min;
+      use_cmd_vel_ = use_cmd_vel;
+      cmd_vel_timeout_ = cmd_vel_timeout;
+      use_remote_ = use_remote;
+      remote_start_ = remote_start;
+      remote_home_ = remote_home;
+      remote_deadzone_ = remote_deadzone;
+      remote_timeout_ = remote_timeout;
+      held_targets_ = std::move(held_targets);
+      pinned_names_ = std::move(pinned_names);
+      manual_pin_ = name_mask(pinned_names_);
+      detect_offline_ = detect_offline;
+      if (command_joints_changed) {
+        apply_command_joints(command_joints);
+      }
+      if (obs_builder) {
+        default_joint_pos_ = std::move(default_joint_pos);
+        observation_scales_ = std::move(observation_scales);
+        old_obs_builder = std::exchange(obs_builder_, std::move(obs_builder));
+      }
+      if (policy) {
+        old_policy = std::exchange(policy_, std::move(policy));
+        policy_path_ = *policy_path;
+        if (switched) {
+          // Live switch: restart the last-action observation and blend from the
+          // last target into the new policy, like Start.
+          std::fill(action_.begin(), action_.end(), 0.0f);
+          move_from_ = current_pose();
+          move_start_ = SteadyClock::now();
+          mode_ = start_ramp_s_ > 0.0 ? Mode::kRamping : Mode::kRunning;
+          step_ = 0;
+          policy_countdown_ = 0;  // the next control tick runs the new policy
+          still_since_.reset();
+        }
+      }
+      if (rates_changed) {
+        policy_rate_hz_ = policy_rate;
+        command_rate_hz_ = command_rate;
+        policy_decimation_ = decimation(policy_rate, command_rate);
+        policy_countdown_ = 0;
+        last_tick_.reset();
+      }
+    }  // Commit done: lock released.
+    if (lowcmd_changed) {
       RCLCPP_WARN(get_logger(), "LowCmd output %s", enable_lowcmd ? "ENABLED" : "disabled");
     }
-    enable_lowcmd_ = enable_lowcmd;
-    custom_mode_ = custom_mode;
-    prepare_mode_ = prepare_mode;
-    cmd_ = cmd;
-    cmd_min_ = cmd_min;
-    cmd_max_ = cmd_max;
-    cmd_offset_ = cmd_offset;
-    offsets_when_standing_ = offsets_when_standing;
-    action_clip_ = action_clip;
-    data_timeout_ = data_timeout;
-    max_start_tilt_deg_ = max_tilt;
-    start_ramp_s_ = ramp;
-    home_max_vel_ = home_vel;
-    home_min_duration_ = home_min;
-    use_cmd_vel_ = use_cmd_vel;
-    cmd_vel_timeout_ = cmd_vel_timeout;
-    if (use_remote != use_remote_ || remote_start != remote_start_ || remote_home != remote_home_) {
+    if (remote_changed) {
       RCLCPP_WARN(
         get_logger(), "Remote controller: velocity command %s, START button %s, BACK button %s",
         use_remote ? "ON" : "off", remote_start ? "ON" : "off", remote_home ? "ON" : "off");
     }
-    use_remote_ = use_remote;
-    remote_start_ = remote_start;
-    remote_home_ = remote_home;
-    remote_deadzone_ = remote_deadzone;
-    remote_timeout_ = remote_timeout;
-    held_targets_ = std::move(held_targets);
-    pinned_names_ = std::move(pinned_names);
-    manual_pin_ = name_mask(pinned_names_);
-    detect_offline_ = detect_offline;
     if (command_joints_changed) {
-      apply_command_joints(command_joints);
-      RCLCPP_WARN(get_logger(), "Now commanding %zu joints", command_joint_names_.size());
+      RCLCPP_WARN(get_logger(), "Now commanding %zu joints", command_joints.size());
     }
-    if (obs_builder) {
-      default_joint_pos_ = std::move(default_joint_pos);
-      observation_scales_ = std::move(observation_scales);
-      obs_builder_ = std::move(obs_builder);
+    if (loaded_policy) {
+      RCLCPP_WARN(
+        get_logger(), "%s policy %s", switched ? "Switched the running" : "Loaded",
+        policy_path_.c_str());
     }
-    if (policy) {
-      policy_ = std::move(policy);
-      policy_path_ = *policy_path;
-      RCLCPP_WARN(get_logger(), "Loaded policy %s", policy_path_.c_str());
-    }
-    if (policy_ && (policy || rebuild_obs || motor_params_changed ||
+    // policy_ is only replaced on this thread, so it can be read unlocked here.
+    if (policy_ && (loaded_policy || rebuild_obs || motor_params_changed ||
       std::find_if(params.begin(), params.end(), [](const rclcpp::Parameter & p) {
         return p.get_name() == "action_scale";
       }) != params.end()))
@@ -972,10 +1152,8 @@ private:
       models_dir_ = resolve_models_dir(models_dir_param_, policy_path_);
       scan_models();
     }
-    if (policy_rate != policy_rate_hz_ || command_rate != command_rate_hz_) {
-      policy_rate_hz_ = policy_rate;
-      command_rate_hz_ = command_rate;
-      create_timers();
+    if (rates_changed) {
+      create_control_timer();
     }
     result.successful = true;
     return result;
@@ -983,8 +1161,10 @@ private:
 
   // ---------------------------------------------------------------- inputs
 
+  // Control thread.
   void on_low_state(const LowState & msg)
   {
+    std::lock_guard<std::mutex> lock(mutex_);
     const auto & imu = msg.imu_state;
     state_.base_ang_vel = {imu.gyro[0], imu.gyro[1], imu.gyro[2]};
     state_.base_quat = quat_from_rpy(imu.rpy[0], imu.rpy[1], imu.rpy[2]);
@@ -1050,6 +1230,7 @@ private:
   // button already held when the first message arrives does not count.
   void on_remote(const RemoteControllerState & msg)
   {
+    std::lock_guard<std::mutex> lock(mutex_);
     remote_axes_ = {msg.lx, msg.ly, msg.rx, msg.ry};
     const bool buttons[kNumRemoteButtons] = {
       msg.a, msg.b, msg.x, msg.y, msg.lb, msg.rb, msg.lt, msg.rt, msg.ls, msg.rs, msg.back,
@@ -1166,6 +1347,67 @@ private:
     return c;
   }
 
+  // Why the requested command / the robot is not at rest ("" when it is).
+  std::string motion_blocker() const
+  {
+    const auto c = raw_command();
+    if (std::abs(c[0]) > 1e-3 || std::abs(c[1]) > 1e-3 || std::abs(c[2]) > 1e-3) {
+      return "velocity command not zero";
+    }
+    char buf[96];
+    const auto & w = state_.base_ang_vel;
+    const double ang = std::sqrt(w[0] * w[0] + w[1] * w[1] + w[2] * w[2]);
+    if (ang > switch_max_ang_vel_) {
+      std::snprintf(
+        buf, sizeof(buf), "body rotating (%.2f > %.2f rad/s)", ang, switch_max_ang_vel_);
+      return buf;
+    }
+    double joint = 0.0;
+    for (size_t idx : action_index_) {
+      joint = std::max(joint, std::abs(state_.joint_vel[idx]));
+    }
+    if (joint > switch_max_joint_vel_) {
+      std::snprintf(
+        buf, sizeof(buf), "legs moving (%.2f > %.2f rad/s)", joint, switch_max_joint_vel_);
+      return buf;
+    }
+    return "";
+  }
+
+  // Every policy step: (re)start or reset the standstill timer.
+  void update_standstill()
+  {
+    if (!motion_blocker().empty()) {
+      still_since_.reset();
+    } else if (!still_since_) {
+      still_since_ = SteadyClock::now();
+    }
+  }
+
+  // Why the running policy cannot be switched now ("" when it can).
+  std::string switch_blocker() const
+  {
+    if (mode_ == Mode::kRamping) {
+      return "ramping, wait until RUNNING";
+    }
+    if (mode_ != Mode::kRunning) {
+      return "policy not running";
+    }
+    if (!data_fresh()) {
+      return "no fresh IMU/JointState data";
+    }
+    const std::string motion = motion_blocker();
+    if (!motion.empty()) {
+      return motion;
+    }
+    if (!still_since_ || age(still_since_) < switch_settle_s_) {
+      char buf[64];
+      std::snprintf(buf, sizeof(buf), "settling (%.1f s at rest needed)", switch_settle_s_);
+      return buf;
+    }
+    return "";
+  }
+
   // -------------------------------------------------------------- services
 
   std::vector<double> current_pose() const
@@ -1227,6 +1469,8 @@ private:
       move_start_ = SteadyClock::now();
       mode_ = start_ramp_s_ > 0.0 ? Mode::kRamping : Mode::kRunning;
       step_ = 0;
+      policy_countdown_ = 0;  // first control tick runs the policy
+      still_since_.reset();
       message = "started";
       RCLCPP_INFO(get_logger(), "Policy started (tilt %.1f deg)", tilt_deg_);
       return true;
@@ -1294,7 +1538,11 @@ private:
 
   bool exit_custom_mode(std::string & message)
   {
-    if (running()) {
+    const bool is_running = [this]() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return running();
+      }();
+    if (is_running) {
       message = "stop the policy first";
       return false;
     }
@@ -1314,6 +1562,7 @@ private:
       mode_ = target_ ? Mode::kHolding : Mode::kIdle;
       return;
     }
+    update_standstill();
     state_.command = velocity_command();
     obs_state_ = state_;
     const auto pin = pinned_mask();
@@ -1408,7 +1657,24 @@ private:
     ++lowcmd_count_;
   }
 
+  // Main thread, 10 Hz: the JSON is built under the lock (a few tens of us, no
+  // I/O), the DDS publish happens after it is released.
   void publish_status()
+  {
+    std_msgs::msg::String msg;
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      msg.data = status_json();
+      // Timing maxima are per status window.
+      window_max_jitter_ms_ = 0.0;
+      window_max_exec_ms_ = 0.0;
+      window_max_lock_wait_ms_ = 0.0;
+    }
+    status_pub_->publish(msg);
+  }
+
+  // Requires mutex_.
+  std::string status_json() const
   {
     const auto c = velocity_command();
     const std::string path = json_safe(policy_path_);
@@ -1435,6 +1701,9 @@ private:
       enable_lowcmd_ ? "true" : "false", enable_lowcmd_ && data_fresh() ? "true" : "false",
       static_cast<unsigned long>(lowcmd_count_));
     json += extra;
+    const std::string blocker = switch_blocker();
+    json += std::string(",\"switch_ok\":") + (blocker.empty() ? "true" : "false") +
+      ",\"switch_reason\":\"" + json_safe(blocker) + "\"";
     json += ",\"command_joints\":" + json_list(command_joint_names_) +
       ",\"pinned_joints\":" + json_list(names_where(pinned_mask())) +
       ",\"offline_detected\":" + json_list(names_where(offline_now_)) +
@@ -1442,10 +1711,17 @@ private:
       remote_status() + ",\"models_dir\":\"" + json_safe(models_dir_) + "\",\"models\":" +
       json_list(models_) + ",\"models_error\":\"" + json_safe(models_error_) +
       "\",\"model_warnings\":\"" + json_safe(model_warnings_) + "\",\"rpc_result\":\"" +
-      rpc_result_ + "\",\"ankle_space\":\"" + ankle_space_ + "\"}";
-    std_msgs::msg::String msg;
-    msg.data = json;
-    status_pub_->publish(msg);
+      rpc_result_ + "\",\"ankle_space\":\"" + ankle_space_ + "\"";
+    char control[256];
+    std::snprintf(
+      control, sizeof(control),
+      ",\"control\":{\"period_ms\":%.3f,\"policy_decimation\":%d,\"max_jitter_ms\":%.3f,"
+      "\"max_exec_ms\":%.3f,\"max_lock_wait_ms\":%.3f,\"late_ticks\":%lu,"
+      "\"late_threshold_ms\":%.1f,\"ticks\":%lu}}",
+      1000.0 / command_rate_hz_, policy_decimation_, window_max_jitter_ms_, window_max_exec_ms_,
+      window_max_lock_wait_ms_, static_cast<unsigned long>(late_ticks_), kLateTickMs,
+      static_cast<unsigned long>(ticks_));
+    return json + control;
   }
 
   std::string remote_status() const
@@ -1509,6 +1785,9 @@ private:
   double remote_timeout_{0.5};
   double max_start_tilt_deg_{30.0};
   double start_ramp_s_{1.0};
+  double switch_max_ang_vel_{0.3};
+  double switch_max_joint_vel_{0.5};
+  double switch_settle_s_{0.5};
   std::vector<double> home_pose_;
   std::vector<std::string> command_joint_names_;
   std::vector<std::string> always_commanded_;
@@ -1540,6 +1819,7 @@ private:
   double inference_ms_{0.0};
   double tilt_deg_{180.0};
   Mode mode_{Mode::kIdle};
+  std::optional<SteadyClock::time_point> still_since_;  // at rest since (update_standstill)
   RobotState state_;
   RobotState obs_state_;  // state_ with pinned joints replaced
   std::vector<bool> is_action_;
@@ -1562,7 +1842,21 @@ private:
   int remote_events_{0};
   uint64_t lowcmd_count_{0};
 
+  // Control loop. mutex_ guards the state shared by the control thread
+  // (control_tick, on_low_state) and the main thread (everything else).
+  static constexpr double kLateTickMs = 1.0;  // a tick later than period + 1 ms is late
+  std::mutex mutex_;
+  int policy_decimation_{4};  // control ticks per policy step
+  int policy_countdown_{0};  // control ticks until the next policy step
+  std::optional<SteadyClock::time_point> last_tick_;
+  uint64_t ticks_{0};
+  uint64_t late_ticks_{0};
+  double window_max_jitter_ms_{0.0};  // max |tick period - nominal| since the last status
+  double window_max_exec_ms_{0.0};  // max tick duration (incl. lock wait) since the last status
+  double window_max_lock_wait_ms_{0.0};  // max wait for mutex_ in a tick since the last status
+
   // ROS interfaces.
+  rclcpp::CallbackGroup::SharedPtr control_group_;
   LowCmd low_cmd_msg_;
   rclcpp::Subscription<LowState>::SharedPtr low_state_sub_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
@@ -1579,8 +1873,7 @@ private:
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr custom_srv_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr prepare_srv_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_cb_;
-  rclcpp::TimerBase::SharedPtr policy_timer_;
-  rclcpp::TimerBase::SharedPtr command_timer_;
+  rclcpp::TimerBase::SharedPtr control_timer_;  // control_group_
   rclcpp::TimerBase::SharedPtr status_timer_;
   rclcpp::TimerBase::SharedPtr models_timer_;
 };
@@ -1590,7 +1883,21 @@ private:
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<t1_ppowalk::T1PpowalkPolicyNode>());
+  auto node = std::make_shared<t1_ppowalk::T1PpowalkPolicyNode>();
+
+  // The control group (LowState + control timer) gets its own executor and
+  // thread; the main executor serves the default group (parameter services,
+  // GUI services, remote / cmd_vel, status, model scan). See the file header.
+  rclcpp::executors::SingleThreadedExecutor control_executor;
+  control_executor.add_callback_group(
+    node->control_callback_group(), node->get_node_base_interface());
+  rclcpp::executors::SingleThreadedExecutor main_executor;
+  main_executor.add_node(node);
+
+  std::thread control_thread([&control_executor]() {control_executor.spin();});
+  main_executor.spin();  // returns on shutdown (Ctrl-C)
+  control_executor.cancel();
+  control_thread.join();
   rclcpp::shutdown();
   return 0;
 }
