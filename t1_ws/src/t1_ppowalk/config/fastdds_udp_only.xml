@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Fast DDS participant profile for t1_ppowalk_policy_node: UDPv4 only, no
+  shared-memory (SHM) transport. Loaded by the launch file through
+  FASTRTPS_DEFAULT_PROFILES_FILE (Fast DDS 2.x) / FASTDDS_DEFAULT_PROFILES_FILE (3.x).
+
+  Why: with SHM, when a short-lived participant appears or disappears (every
+  `ros2 param` / `ros2 topic` call, including tab completion, is one), Fast DDS's
+  discovery thread matches it while holding the participant's send mutex and
+  sleeps in SharedMemTransport::find_port() trying to open that process's SHM
+  port. Every writer of the participant waits on that mutex, so LowCmd
+  publish() blocked for ~330 ms (seen with gdb). Without SHM the node never
+  takes that path. Export the same profile in shells used for the ros2 CLI on
+  the robot to remove the trigger for the other processes too (README).
+
+  Ignored when ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST (Jazzy) or
+  ROS_LOCALHOST_ONLY=1: rmw_fastrtps then configures the transports itself.
+-->
+<profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
+  <transport_descriptors>
+    <transport_descriptor>
+      <transport_id>t1_ppowalk_udpv4</transport_id>
+      <type>UDPv4</type>
+    </transport_descriptor>
+  </transport_descriptors>
+  <participant profile_name="t1_ppowalk_udp_only" is_default_profile="true">
+    <rtps>
+      <userTransports>
+        <transport_id>t1_ppowalk_udpv4</transport_id>
+      </userTransports>
+      <useBuiltinTransports>false</useBuiltinTransports>
+    </rtps>
+  </participant>
+</profiles>

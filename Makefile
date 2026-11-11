@@ -43,6 +43,24 @@ testbag:
 	cd $(T1_PROJECT_PATH) && source install/setup.bash
 	ros2 launch particle_filter rosbag_localization.launch.py
 
+# T1 PPO walking policy (t1_ppowalk + web GUI on :8084). Every *.onnx in
+# T1_MODELS_DIR is offered in the GUI's model dropdown; no model is loaded at
+# startup unless T1_WALK_POLICY is given.
+T1_MODELS_DIR ?= $(HOME)/t1_ppowalk_models
+T1_WALK_POLICY ?=
+T1_WALK_ARGS ?=
+
+t1walk:
+	@echo "Building booster_interface (colcon_ws) and t1_ppowalk (t1_ws)..."
+	@cd $(PUMANOIDS_PROJECT_PATH) && colcon build --packages-select booster_interface
+	@cd $(PUMANOIDS_PROJECT_PATH) && source install/setup.bash && \
+		cd $(T1_PROJECT_PATH) && colcon build --packages-select t1_ppowalk t1_ppowalk_gui
+	@echo "GUI: http://<robot-ip>:8084"
+	@source $(PUMANOIDS_PROJECT_PATH)/install/setup.bash && \
+		source $(T1_PROJECT_PATH)/install/setup.bash && \
+		ros2 launch t1_ppowalk t1_ppowalk.launch.py models_dir:=$(T1_MODELS_DIR) \
+		$(if $(T1_WALK_POLICY),policy_path:=$(T1_WALK_POLICY)) $(T1_WALK_ARGS)
+
 demo:
 	@echo "BUILDING DEMO FOR BEIJING MASTERS GAMES..."
 	@sleep 1
