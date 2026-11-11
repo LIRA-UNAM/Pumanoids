@@ -61,6 +61,24 @@ t1walk:
 		ros2 launch t1_ppowalk t1_ppowalk.launch.py models_dir:=$(T1_MODELS_DIR) \
 		$(if $(T1_WALK_POLICY),policy_path:=$(T1_WALK_POLICY)) $(T1_WALK_ARGS)
 
+# K1 PPO walking policy (k1_ppowalk + web GUI on :8085), parallel-ankle model.
+# Every *.onnx in K1_MODELS_DIR is offered in the GUI's model dropdown; no model
+# is loaded at startup unless K1_WALK_POLICY is given.
+K1_MODELS_DIR ?= $(HOME)/k1_ppowalk_models
+K1_WALK_POLICY ?=
+K1_WALK_ARGS ?=
+
+k1walk:
+	@echo "Building booster_interface (colcon_ws) and k1_ppowalk (k1_ws)..."
+	@cd $(PUMANOIDS_PROJECT_PATH) && colcon build --packages-select booster_interface
+	@cd $(PUMANOIDS_PROJECT_PATH) && source install/setup.bash && \
+		cd $(K1_PROJECT_PATH) && colcon build --packages-select k1_ppowalk k1_ppowalk_gui
+	@echo "GUI: http://<robot-ip>:8085"
+	@source $(PUMANOIDS_PROJECT_PATH)/install/setup.bash && \
+		source $(K1_PROJECT_PATH)/install/setup.bash && \
+		ros2 launch k1_ppowalk k1_ppowalk.launch.py models_dir:=$(K1_MODELS_DIR) \
+		$(if $(K1_WALK_POLICY),policy_path:=$(K1_WALK_POLICY)) $(K1_WALK_ARGS)
+
 demo:
 	@echo "BUILDING DEMO FOR BEIJING MASTERS GAMES..."
 	@sleep 1
