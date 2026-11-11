@@ -1,0 +1,721 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+  --red: #dc2626;
+  --amber: #d97706;
+  --green: #16a34a;
+  --gray: #6b7280;
+}
+
+body {
+  margin: 0;
+  padding: 0 2rem 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  background: Canvas;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.3);
+}
+
+h1 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+h2 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+h2 small {
+  font-weight: normal;
+  opacity: 0.6;
+  font-size: 0.8rem;
+}
+
+h3 {
+  font-size: 0.9rem;
+  margin: 1rem 0 0.4rem;
+}
+
+.status {
+  display: block;
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin-top: 0.2rem;
+}
+
+button {
+  font: inherit;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(127, 127, 127, 0.5);
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+button.go {
+  background: var(--green);
+  border-color: var(--green);
+  color: white;
+}
+
+button.warn {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: white;
+}
+
+.conn-lost {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  margin: 0 -2rem;
+  padding: 0.6rem 2rem;
+  background: var(--red);
+  color: white;
+  font-weight: 700;
+}
+
+.state {
+  margin: 1rem 0 1.25rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border-left: 8px solid var(--state);
+  background: color-mix(in srgb, var(--state) 10%, transparent);
+}
+
+.state-offline,
+.state-disabled {
+  --state: var(--gray);
+}
+
+.state-damping {
+  --state: var(--amber);
+}
+
+.state-tracking {
+  --state: var(--green);
+}
+
+@keyframes blink {
+  50% {
+    background: color-mix(in srgb, var(--state) 25%, transparent);
+  }
+}
+
+.state-main {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.state-label {
+  opacity: 0.7;
+}
+
+.state-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--state);
+}
+
+.state-reason {
+  font-weight: 600;
+}
+
+.state-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.4rem 1rem;
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+}
+
+.state-grid span {
+  display: block;
+  opacity: 0.65;
+  font-size: 0.8rem;
+}
+
+.state-grid .path {
+  word-break: break-all;
+  font-weight: normal;
+  font-size: 0.8rem;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.hint {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  margin: 0.6rem 0 0;
+}
+
+@media (max-width: 860px) {
+  body {
+    padding: 0 1rem 1rem;
+  }
+}
+
+/* Parameter groups as tabs: one panel at a time, full width. */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.3);
+}
+
+.tab {
+  padding: 0.55rem 1.1rem;
+  border: 1px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-radius: 0.4rem 0.4rem 0 0;
+  background: transparent;
+  opacity: 0.7;
+}
+
+.tab:hover {
+  opacity: 1;
+}
+
+.tab[aria-selected="true"] {
+  font-weight: 700;
+  opacity: 1;
+  border-bottom-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.tab-command {
+  --accent: #0891b2;
+  --accent-bg: rgba(8, 145, 178, 0.08);
+}
+
+.tab-policy {
+  --accent: #2f6fed;
+  --accent-bg: rgba(47, 111, 237, 0.08);
+}
+
+.tab-joints {
+  --accent: #6d28d9;
+  --accent-bg: rgba(109, 40, 217, 0.07);
+}
+
+.tab-panels {
+  margin-top: 1rem;
+}
+
+.tab-panels > [hidden] {
+  display: none;
+}
+
+.panel {
+  border: 1px solid var(--accent-border);
+  border-top: 4px solid var(--accent);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background: var(--accent-bg);
+}
+
+.panel-policy {
+  --accent: #2f6fed;
+  --accent-border: rgba(47, 111, 237, 0.35);
+  --accent-bg: rgba(47, 111, 237, 0.06);
+}
+
+.panel-bridge {
+  --accent: #d97706;
+  --accent-border: rgba(217, 119, 6, 0.35);
+  --accent-bg: rgba(217, 119, 6, 0.06);
+}
+
+.panel-joints {
+  --accent: #6d28d9;
+  --accent-border: rgba(109, 40, 217, 0.35);
+  --accent-bg: rgba(109, 40, 217, 0.05);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.params {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.param-row {
+  display: grid;
+  grid-template-columns: 1fr 9rem;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.param-row label {
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+input {
+  font: inherit;
+  padding: 0.3rem 0.4rem;
+  border-radius: 0.3rem;
+  border: 1px solid rgba(127, 127, 127, 0.5);
+  min-width: 0;
+  transition: background-color 0.3s;
+}
+
+input[type="checkbox"] {
+  justify-self: start;
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+input.applied {
+  background-color: rgba(22, 163, 74, 0.25);
+}
+
+input.rejected {
+  background-color: rgba(220, 38, 38, 0.35);
+}
+
+.warning {
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.3rem;
+  background: rgba(217, 119, 6, 0.2);
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.85rem;
+}
+
+thead td {
+  font-weight: 600;
+  padding: 0.3rem;
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 0.15rem 0.3rem;
+  white-space: nowrap;
+}
+
+tbody tr:nth-child(odd) {
+  background: rgba(127, 127, 127, 0.07);
+}
+
+td input {
+  width: 6rem;
+}
+
+td.col-policy {
+  border-left: 3px solid rgba(47, 111, 237, 0.5);
+}
+
+td.col-bridge {
+  border-left: 3px solid rgba(217, 119, 6, 0.5);
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal[hidden],
+.conn-lost[hidden] {
+  display: none;
+}
+
+.modal-box {
+  max-width: 28rem;
+  padding: 1.25rem;
+  border-radius: 0.5rem;
+  background: Canvas;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* ---- motion recorder additions ---- */
+
+.state-idle,
+.state-holding {
+  --state: var(--gray);
+}
+
+.state-recording {
+  --state: var(--red);
+}
+
+.state-going_home,
+.state-approaching,
+.state-returning,
+.state-paused {
+  --state: var(--amber);
+}
+
+.state-playing {
+  --state: var(--green);
+}
+
+.panel-record {
+  --accent: #dc2626;
+  --accent-border: rgba(220, 38, 38, 0.35);
+  --accent-bg: rgba(220, 38, 38, 0.05);
+}
+
+.panel-play {
+  --accent: #16a34a;
+  --accent-border: rgba(22, 163, 74, 0.35);
+  --accent-bg: rgba(22, 163, 74, 0.05);
+}
+
+.progress {
+  height: 0.5rem;
+  margin-top: 0.6rem;
+  border-radius: 0.25rem;
+  background: rgba(127, 127, 127, 0.2);
+  overflow: hidden;
+}
+
+#progress-bar {
+  height: 100%;
+  width: 0;
+  background: var(--state);
+  transition: width 0.1s linear;
+}
+
+.controls.big {
+  margin-top: 0.9rem;
+}
+
+/* Top group: square buttons (height = width) and the model tile. */
+.controls.big {
+  --tile: 7.5rem;
+  align-items: stretch;
+}
+
+.controls.big button {
+  width: var(--tile);
+  aspect-ratio: 1 / 1;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  text-align: center;
+  line-height: 1.15;
+}
+
+.controls.big button .icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.model-tile,
+.motor-tile {
+  box-sizing: border-box;
+  width: 18rem;
+  max-width: 100%;
+  height: var(--tile);
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(127, 127, 127, 0.5);
+  border-radius: 0.4rem;
+  background: Canvas;
+}
+
+.model-tile label,
+.motor-tile .tile-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  opacity: 0.75;
+}
+
+/* Motor output tile: amber accent (the motor output colour), compact rows. */
+.motor-tile {
+  border-left: 4px solid var(--amber);
+}
+
+.motor-tile .param-row {
+  grid-template-columns: 1fr 5rem;
+  gap: 0.5rem;
+}
+
+.motor-tile .param-row label {
+  font-size: 0.8rem;
+}
+
+/* Policy tab: parameters in three columns. */
+.panel-policy .params {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 2rem;
+}
+
+@media (max-width: 1100px) {
+  .panel-policy .params {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .panel-policy .params {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.model-tile select {
+  width: 100%;
+}
+
+.model-tile small {
+  font-size: 0.75rem;
+  opacity: 0.75;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+button.rec {
+  color: white;
+  background: var(--red);
+  border-color: var(--red);
+}
+
+button.rec.recording {
+  animation: blink 1s step-start infinite;
+}
+
+select {
+  font: inherit;
+  padding: 0.3rem;
+  border-radius: 0.3rem;
+  min-width: 0;
+}
+
+.param-row:has(select),
+.param-row:has(.groups) {
+  grid-template-columns: 8rem 1fr;
+}
+
+.groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+}
+
+.tag {
+  margin-left: 0.3rem;
+  padding: 0 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  background: var(--red);
+}
+
+.groups label.unavailable {
+  opacity: 0.4;
+}
+
+.state-grid .wide {
+  grid-column: 1 / -1;
+}
+
+/* ---- ppowalk additions ---- */
+
+.state-homing,
+.state-ramping {
+  --state: var(--amber);
+}
+
+.state-running {
+  --state: var(--green);
+}
+
+.upright {
+  flex-shrink: 0;
+  min-width: 11rem;
+  padding: 0.6rem 1rem;
+  border-radius: 0.75rem;
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.3rem;
+  color: white;
+}
+
+.upright small {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.upright-ok {
+  background: var(--green);
+}
+
+.upright-bad {
+  background: var(--red);
+}
+
+.upright-unknown {
+  background: var(--gray);
+}
+
+.panel-command {
+  --accent: #0891b2;
+  --accent-border: rgba(8, 145, 178, 0.35);
+  --accent-bg: rgba(8, 145, 178, 0.06);
+}
+
+.joysticks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  align-items: flex-start;
+  gap: 1rem;
+  margin: 0.75rem 0;
+}
+
+.joystick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.joystick small {
+  opacity: 0.7;
+}
+
+/* JS sets --u (right) and --v (up) in [-1, 1]; --reach must match makePad(). */
+.pad {
+  --pad-size: min(180px, 40vw);
+  --knob-size: calc(var(--pad-size) * 0.32);
+  --reach: calc((var(--pad-size) - var(--knob-size)) / 2 - 4px);
+  --u: 0;
+  --v: 0;
+  position: relative;
+  box-sizing: border-box;
+  width: var(--pad-size);
+  height: var(--pad-size);
+  border: 2px solid var(--accent-border);
+  border-radius: 50%;
+  background:
+    linear-gradient(var(--accent-border), var(--accent-border)) center / 1px 100% no-repeat,
+    linear-gradient(var(--accent-border), var(--accent-border)) center / 100% 1px no-repeat,
+    var(--accent-bg);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.pad.track {
+  height: calc(var(--knob-size) + 12px);
+  border-radius: calc(var(--knob-size) / 2 + 6px);
+  background:
+    linear-gradient(var(--accent-border), var(--accent-border)) center / 1px 100% no-repeat,
+    var(--accent-bg);
+}
+
+.knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--knob-size);
+  height: var(--knob-size);
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transform: translate(calc(-50% + var(--u) * var(--reach)), calc(-50% - var(--v) * var(--reach)));
+  transition: transform 150ms ease-out;
+  pointer-events: none;
+}
+
+.pad.dragging {
+  cursor: grabbing;
+}
+
+.pad.dragging .knob {
+  transition: none;
+}
+
+.pad.disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.hint.blocked {
+  color: var(--amber);
+}
+
+.pad-readout {
+  font-variant-numeric: tabular-nums;
+}
+
+td.col-flag,
+thead td.col-flag {
+  text-align: center;
+  border-left: 3px solid rgba(8, 145, 178, 0.5);
+}
+
+td.col-flag input {
+  width: auto;
+}
+
+.source-row .groups label {
+  white-space: nowrap;
+}
+
+.remote-grid {
+  margin: 0.25rem 0 0.5rem;
+}
+
+/* Let the panel shrink below the joint table's width (it scrolls inside
+   .table-wrap) so narrow screens get no horizontal page scroll. */
+.tab-panels > * {
+  min-width: 0;
+}
