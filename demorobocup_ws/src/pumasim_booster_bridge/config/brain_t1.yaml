@@ -1,0 +1,22 @@
+brain_node:
+  ros__parameters:
+    game:
+      field_type: "adult_size"
+    robot:
+      robot_height: 0.665
+      odom_factor: 1.0
+      vx_factor: 1.0
+      yaw_offset: 0.0
+      vx_limit: 1.0
+      vy_limit: 0.5
+      vtheta_limit: 1.0
+    strategy:
+      enable_auto_visual_kick: false
+      enable_shoot: false
+    vision:
+      image_topic: "/boostercamera/head/rgb"
+      depth_image_topic: "/boostercamera/head/depth"
+      cam_pixel_width: 640.0
+      cam_pixel_height: 480.0
+      cam_fov_x: 62.0
+      cam_fov_y: 48.0

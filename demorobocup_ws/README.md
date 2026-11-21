@@ -1,5 +1,9 @@
 # Booster RoboCup Demo
 
+For simulation, the [PumaSim bridge guide](src/pumasim_booster_bridge/README.md)
+explains how to start the simulator and the Booster adapter in separate
+processes, inspect localization, and launch the demo for one or more robots.
+
 ## NOTICE
 This branch supports T1 and K1. The branch supporting T2 is [support_T2](https://github.com/BoosterRobotics/robocup_demo/tree/sandbox/support_T2).
 
