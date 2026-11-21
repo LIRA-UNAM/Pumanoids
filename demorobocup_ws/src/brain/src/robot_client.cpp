@@ -1,6 +1,8 @@
 #include <cmath>
 #include <cctype>
+#ifdef BRAIN_ENABLE_BOOSTER_INTERNAL_SDK
 #include <booster_internal/robot/b1/b1_loco_internal_api.hpp>
+#endif
 #include "brain.h"
 #include "robot_client.h"
 #include "booster_interface/message_utils.hpp"
@@ -54,9 +56,11 @@ int RobotClient::moveHead(double pitch, double yaw)
     yaw = cap(yaw, brain->config->headYawLimitLeft, brain->config->headYawLimitRight);
     pitch = max(pitch, brain->config->headPitchLimitUp);
 
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->setTimeNow();
     auto level = (fabs(pitch > 2.0) || fabs(yaw > 2.0)) ? rerun::TextLogLevel::Error : rerun::TextLogLevel::Info;
     brain->log->log("debug/move_head", rerun::TextLog(format("pitch: %.1f, yaw: %.1f", pitch, yaw)).with_level(level));
+#endif
 
     return call(booster_interface::CreateRotateHeadMsg(pitch, yaw));
 }
@@ -80,11 +84,13 @@ int RobotClient::standUp()
     body["version"] = getUpVersion;
     msg.body = body.dump();
 
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(
         "RobotClient/standUp",
         rerun::TextLog(
             "Sending get-up request: version=" + brain->config->recoveryGetUpVersion +
             ", body=" + msg.body));
+#endif
     return call(msg);
 }
 
@@ -104,12 +110,17 @@ int RobotClient::kickBall(double kick_speed, double kick_dir, bool cancel)
 
 int RobotClient::walkMode()
 {
+#ifdef BRAIN_ENABLE_BOOSTER_INTERNAL_SDK
     booster_interface::msg::BoosterApiReqMsg msg;
     msg.api_id = static_cast<int64_t>(booster_internal::robot::b1::LocoInternalApiId::kEnableRobocupWalkMode);
     nlohmann::json body;
     msg.body = body.dump();
 
     return call(msg);
+#else
+    RCLCPP_ERROR(brain->get_logger(), "RobotClient::walkMode requires private booster_internal SDK support (disabled in this build).");
+    return -1;
+#endif
 }
 
 int RobotClient::fancyKickBall(double kick_speed, double kick_dir, bool cancel)
@@ -178,9 +189,11 @@ int RobotClient::waveHand(bool doWaveHand)
 
 int RobotClient::setVelocity(double x, double y, double theta, bool applyMinX, bool applyMinY, bool applyMinTheta)
 {
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->setTimeNow();
     brain->log->log("RobotClient/setVelocity_in",
                     rerun::TextLog(format("vx: %.2f  vy: %.2f  vtheta: %.2f", x, y, theta)));
+#endif
 
     // rerun::Collection<rerun::Vec2D> vxLine = {{0, 0}, {x, 0}};
     // rerun::Collection<rerun::Vec2D> vyLine = {{0, 0}, {0, -y}};
@@ -209,6 +222,7 @@ int RobotClient::setVelocity(double x, double y, double theta, bool applyMinX, b
     // brain->log->log("RobotClient/velocity_out/y", rerun::Scalar(y));
     // brain->log->log("RobotClient/velocity_out/theta", rerun::Scalar(theta));
     
+#ifdef BRAIN_ENABLE_RERUN
     // log simulated path based on velocity
     vector<Pose2D> path = {{0, 0, 0}}; // 坐标系是以机器人的位置为 0,0, linear 速度方向为 theta = 0 的坐标系
     double v = norm(x, y);
@@ -260,12 +274,15 @@ int RobotClient::setVelocity(double x, double y, double theta, bool applyMinX, b
                 .with_draw_order(40)
         );
     }
+#endif
     // prtWarn(format("path_f size: %d", path_f.size()));
     _vx = x; _vy = y; _vtheta = theta; // remember last command. 可以近似作为当前机器人的速度使用. 
     _lastCmdTime = brain->get_clock()->now();
     if (fabs(_vx) > 1e-3 || fabs(_vy) > 1e-3 || fabs(_vtheta) > 1e-3) _lastNonZeroCmdTime = brain->get_clock()->now();
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log("RobotClient/setVelocity_out",
         rerun::TextLog(format("vx: %.2f  vy: %.2f  vtheta: %.2f", x, y, theta)));
+#endif
     return call(booster_interface::CreateMoveMsg(x, y, theta));
 }
 
@@ -354,6 +371,7 @@ int RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double l
         else if (etc < 5000) color = 0x00FF00FF;
         else color = 0x00FF00FF;
 
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->setTimeNow();
         brain->log->log(
             "tick/time_to_collide",
@@ -363,6 +381,7 @@ int RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double l
                 .with_draw_order(10)
                 .with_labels({format("etc:  %.0fms", etc)})
         );
+#endif
         if (etc < min(eta, 3000.)) {
             std::srand(std::time(0));
             vx = (std::rand() / (RAND_MAX / 0.02)) - 0.01; // step on spot, don't full stop
@@ -384,10 +403,12 @@ int RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double l
                 vy_temp = 0.4 * sin(theta1);
                 if (msecsToCollide(vx_temp, vy_temp, 0) > 3000) break;
             }
+#ifdef BRAIN_ENABLE_RERUN
             brain->log->log("debug/avoidObstacle", rerun::TextLog(format(
                 "theta1 = %.2f",
                 theta1
             )));
+#endif
             target_temp_r.x = 1 * cos(theta1);
             target_temp_r.y = 1 * sin(theta1);
             timeEndTempTarget = brain->get_clock()->now() + rclcpp::Duration(3.5, 0.0);
@@ -709,19 +730,23 @@ double RobotClient::msecsToCollide(double vx, double vy, double vtheta, double m
         auto pose = robots[i].posToField;
         Point2D p = {pose.x, pose.y};
         double distToPath = pointMinDistToLine(p, path);
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("debug/msecsToCollide", rerun::TextLog(format(
             "i = %d, rbt at (%.2f, %.2f), obstacle at (%.2f, %.2f), distToPath = %.2f",
             i, x0, y0, p.x, p.y, distToPath
         )));
+#endif
         if (distToPath < SAFE_DIST) {
             Line line = {x0, y0, pose.x, pose.y};
             double angle = angleBetweenLines(line, path);
             double l = norm(pose.x - x0, pose.y - y0);
             double d = l*cos(angle) - sqrt(SAFE_DIST*SAFE_DIST - l*l*sin(angle)*sin(angle));
+#ifdef BRAIN_ENABLE_RERUN
             brain->log->log("debug/msecsToCollide", rerun::TextLog(format(
                 "angle: %.2f, l: %.2f, d: %.2f",
                 angle, l, d
             )));
+#endif
             if (d < minDist) minDist = d;
         }
     }

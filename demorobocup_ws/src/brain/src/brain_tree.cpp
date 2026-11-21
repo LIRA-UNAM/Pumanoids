@@ -336,9 +336,14 @@ NodeStatus CamTrackBall::tick()
 
     auto log = [=](string msg) {
         brain->log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("debug/CamTrackBall", rerun::TextLog(msg));
+#else
+        (void)msg;
+#endif
     };
     auto logTrackingBox = [=](int color, string label) {
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->setTimeNow();
         vector<rerun::Vec2D> mins;
         vector<rerun::Vec2D> sizes;
@@ -349,8 +354,11 @@ NodeStatus CamTrackBall::tick()
             rerun::Boxes2D::from_mins_and_sizes(mins, sizes)
                 .with_labels({label})
                 .with_colors(color)
-        );   
-
+        );
+#else
+        (void)color;
+        (void)label;
+#endif
     };
 
     bool iSeeBall = brain->data->ballDetected;
@@ -1125,7 +1133,11 @@ NodeStatus GoToGoalBlockingPosition::tick() {
 NodeStatus Assist::tick() {
     auto log = [=](string msg) {
         brain->log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("debug/Assist", rerun::TextLog(msg));
+#else
+        (void)msg;
+#endif
     };
     log("ticked");
 
@@ -1489,6 +1501,7 @@ NodeStatus CalcKickDir::tick()
     brain->data->kickDir = kick_geometry::normalizeAngle(nextKickDir);
 
     brain->log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(
         "field/kick_dir",
         rerun::Arrows2D::from_vectors({{10 * cos(brain->data->kickDir), -10 * sin(brain->data->kickDir)}})
@@ -1497,6 +1510,7 @@ NodeStatus CalcKickDir::tick()
             .with_radii(0.01)
             .with_draw_order(31)
     );
+#endif
 
     return NodeStatus::SUCCESS;
 }
@@ -1504,7 +1518,11 @@ NodeStatus CalcKickDir::tick()
 NodeStatus StrikerDecide::tick() {
     auto log = [=](string msg) {
         brain->log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("debug/striker_decide", rerun::TextLog(msg));
+#else
+        (void)msg;
+#endif
     };
     // 读取和处理参数
     bool enableBypass, enableShoot, enableDirectionalKick, kickAOUseShoot, enablePowerShoot, usePowerShootForKickoff;
@@ -2073,7 +2091,11 @@ NodeStatus Kick::onRunning()
 {
     auto log = [=](string msg) {
         brain->log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("debug/Kick", rerun::TextLog(msg));
+#else
+        (void)msg;
+#endif
     };
     bool enableAbort;
     brain->get_parameter("strategy.abort_kick_when_ball_moved", enableAbort);
@@ -2217,7 +2239,11 @@ NodeStatus RLVisionKick::onRunning()
 {
     auto logExit = [=](const string &msg) {
         brain->log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("debug/RLVisionKick", rerun::TextLog(msg));
+#else
+        (void)msg;
+#endif
         std::cout << "[RLVisionKick] " << msg << std::endl;
     };
 
@@ -2418,7 +2444,9 @@ void RLVisionKick::onHalted()
 {
     const string haltMsg = "halted by behavior tree, force exit visual kick";
     brain->log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log("debug/RLVisionKick", rerun::TextLog(haltMsg));
+#endif
     std::cout << "[RLVisionKick] " << haltMsg << std::endl;
     brain->data->tmImInVisualKick = false;
     brain->tree->setEntry<bool>("goalie_block_kick_active", false);
@@ -2696,11 +2724,18 @@ NodeStatus TurnOnSpot::onRunning()
 
 NodeStatus SelfLocate::tick()
 {
+    if (brain->config->useMujocoLocalization)
+        return NodeStatus::SUCCESS;
+
     // ... (保留原文件 SelfLocate::tick 的完整实现) ...
     // 为确保完整性，这里列出 SelfLocate::tick
     auto log = [=](string msg) {
         brain->log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("debug/SelfLocate", rerun::TextLog(msg));
+#else
+        (void)msg;
+#endif
     };
     double interval = getInput<double>("msecs_interval").value();
     if (brain->msecsSince(brain->data->lastSuccessfulLocalizeTime) < interval) return NodeStatus::SUCCESS;
@@ -2794,6 +2829,7 @@ NodeStatus SelfLocate::tick()
     }
     if (res.success) {
         
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log(
             "field/recal",
             rerun::Arrows2D::from_vectors({{res.pose.x - brain->data->robotPoseToField.x, -res.pose.y + brain->data->robotPoseToField.y}})
@@ -2803,6 +2839,7 @@ NodeStatus SelfLocate::tick()
             .with_draw_order(10)
             .with_labels({"pf"})
         );
+#endif
     }
     log(
         format(
@@ -2838,9 +2875,17 @@ NodeStatus SelfLocate::tick()
 // SelfLocateEnterField: 自动检测左右入场位置
 NodeStatus SelfLocateEnterField::tick()
 {
+    if (brain->config->useMujocoLocalization)
+        return NodeStatus::SUCCESS;
+
     auto log = [=](string msg, bool success) {
         brain->log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("debug/SelfLocateEnterField", rerun::TextLog(msg).with_level(success? rerun::TextLogLevel::Info : rerun::TextLogLevel::Error));
+#else
+        (void)msg;
+        (void)success;
+#endif
     };
     double interval = getInput<double>("msecs_interval").value();
     if (brain->msecsSince(brain->data->lastSuccessfulLocalizeTime) < interval) return NodeStatus::SUCCESS;
@@ -2905,6 +2950,7 @@ NodeStatus SelfLocateEnterField::tick()
             res.success
         );
 
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(
         "field/recal_enter_field", 
         rerun::Arrows2D::from_vectors({{res.pose.x - brain->data->robotPoseToField.x, -res.pose.y + brain->data->robotPoseToField.y}})
@@ -2914,6 +2960,7 @@ NodeStatus SelfLocateEnterField::tick()
             .with_draw_order(10)
             .with_labels({"pfe"})
     );
+#endif
 
     if (!res.success) return NodeStatus::SUCCESS; // 不阻塞后面的节点
 
@@ -2930,9 +2977,11 @@ NodeStatus SelfLocateEnterField::tick()
 bool SelfLocateLocal::_singlePenalty() {
     auto penaltyPoints = brain->data->getMarkingsByType({"PenaltyPoint"});
     if (penaltyPoints.size() != 1) {
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("SelfLocateLocal/SinglePenalty",
             rerun::TextLog(format("Failed, penaltyPoints.size() = %d", penaltyPoints.size()))
         );
+#endif
         return false;
     }
 
@@ -2946,7 +2995,9 @@ bool SelfLocateLocal::_singlePenalty() {
 
     auto pp = penaltyPoints[0]; // 观察到的 penalty point
     if (pp.range > 5.0) {
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("SelfLocateLocal/SinglePenalty", rerun::TextLog(format("Failed, Penalty point is too far (%.2f)", pp.range)));
+#endif
         return false;
     }
 
@@ -2962,9 +3013,11 @@ bool SelfLocateLocal::_singlePenalty() {
     if (disto < dists && disto < maxDrift)  ppt = ppo;
     else if (dists < disto && dists < maxDrift) ppt = pps;
     else {
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("SelfLocateLocal/SinglePenalty",
             rerun::TextLog(format("Failed: disto= %.2f  dists=%.2f maxDrift=%.2f", disto, dists, maxDrift))
         );
+#endif
         return false;
     }
 
@@ -2976,23 +3029,30 @@ bool SelfLocateLocal::_singlePenalty() {
     // validate the hypo with other 
     auto allMarkers = brain->data->getMarkersForLocator();
     if (allMarkers.size() < 3) {
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("SelfLocateLocal/SinglePenalty",
             rerun::TextLog("Failed. Not enough markers for validation.")
         );
+#endif
         return false;        
     }
     double residual = brain->locator->residual(allMarkers, hypoPose) / allMarkers.size();
     if (residual > brain->locator->residualTolerance) { // validation failed. 可能看到的 penalty mark 为误识别
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("SelfLocateLocal/SinglePenalty",
             rerun::TextLog("Failed, validation failed. Possible misdetection.")
         );
+#endif
         return false;
     }
 
     // else everything is ok, recalibrate with this hypo pose
     brain->calibrateOdom(hypoPose.x, hypoPose.y, hypoPose.theta);
     brain->data->lastSuccessfulLocalizeTime = brain->get_clock()->now();
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log("SelfLocateLocal/SinglePenalty", rerun::TextLog(format("Success. Residual = %.2f", residual)));
+#endif
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(
         "field/recal",
         rerun::Arrows2D::from_vectors({{hypoPose.x - brain->data->robotPoseToField.x, -hypoPose.y + brain->data->robotPoseToField.y}})
@@ -3002,15 +3062,18 @@ bool SelfLocateLocal::_singlePenalty() {
             .with_draw_order(10)
             .with_labels({"1p"})
     );
+#endif
     return true;
 }
 
 bool SelfLocateLocal::_doubleX() {
     auto points = brain->data->getMarkingsByType({"XCross"});
     if (points.size() != 2) {
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("SelfLocateLocal/DoubleX",
             rerun::TextLog(format("Failed, points.size() = %d", points.size()))
         );
+#endif
         return false;
     }
 
@@ -3021,6 +3084,7 @@ bool SelfLocateLocal::_doubleX() {
         || fabs(fabs(p0.posToField.y - p1.posToField.y) - brain->config->fieldDimensions.circleRadius * 2.0) > 0.5 // 距离不对
         || p0.range > 5.0 || p1.range > 5.0 // 太远
     ) {
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("SelfLocateLocal/DoubleX",
             rerun::TextLog(format("Failed, did not pass feature validation. dy = %.2f, dist = %.2f, range = [%.2f, %.2f]",
                 p0.posToField.y - p1.posToField.y,
@@ -3028,6 +3092,7 @@ bool SelfLocateLocal::_doubleX() {
                 p0.range, p1.range
         ))
         );
+#endif
         return false;
     }
 
@@ -3037,9 +3102,11 @@ bool SelfLocateLocal::_doubleX() {
 
     double maxDrift = 2.0;
     if (norm(xc, yc) > maxDrift) {
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("SelfLocateLocal/DoubleX",
             rerun::TextLog(format("Failed, dist = %.2f > maxDrift(%.2f)", norm(xc, yc), maxDrift))
         );
+#endif
         return false; 
     }
     // 到此为止, 一切看起来 ok 利用这个点计算一个假设的新 Pose
@@ -3051,23 +3118,30 @@ bool SelfLocateLocal::_doubleX() {
     // validate the hypo with other markings
     auto allMarkers = brain->data->getMarkersForLocator();
     if (allMarkers.size() < 3) {
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("SelfLocateLocal/DoubleX",
             rerun::TextLog("Failed. Not enough markers for validation.")
         );
+#endif
         return false;        
     }
     double residual = brain->locator->residual(allMarkers, hypoPose) / allMarkers.size();
     if (residual > brain->locator->residualTolerance) { // validation failed. 可能看到的 penalty mark 为误识别
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("SelfLocateLocal/DoubleX",
             rerun::TextLog("Failed, validation failed. Possible misdetection.")
         );
+#endif
         return false;
     }
 
     // else everything is ok, recalibrate with this hypo pose
     brain->calibrateOdom(hypoPose.x, hypoPose.y, hypoPose.theta);
     brain->data->lastSuccessfulLocalizeTime = brain->get_clock()->now();
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log("SelfLocateLocal/DoubleX", rerun::TextLog(format("Success. Residual = %.2f", residual)));
+#endif
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(
         "field/recal",
         rerun::Arrows2D::from_vectors({{hypoPose.x - brain->data->robotPoseToField.x, -hypoPose.y + brain->data->robotPoseToField.y}})
@@ -3077,11 +3151,15 @@ bool SelfLocateLocal::_doubleX() {
             .with_draw_order(10)
             .with_labels({"2x"})
     );
+#endif
     return true;
 }
 
 NodeStatus SelfLocateLocal::tick()
 {
+    if (brain->config->useMujocoLocalization)
+        return NodeStatus::SUCCESS;
+
     double interval = getInput<double>("msecs_interval").value();
     if (brain->msecsSince(brain->data->lastSuccessfulLocalizeTime) < interval) return NodeStatus::SUCCESS;
 
@@ -3095,6 +3173,9 @@ NodeStatus SelfLocateLocal::tick()
 
 NodeStatus SelfLocate1P::tick()
 {
+    if (brain->config->useMujocoLocalization)
+        return NodeStatus::SUCCESS;
+
     double interval = getInput<double>("msecs_interval").value();
     double maxDist = getInput<double>("max_dist").value();
     if (brain->client->isStandingStill(2000)) maxDist *= 1.5; // 静态下, 允许更大的距离
@@ -3108,30 +3189,38 @@ NodeStatus SelfLocate1P::tick()
 
     auto msecs = brain->msecsSince(brain->data->lastSuccessfulLocalizeTime);
     if (msecs < interval){
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF, rerun::TextLog(format("Failed, msecs(%.1f) < interval(%.1f)", msecs, interval)));
+#endif
         return NodeStatus::SUCCESS;
     }
 
     auto penaltyPoints = brain->data->getMarkingsByType({"PenaltyPoint"});
     if (penaltyPoints.size() != 1) {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF,
             rerun::TextLog(format("Failed, penaltyCnt(%d) != 1", penaltyPoints.size()))
         );
+#endif
         return NodeStatus::SUCCESS;
     }
 
     auto pp = penaltyPoints[0];
     if (pp.range > maxDist) {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF,
             rerun::TextLog(format("Failed, penalty Dist(%.2f) > maxDist(%.2f)", pp.range, maxDist))
         );
+#endif
         return NodeStatus::SUCCESS;
     }
 
     if (!brain->isBoundingBoxInCenter(pp.boundingBox)) {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF,
             rerun::TextLog(format("Failed, boundingbox is not in the center area"))
         );
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -3153,9 +3242,11 @@ NodeStatus SelfLocate1P::tick()
         dy = pps.y - pp.posToField.y;
     }
     else {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF,
             rerun::TextLog(format("Failed: disto= %.2f dists=%.2f maxDrift=%.2f", disto, dists, maxDrift))
         );
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -3169,16 +3260,21 @@ NodeStatus SelfLocate1P::tick()
     if (allMarkers.size() > 0) {
         double residual = brain->locator->residual(allMarkers, hypoPose) / allMarkers.size();
         if (residual > brain->locator->residualTolerance) { // validation failed. 可能看到的 penalty mark 为误识别
+#ifdef BRAIN_ENABLE_RERUN
             log->log(logPathF,
                 rerun::TextLog(format("Failed, validation residual(%.2f) > tolerance(%.2f)", residual, brain->locator->residualTolerance))
             );
+#endif
             return NodeStatus::SUCCESS;
         }
     }
 
     // else everything is ok, recalibrate with this hypo pose
     double drift = norm(dx, dy);
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(logPathS, rerun::TextLog(format("Success. Dist = %.2f", drift)));
+#endif
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(
         "field/recal/1p/success",
         rerun::Arrows2D::from_vectors({{hypoPose.x - brain->data->robotPoseToField.x, -hypoPose.y + brain->data->robotPoseToField.y}})
@@ -3188,6 +3284,7 @@ NodeStatus SelfLocate1P::tick()
             .with_draw_order(10)
             .with_labels({"1p"})
     );
+#endif
     brain->calibrateOdom(hypoPose.x, hypoPose.y, hypoPose.theta);
     brain->data->lastSuccessfulLocalizeTime = brain->get_clock()->now();
     return NodeStatus::SUCCESS;
@@ -3195,6 +3292,9 @@ NodeStatus SelfLocate1P::tick()
 
 NodeStatus SelfLocate1M::tick()
 {
+    if (brain->config->useMujocoLocalization)
+        return NodeStatus::SUCCESS;
+
     double interval = getInput<double>("msecs_interval").value();
     double maxDist = getInput<double>("max_dist").value();
     if (brain->client->isStandingStill(2000)) maxDist *= 1.5; // 静态下, 允许更大的距离
@@ -3209,7 +3309,9 @@ NodeStatus SelfLocate1M::tick()
     // 避免过于频繁定位
     auto msecs = brain->msecsSince(brain->data->lastSuccessfulLocalizeTime);
     if (msecs < interval){
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF, rerun::TextLog(format("Failed, msecs(%.1f) < interval(%.1f)", msecs, interval)));
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -3236,24 +3338,30 @@ NodeStatus SelfLocate1M::tick()
         markerIndex < 0 || markerIndex >= markings.size()
         || marker.id < 0 || marker.id >= brain->config->mapMarkings.size()
     ) {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF, rerun::TextLog("Failed, No markings Found. Or marker id invalid."));
+#endif
         return NodeStatus::SUCCESS;
     }
     mapMarker = brain->config->mapMarkings[marker.id];
 
     // 检查距离, 太远不用. (因为远了测距不准)
     if (marker.range > maxDist) {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF,
             rerun::TextLog(format("Failed, min marker Dist(%.2f) > maxDist(%.2f)", marker.range, maxDist))
         );
+#endif
         return NodeStatus::SUCCESS;
     }
 
     // 检查视野中的位置, 太偏的不用. (因为可能有扭曲, 导致测距有问题)
     if (!brain->isBoundingBoxInCenter(marker.boundingBox)) {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF,
             rerun::TextLog(format("Failed, boundingbox is not in the center area"))
         );
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -3264,9 +3372,11 @@ NodeStatus SelfLocate1M::tick()
     // 偏量太大, 不用. 可能是误识别导致的.
     double drift = norm(dx, dy);
     if (drift > maxDrift) {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF,
             rerun::TextLog(format("Failed, drift(%.2f) > maxDrift(%.2f)", drift, maxDrift))
         );
+#endif
         return NodeStatus::SUCCESS;
     }
     
@@ -3280,15 +3390,20 @@ NodeStatus SelfLocate1M::tick()
     if (allMarkers.size() > 0) {
         double residual = brain->locator->residual(allMarkers, hypoPose) / allMarkers.size();
         if (residual > brain->locator->residualTolerance) { // validation failed. 可能看到的 penalty mark 为误识别
+#ifdef BRAIN_ENABLE_RERUN
             log->log(logPathF,
                 rerun::TextLog(format("Failed, validation residual(%.2f) > tolerance(%.2f)", residual, brain->locator->residualTolerance))
             );
+#endif
             return NodeStatus::SUCCESS;
         }
     }
 
     // else everything is ok, recalibrate with this hypo pose
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(logPathS, rerun::TextLog(format("Success. Drift = %.2f", drift)));
+#endif
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(
         "field/recal/1m/success",
         rerun::Arrows2D::from_vectors({{hypoPose.x - brain->data->robotPoseToField.x, -hypoPose.y + brain->data->robotPoseToField.y}})
@@ -3298,6 +3413,7 @@ NodeStatus SelfLocate1M::tick()
             .with_draw_order(10)
             .with_labels({marker.name})
     );
+#endif
     brain->calibrateOdom(hypoPose.x, hypoPose.y, hypoPose.theta);
     brain->data->lastSuccessfulLocalizeTime = brain->get_clock()->now();
     return NodeStatus::SUCCESS;
@@ -3305,6 +3421,9 @@ NodeStatus SelfLocate1M::tick()
 
 NodeStatus SelfLocate2X::tick()
 {
+    if (brain->config->useMujocoLocalization)
+        return NodeStatus::SUCCESS;
+
     double interval = getInput<double>("msecs_interval").value();
     double maxDist = getInput<double>("max_dist").value();
     if (brain->client->isStandingStill(2000)) maxDist *= 1.5; // 静态下, 允许更大的距离
@@ -3318,41 +3437,51 @@ NodeStatus SelfLocate2X::tick()
 
     auto msecs = brain->msecsSince(brain->data->lastSuccessfulLocalizeTime);
     if (msecs < interval){
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF, rerun::TextLog(format("Failed, msecs(%.1f) < interval(%.1f)", msecs, interval)));
+#endif
         return NodeStatus::SUCCESS;
     }
 
     auto points = brain->data->getMarkingsByType({"XCross"});
     if (points.size() != 2) {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF,
             rerun::TextLog(format("Failed, point cnt(%d) != 2", points.size()))
         );
+#endif
         return NodeStatus::SUCCESS;
     }
 
     auto p0 = points[0]; auto p1 = points[1];
     
     if (p0.range > maxDist || p1.range > maxDist) { // 太远
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF,
             rerun::TextLog(format("Failed, p0 range (%.2f) or p1 range (%.2f) > maxDist(%.2f)", p0.range, p1.range, maxDist))
         );
+#endif
         return NodeStatus::SUCCESS;
     }
 
     double xDist = fabs(p0.posToField.x - p1.posToField.x);
     if (xDist > 0.5) { // 方向不对
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF,
             rerun::TextLog(format("Failed, xDist(%.2f) > maxDist(%.2f)", xDist, 0.5))
         );
+#endif
         return NodeStatus::SUCCESS;
     }
 
     double yDist = fabs(p0.posToField.y - p1.posToField.y);
     double mapYDist = brain->config->fieldDimensions.circleRadius * 2.0;
     if (fabs(yDist - mapYDist) > 0.5) { // 距离不对
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF,
             rerun::TextLog(format("Failed, yDist(%.2f) too far (%.2f) from mapYDist(%.2f)", yDist, 0.5, mapYDist))
         );
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -3362,9 +3491,11 @@ NodeStatus SelfLocate2X::tick()
     double drift = norm(dx, dy);
 
     if (drift > maxDrift) { // 修正量过大
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF,
             rerun::TextLog(format("Failed, dirft(%.2f) > maxDrift(%.2f)", drift, maxDrift))
         );
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -3378,15 +3509,20 @@ NodeStatus SelfLocate2X::tick()
     if (allMarkers.size() > 0) {
         double residual = brain->locator->residual(allMarkers, hypoPose) / allMarkers.size();
         if (residual > brain->locator->residualTolerance) { // validation failed. 可能看到的 penalty mark 为误识别
+#ifdef BRAIN_ENABLE_RERUN
             log->log(logPathF,
                 rerun::TextLog(format("Failed, validation residual(%.2f) > tolerance(%.2f)", residual, brain->locator->residualTolerance))
             );
+#endif
             return NodeStatus::SUCCESS;
         }
     }
 
     // else everything is ok, recalibrate with this hypo pose
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(logPathS, rerun::TextLog(format("Success. Dist = %.2f", drift)));
+#endif
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(
         "field/recal/2x/success",
         rerun::Arrows2D::from_vectors({{hypoPose.x - brain->data->robotPoseToField.x, -hypoPose.y + brain->data->robotPoseToField.y}})
@@ -3396,6 +3532,7 @@ NodeStatus SelfLocate2X::tick()
             .with_draw_order(10)
             .with_labels({"1p"})
     );
+#endif
     brain->calibrateOdom(hypoPose.x, hypoPose.y, hypoPose.theta);
     brain->data->lastSuccessfulLocalizeTime = brain->get_clock()->now();
     return NodeStatus::SUCCESS;
@@ -3403,6 +3540,9 @@ NodeStatus SelfLocate2X::tick()
 
 NodeStatus SelfLocate2T::tick()
 {
+    if (brain->config->useMujocoLocalization)
+        return NodeStatus::SUCCESS;
+
     double interval = getInput<double>("msecs_interval").value();
     double maxDist = getInput<double>("max_dist").value();
     if (brain->client->isStandingStill(2000)) maxDist *= 1.5; // 静态下, 允许更大的距离
@@ -3416,7 +3556,9 @@ NodeStatus SelfLocate2T::tick()
 
     auto msecs = brain->msecsSince(brain->data->lastSuccessfulLocalizeTime);
     if (msecs < interval){
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF, rerun::TextLog(format("Failed, msecs(%.1f) < interval(%.1f)", msecs, interval)));
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -3447,7 +3589,9 @@ NodeStatus SelfLocate2T::tick()
 
 
     if (!found) {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF, rerun::TextLog(format("Failed, No pattern within maxDist(%.2f) Found", maxDist)));
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -3476,7 +3620,9 @@ NodeStatus SelfLocate2T::tick()
     }
 
     if (!matched) {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF, rerun::TextLog(format("Failed, can not match to any map positions within maxDrift(%.2f)", maxDrift)));
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -3495,15 +3641,20 @@ NodeStatus SelfLocate2T::tick()
     if (allMarkers.size() > 0) {
         double residual = brain->locator->residual(allMarkers, hypoPose) / allMarkers.size();
         if (residual > brain->locator->residualTolerance) { // validation failed. 可能看到的 penalty mark 为误识别
+#ifdef BRAIN_ENABLE_RERUN
             log->log(logPathF,
                 rerun::TextLog(format("Failed, validation residual(%.2f) > tolerance(%.2f)", residual, brain->locator->residualTolerance))
             );
+#endif
             return NodeStatus::SUCCESS;
         }
     }
 
     // else everything is ok, recalibrate with this hypo pose
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(logPathS, rerun::TextLog(format("Success. Dist = %.2f", drift)));
+#endif
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(
         "field/recal/2t/success",
         rerun::Arrows2D::from_vectors({{hypoPose.x - brain->data->robotPoseToField.x, -hypoPose.y + brain->data->robotPoseToField.y}})
@@ -3513,6 +3664,7 @@ NodeStatus SelfLocate2T::tick()
             .with_draw_order(10)
             .with_labels({"2t"})
     );
+#endif
     brain->calibrateOdom(hypoPose.x, hypoPose.y, hypoPose.theta);
     brain->data->lastSuccessfulLocalizeTime = brain->get_clock()->now();
     return NodeStatus::SUCCESS;
@@ -3520,6 +3672,9 @@ NodeStatus SelfLocate2T::tick()
 
 NodeStatus SelfLocateLT::tick()
 {
+    if (brain->config->useMujocoLocalization)
+        return NodeStatus::SUCCESS;
+
     double interval = getInput<double>("msecs_interval").value();
     double maxDist = getInput<double>("max_dist").value();
     if (brain->client->isStandingStill(2000)) maxDist *= 1.5; // 静态下, 允许更大的距离
@@ -3533,7 +3688,9 @@ NodeStatus SelfLocateLT::tick()
 
     auto msecs = brain->msecsSince(brain->data->lastSuccessfulLocalizeTime);
     if (msecs < interval){
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF, rerun::TextLog(format("Failed, msecs(%.1f) < interval(%.1f)", msecs, interval)));
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -3567,7 +3724,9 @@ NodeStatus SelfLocateLT::tick()
 
 
     if (!found) {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF, rerun::TextLog(format("Failed, No pattern within MaxDist(%.2f) Found", maxDist)));
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -3595,7 +3754,9 @@ NodeStatus SelfLocateLT::tick()
         if (matched) break;
     }
     if (!matched) {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF, rerun::TextLog(format("Failed, can not match to any map positions within maxDrift(%.2f)", maxDrift)));
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -3614,15 +3775,20 @@ NodeStatus SelfLocateLT::tick()
     if (allMarkers.size() > 0) {
         double residual = brain->locator->residual(allMarkers, hypoPose) / allMarkers.size();
         if (residual > brain->locator->residualTolerance) { // validation failed. 可能看到的 penalty mark 为误识别
+#ifdef BRAIN_ENABLE_RERUN
             log->log(logPathF,
                 rerun::TextLog(format("Failed, validation residual(%.2f) > tolerance(%.2f)", residual, brain->locator->residualTolerance))
             );
+#endif
             return NodeStatus::SUCCESS;
         }
     }
 
     // else everything is ok, recalibrate with this hypo pose
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(logPathS, rerun::TextLog(format("Success. Dist = %.2f", drift)));
+#endif
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(
         "field/recal/lt/success",
         rerun::Arrows2D::from_vectors({{hypoPose.x - brain->data->robotPoseToField.x, -hypoPose.y + brain->data->robotPoseToField.y}})
@@ -3632,6 +3798,7 @@ NodeStatus SelfLocateLT::tick()
             .with_draw_order(10)
             .with_labels({"2t"})
     );
+#endif
     brain->calibrateOdom(hypoPose.x, hypoPose.y, hypoPose.theta);
     brain->data->lastSuccessfulLocalizeTime = brain->get_clock()->now();
     return NodeStatus::SUCCESS;
@@ -3639,6 +3806,9 @@ NodeStatus SelfLocateLT::tick()
 
 NodeStatus SelfLocatePT::tick()
 {
+    if (brain->config->useMujocoLocalization)
+        return NodeStatus::SUCCESS;
+
     double interval = getInput<double>("msecs_interval").value();
     double maxDist = getInput<double>("max_dist").value();
     if (brain->client->isStandingStill(2000)) maxDist *= 1.5; // 静态下, 允许更大的距离
@@ -3652,7 +3822,9 @@ NodeStatus SelfLocatePT::tick()
 
     auto msecs = brain->msecsSince(brain->data->lastSuccessfulLocalizeTime);
     if (msecs < interval){
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF, rerun::TextLog(format("Failed, msecs(%.1f) < interval(%.1f)", msecs, interval)));
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -3683,7 +3855,9 @@ NodeStatus SelfLocatePT::tick()
 
 
     if (!found) {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF, rerun::TextLog(format("Failed, No pattern within maxDist(%.2f) Found", maxDist)));
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -3711,7 +3885,9 @@ NodeStatus SelfLocatePT::tick()
         if (matched) break;
     }
     if (!matched) {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF, rerun::TextLog(format("Failed, can not match to any map positions within maxDrift(%.2f)", maxDrift)));
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -3730,15 +3906,20 @@ NodeStatus SelfLocatePT::tick()
     if (allMarkers.size() > 0) {
         double residual = brain->locator->residual(allMarkers, hypoPose) / allMarkers.size();
         if (residual > brain->locator->residualTolerance) { // validation failed. 可能看到的 penalty mark 为误识别
+#ifdef BRAIN_ENABLE_RERUN
             log->log(logPathF,
                 rerun::TextLog(format("Failed, validation residual(%.2f) > tolerance(%.2f)", residual, brain->locator->residualTolerance))
             );
+#endif
             return NodeStatus::SUCCESS;
         }
     }
 
     // else everything is ok, recalibrate with this hypo pose
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(logPathS, rerun::TextLog(format("Success. Dist = %.2f", drift)));
+#endif
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(
         "field/recal/pt/success",
         rerun::Arrows2D::from_vectors({{hypoPose.x - brain->data->robotPoseToField.x, -hypoPose.y + brain->data->robotPoseToField.y}})
@@ -3748,6 +3929,7 @@ NodeStatus SelfLocatePT::tick()
             .with_draw_order(10)
             .with_labels({"2t"})
     );
+#endif
     brain->calibrateOdom(hypoPose.x, hypoPose.y, hypoPose.theta);
     brain->data->lastSuccessfulLocalizeTime = brain->get_clock()->now();
     return NodeStatus::SUCCESS;
@@ -3755,6 +3937,9 @@ NodeStatus SelfLocatePT::tick()
 
 NodeStatus SelfLocateBorder::tick()
 {
+    if (brain->config->useMujocoLocalization)
+        return NodeStatus::SUCCESS;
+
     double interval = getInput<double>("msecs_interval").value();
     double maxDist = getInput<double>("max_dist").value();
     if (brain->client->isStandingStill(2000)) maxDist *= 1.5; // 静态下, 允许更大的距离
@@ -3769,7 +3954,9 @@ NodeStatus SelfLocateBorder::tick()
     // 避免过于频繁定位
     auto msecs = brain->msecsSince(brain->data->lastSuccessfulLocalizeTime);
     if (msecs < interval){
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF, rerun::TextLog(format("Failed, msecs(%.1f) < interval(%.1f)", msecs, interval)));
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -3880,18 +4067,22 @@ NodeStatus SelfLocateBorder::tick()
 
     // 没找到
     if ((!touchLineFound && !goalLineFound && !middleLineFound)) {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF,
             rerun::TextLog("No touchline or goalline or middleLine found.")
         );
+#endif
         return NodeStatus::SUCCESS;
     }
 
     // 偏量太大, 不用. 可能是误识别导致的.
     double drift = norm(dx, dy);
     if (drift > maxDrift) {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF,
             rerun::TextLog(format("Failed, drift(%.2f) > maxDrift(%.2f)", drift, maxDrift))
         );
+#endif
         return NodeStatus::SUCCESS;
     }
     
@@ -3905,20 +4096,25 @@ NodeStatus SelfLocateBorder::tick()
     if (allMarkers.size() > 0) {
         double residual = brain->locator->residual(allMarkers, hypoPose) / allMarkers.size();
         if (residual > brain->locator->residualTolerance) { // validation failed. 可能看到的 penalty mark 为误识别
+#ifdef BRAIN_ENABLE_RERUN
             log->log(logPathF,
                 rerun::TextLog(format("Failed, validation residual(%.2f) > tolerance(%.2f)", residual, brain->locator->residualTolerance))
             );
+#endif
             return NodeStatus::SUCCESS;
         }
     }
 
     // else everything is ok, recalibrate with this hypo pose
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(logPathS, rerun::TextLog(format("Success. Drift = %.2f", drift)));
+#endif
     string label = "";
     if (touchLineFound) label += "TouchLine";
     if (touchLineFound && (goalLineFound || middleLineFound)) label += " ";
     if (goalLineFound) label += "GoalLine";
     if (middleLineFound) label += "MiddleLine";
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(
         "field/recal/border/success",
         rerun::Arrows2D::from_vectors({{hypoPose.x - brain->data->robotPoseToField.x, -hypoPose.y + brain->data->robotPoseToField.y}})
@@ -3928,6 +4124,7 @@ NodeStatus SelfLocateBorder::tick()
             .with_draw_order(10)
             .with_labels({label})
     );
+#endif
     brain->calibrateOdom(hypoPose.x, hypoPose.y, hypoPose.theta);
     brain->data->lastSuccessfulLocalizeTime = brain->get_clock()->now();
     return NodeStatus::SUCCESS;
@@ -3954,6 +4151,9 @@ double SelfLocateLine::lineToLineAvgDist(const FieldLine& a, const FieldLineRef&
 
 NodeStatus SelfLocateLine::tick()
 {
+    if (brain->config->useMujocoLocalization)
+        return NodeStatus::SUCCESS;
+
     double interval = getInput<double>("msecs_interval").value();
     double maxDist = getInput<double>("max_dist").value();
     if (brain->client->isStandingStill(2000)) maxDist *= 1.5; // 静态下, 允许更大的距离
@@ -3968,7 +4168,9 @@ NodeStatus SelfLocateLine::tick()
     // 避免过于频繁定位
     auto msecs = brain->msecsSince(brain->data->lastSuccessfulLocalizeTime);
     if (msecs < interval){
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF, rerun::TextLog(format("Failed, msecs(%.1f) < interval(%.1f)", msecs, interval)));
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -4078,7 +4280,9 @@ NodeStatus SelfLocateLine::tick()
     }
 
     if (!firstLineFound) {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF, rerun::TextLog("Failed, no matching line found"));
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -4112,7 +4316,9 @@ NodeStatus SelfLocateLine::tick()
 
     double drift = norm(dx, dy);
     if (drift > maxDrift) {
+#ifdef BRAIN_ENABLE_RERUN
         log->log(logPathF, rerun::TextLog(format("Failed, drift(%.2f) > maxDrift(%.2f)", drift, maxDrift)));
+#endif
         return NodeStatus::SUCCESS;
     }
 
@@ -4127,16 +4333,21 @@ NodeStatus SelfLocateLine::tick()
         if (allMarkers.size() > 0) {
             double residual = brain->locator->residual(allMarkers, hypoPose) / allMarkers.size();
             if (residual > brain->locator->residualTolerance) {
+#ifdef BRAIN_ENABLE_RERUN
                 log->log(logPathF,
                     rerun::TextLog(format("Failed, validation residual(%.2f) > tolerance(%.2f)", residual, brain->locator->residualTolerance))
                 );
+#endif
                 return NodeStatus::SUCCESS;
             }
         }
     }
 
     // else everything is ok, recalibrate with this hypo pose
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(logPathS, rerun::TextLog(format("Success. Drift = %.2f", drift)));
+#endif
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(
         "field/recal/line/success",
         rerun::Arrows2D::from_vectors({{hypoPose.x - brain->data->robotPoseToField.x, -hypoPose.y + brain->data->robotPoseToField.y}})
@@ -4146,6 +4357,7 @@ NodeStatus SelfLocateLine::tick()
             .with_draw_order(10)
             .with_labels({bestLine.name})
     );
+#endif
     brain->calibrateOdom(hypoPose.x, hypoPose.y, hypoPose.theta);
     brain->data->lastSuccessfulLocalizeTime = brain->get_clock()->now();
     return NodeStatus::SUCCESS;
@@ -4296,7 +4508,11 @@ NodeStatus GoBackInField::tick()
 {
     auto log = [=](string msg) {
         brain->log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("debug/GoBackInField", rerun::TextLog(msg));
+#else
+        (void)msg;
+#endif
     };
     log("GoBackInField ticked");
 
@@ -4353,10 +4569,14 @@ NodeStatus CheckAndStandUp::tick()
     if (brain->tree->getEntry<bool>("gc_is_under_penalty") || brain->data->currentRobotModeIndex == 2) {
         brain->data->recoveryPerformedRetryCount = 0;
         brain->data->recoveryPerformed = false;
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("recovery", rerun::TextLog("reset recovery"));
+#endif
         return NodeStatus::SUCCESS;
     }
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log("recovery", rerun::TextLog(format("Recovery retry count: %d, recoveryPerformed: %d recoveryState: %d currentRobotModeIndex: %d", brain->data->recoveryPerformedRetryCount, brain->data->recoveryPerformed, brain->data->recoveryState, brain->data->currentRobotModeIndex)));
+#endif
 
     if (!brain->data->recoveryPerformed &&
         brain->data->recoveryState == RobotRecoveryState::HAS_FALLEN &&
@@ -4367,14 +4587,18 @@ NodeStatus CheckAndStandUp::tick()
         brain->client->standUp();
         brain->data->recoveryPerformed = true;
         brain->speak("Trying to stand up");
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("recovery", rerun::TextLog(format("Recovery retry count: %d", brain->data->recoveryPerformedRetryCount)));
+#endif
         return NodeStatus::SUCCESS;
     }
 
     if (brain->data->recoveryPerformed && brain->data->currentRobotModeIndex == 10) { // recover
         brain->data->recoveryPerformedRetryCount +=1;
         brain->data->recoveryPerformed = false;
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("recovery", rerun::TextLog(format("Add retry count: %d", brain->data->recoveryPerformedRetryCount)));
+#endif
     }
 
     // 机器人站着且是robocup步态，可以重置跌到爬起的状态
@@ -4383,7 +4607,9 @@ NodeStatus CheckAndStandUp::tick()
         brain->data->recoveryPerformedRetryCount = 0;
         brain->data->recoveryPerformed = false;
         brain->data->shouldExitRLVisionKick = false;
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("recovery", rerun::TextLog("Reset recovery, recoveryState: " + to_string(static_cast<int>(brain->data->recoveryState))));
+#endif
     }
 
     return NodeStatus::SUCCESS;
@@ -4523,6 +4749,7 @@ NodeStatus AutoCalibrateVision::onRunning()
         double z = brain->tree->getEntry<double>("calibrate_z_center");
         brain->pubCalParamMsg(pitch, yaw, z);
         brain->log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log(
             "/field/vision_param", 
             rerun::Points2D({{0, 5}})
@@ -4530,6 +4757,7 @@ NodeStatus AutoCalibrateVision::onRunning()
                 pitch, yaw, z, _bestResidual)})
             .with_colors(0xFFFFFFFF)
         );
+#endif
         return NodeStatus::SUCCESS;
     }
     
@@ -4626,6 +4854,7 @@ NodeStatus AutoCalibrateVision::onRunning()
         _res[_index][4] = _count;  
     } 
     brain->log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
     brain->log->log(
         "/field/vision_param", 
         rerun::Points2D({{0, 5}})
@@ -4633,6 +4862,7 @@ NodeStatus AutoCalibrateVision::onRunning()
             _res[_index][0], _res[_index][1], _res[_index][2], _res[_index][3], _res[_index][4])})
         .with_colors(0xFFFFFFFF)
     );
+#endif
     return NodeStatus::RUNNING;
 }
 

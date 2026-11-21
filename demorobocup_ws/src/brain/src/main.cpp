@@ -28,8 +28,10 @@ int main(int argc, char **argv)
             brain->tick();
             auto end_time = brain->get_clock()->now();
             auto duration = (end_time - start_time).nanoseconds() / 1000000.0; // 转换为毫秒
+#ifdef BRAIN_ENABLE_RERUN
             brain->log->setTimeNow();
             brain->log->log("performance/brain_tick", rerun::Scalar(duration));
+#endif
             this_thread::sleep_for(chrono::milliseconds(static_cast<int>(1000 / HZ)));
         } 
     });

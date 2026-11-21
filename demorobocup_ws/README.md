@@ -69,9 +69,40 @@ vision.yaml for jetpack 6.2 machine
 ./scripts/build.sh
 ```
 
+### Build for Simulation (PumaSim, ONNX + optional Rerun SDK)
+
+Follow the [simulation guide](SIMULATION.md) for native dependencies, the
+ROS-compatible uv workflow, switching build profiles and installing Rerun.
+
+```bash
+# Optional: install Rerun C++ SDK once (e.g. ~/.local/rerun_sdk or /opt/rerun_sdk)
+./scripts/build.sh --sim
+```
+
 ## Run
 
 ### Run on real robot
 ```bash
 ./scripts/start.sh
+```
+
+### Run in Simulation (with PumaSim running in another terminal)
+
+The [simulation guide](SIMULATION.md#start-the-simulator-and-the-demo) pairs
+each PumaSim scenario with the matching demo command, including one T1, one
+K1, and same-model 1v1 and 5v5. It also covers GameController, localization,
+component isolation and recording with Rerun.
+
+```bash
+# Default: internal particle-filter/line localization in brain (use_mujoco_localization:=false)
+./scripts/start.sh --sim role:=striker pos:=left number_of_players:=1 gc_ip:=127.0.0.1
+
+# Or use MuJoCo ground-truth localization directly (/<robot>/ground_truth/localization):
+./scripts/start.sh --sim role:=striker pos:=left number_of_players:=1 gc_ip:=127.0.0.1 use_mujoco_localization:=true
+
+# Multi-robot match (1 shared GC + 1 bridge + match_supervisor + N isolated vision/brain con UDP SO_REUSEPORT):
+./scripts/start.sh --sim robots:=blue_1:70:1:goal_keeper:left,blue_2:70:2:striker:right,red_1:71:1:goal_keeper:left,red_2:71:2:striker:right use_mujoco_localization:=true
+
+# Stop simulation nodes without touching PumaSim:
+./scripts/stop.sh --sim
 ```

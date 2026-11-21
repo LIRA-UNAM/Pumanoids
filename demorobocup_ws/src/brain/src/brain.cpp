@@ -220,6 +220,8 @@ Brain::Brain() : rclcpp::Node("brain_node")
     
     declare_parameter<int>("locator.min_marker_count", 5);
     declare_parameter<double>("locator.max_residual", 0.3);
+    declare_parameter<bool>("locator.use_mujoco_localization", false);
+    declare_parameter<string>("locator.mujoco_localization_topic", "/blue_1/ground_truth/localization");
 
     declare_parameter<bool>("enable_com", false);
 
@@ -321,6 +323,16 @@ void Brain::init()
     const auto latestSensorQos = rclcpp::QoS(rclcpp::KeepLast(1)).best_effort().durability_volatile();
     const auto latestReliableQos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().durability_volatile();
     odometerSubscription = create_subscription<booster_interface::msg::Odometer>("/odometer_state", latestSensorQos, bind(&Brain::odometerCallback, this, _1));
+    if (config->useMujocoLocalization) {
+        mujocoLocalizationSubscription = create_subscription<booster_interface::msg::Odometer>(
+            config->mujocoLocalizationTopic,
+            latestSensorQos,
+            bind(&Brain::mujocoLocalizationCallback, this, _1));
+        RCLCPP_INFO(
+            get_logger(),
+            "Using MuJoCo localization from %s (internal SelfLocate disabled)",
+            config->mujocoLocalizationTopic.c_str());
+    }
     lowStateSubscription = create_subscription<booster_interface::msg::LowState>("/low_state", latestSensorQos, bind(&Brain::lowStateCallback, this, _1));
     headPoseSubscription = create_subscription<geometry_msgs::msg::Pose>("/head_pose", latestSensorQos, bind(&Brain::headPoseCallback, this, _1));
     recoveryStateSubscription = create_subscription<booster_interface::msg::RawBytesMsg>("fall_down_recovery_state", latestReliableQos, bind(&Brain::recoveryStateCallback, this, _1));
@@ -370,6 +382,8 @@ void Brain::loadConfig()
 
     get_parameter("locator.min_marker_count", config->pfMinMarkerCnt);
     get_parameter("locator.max_residual", config->pfMaxResidual);
+    get_parameter("locator.use_mujoco_localization", config->useMujocoLocalization);
+    get_parameter("locator.mujoco_localization_topic", config->mujocoLocalizationTopic);
 
     get_parameter("enable_com", config->enableCom);
 
@@ -723,7 +737,11 @@ int Brain::selectGoaliePlayerId(bool *communicationHealthy,
 void Brain::handleCooperation() {
     auto log_ = [=](string msg) {
         log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
         log->log("debug/handleCooperation", rerun::TextLog(msg));
+#else
+        (void)msg;
+#endif
     };
     log_("handle cooperation");
 
@@ -786,8 +804,12 @@ void Brain::handleCooperation() {
         if (data->tmStatus[i].isAlive) {
             aliveTmIdxs.push_back(i);
             log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
             log->log(format("debug/tm_cost_scalar_%d", i + 1), rerun::Scalar(data->tmStatus[i].cost));
+#endif
+#ifdef BRAIN_ENABLE_RERUN
             log->log(format("debug/tm_lead_scalar_%d", i + 1), rerun::Scalar(data->tmStatus[i].isLead));
+#endif
         }
     }
     log_(format("alive TM Count: %d", aliveTmIdxs.size()));
@@ -1381,7 +1403,11 @@ double Brain::calcKickDir(double goalPostMargin) {
 void Brain::updateCostToKick() {
     auto log_ = [=](string msg) {
         log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
         log->log("debug/updateCostToKick", rerun::TextLog(msg));
+#else
+        (void)msg;
+#endif
     };
     double cost = 0.;
 
@@ -1707,8 +1733,26 @@ bool Brain::lookupRobotPoseToOdomAt(
     return true;
 }
 
+void Brain::updateObjectsFieldPosLocked()
+{
+    double placeHolder;
+    transCoord(
+        data->ball.posToRobot.x, data->ball.posToRobot.y, 0,
+        data->robotPoseToField.x, data->robotPoseToField.y, data->robotPoseToField.theta,
+        data->ball.posToField.x, data->ball.posToField.y, placeHolder);
+
+    auto robots = data->getRobots();
+    for (size_t i = 0; i < robots.size(); i++) {
+        updateFieldPos(robots[i]);
+    }
+    data->setRobots(robots);
+}
+
 void Brain::calibrateOdom(double x, double y, double theta, bool alignToVisionTime)
 {
+    if (config->useMujocoLocalization)
+        return;
+
     std::lock_guard<std::recursive_mutex> stateLock(brainStateMutex_);
 
     updateFallLocalizationHoldState(isTrueFallRecoveryState(data->recoveryState));
@@ -1758,21 +1802,9 @@ void Brain::calibrateOdom(double x, double y, double theta, bool alignToVisionTi
         data->robotPoseToField.x, data->robotPoseToField.y, data->robotPoseToField.theta);
 
 
-    double placeHolder;
-    // ball
-    transCoord(
-        data->ball.posToRobot.x, data->ball.posToRobot.y, 0,
-        data->robotPoseToField.x, data->robotPoseToField.y, data->robotPoseToField.theta,
-        data->ball.posToField.x, data->ball.posToField.y, placeHolder 
-    );
+    updateObjectsFieldPosLocked();
 
-    // robots
     auto robots = data->getRobots();
-    for (int i = 0; i < robots.size(); i++) {
-        updateFieldPos(robots[i]);
-    }
-    data->setRobots(robots);
-
     // goalposts
     auto goalposts = data->getGoalposts();
     for (int i = 0; i < goalposts.size(); i++) {
@@ -1785,6 +1817,7 @@ void Brain::calibrateOdom(double x, double y, double theta, bool alignToVisionTi
     }
 
     log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
     log->log(
         "debug/odom_calibration",
         rerun::TextLog(format(
@@ -1800,6 +1833,7 @@ void Brain::calibrateOdom(double x, double y, double theta, bool alignToVisionTi
             data->robotPoseToField.x,
             data->robotPoseToField.y,
             data->robotPoseToField.theta)));
+#endif
 
     // relog
     log->setTimeNow();
@@ -1898,7 +1932,11 @@ void Brain::joystickCallback(const booster_interface::msg::RemoteControllerState
 
     auto log_ = [=](string msg) {
         log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
         log->log("debug/joystick", rerun::TextLog(msg));
+#else
+        (void)msg;
+#endif
     };
     // prtDebug("joy!!", RED_CODE);
     string soundPack = config->soundPack;
@@ -1952,7 +1990,8 @@ void Brain::joystickCallback(const booster_interface::msg::RemoteControllerState
         if (joy.a)
         {
             tree->setEntry<int>("control_state", 2);
-            tree->setEntry<bool>("odom_calibrated", false);
+            if (!config->useMujocoLocalization)
+                tree->setEntry<bool>("odom_calibrated", false);
             prtDebug("State => 2: RECALIBRATE");
             // playSound("search");
         }
@@ -2204,7 +2243,7 @@ void Brain::gameControlCallback(const game_controller_interface::msg::GameContro
     bool lastIsUnderPenalty = tree->getEntry<bool>("gc_is_under_penalty");
     bool isUnderPenalty = (data->penalty[config->playerId - 1] != PENALTY_NONE); // 当前 robot 是否被判罚中
     tree->setEntry<bool>("gc_is_under_penalty", isUnderPenalty);
-    if (isUnderPenalty && !lastIsUnderPenalty) tree->setEntry<bool>("odom_calibrated", false); // 被判罚了, 则需要重新进场, 因此需要重新定位
+    if (!config->useMujocoLocalization && isUnderPenalty && !lastIsUnderPenalty) tree->setEntry<bool>("odom_calibrated", false); // 被判罚了, 则需要重新进场, 因此需要重新定位
 
     // log game state   
     log->setTimeNow();
@@ -2316,6 +2355,7 @@ void Brain::fieldLineCallback(const vision_interface::msg::LineSegments &msg)
     lines = processFieldLines(lines);
     data->setFieldLines(lines);
 
+#ifdef BRAIN_ENABLE_RERUN
     { // log processed lines
         log->setTimeSeconds(timePoint.seconds());
         vector<rerun::LineStrip2D> logLinesOnField = {};
@@ -2432,6 +2472,7 @@ void Brain::fieldLineCallback(const vision_interface::msg::LineSegments &msg)
         //         .with_draw_order(10)
         // );
     }
+#endif
 }
 
 void Brain::odometerCallback(const booster_interface::msg::Odometer &msg)
@@ -2448,18 +2489,24 @@ void Brain::odometerCallback(const booster_interface::msg::Odometer &msg)
     data->robotPoseToOdom.theta = msg.theta;
     storeRobotPoseToOdomSample(callbackTime, data->robotPoseToOdom);
 
-    updateFallLocalizationHoldState(isTrueFallRecoveryState(data->recoveryState));
-    if (isFallLocalizationHoldActive()) {
-        // 起身/倒地时底层 odom 可能跳变；保持最后可信的场地位姿，同时
-        // 每帧重锚定 odom->field，使恢复后不会把跳变一次性带入场地坐标。
-        reanchorFrozenPoseToCurrentOdom(fallLocalizationHoldPose_);
-        fallLocalizationHoldOdomToField_ = data->odomToField;
+    if (config->useMujocoLocalization && mujocoLocalizationReceived_) {
+        // La pose en campo proviene directamente de MuJoCo; mantener odomToField coherente
+        // con el odómetro relativo sin sobreescribir robotPoseToField.
+        reanchorFrozenPoseToCurrentOdom(data->robotPoseToField);
     } else {
-        // 根据 Odom 信息, 更新机器人在 Field 坐标系中的位置
-        transCoord(
-            data->robotPoseToOdom.x, data->robotPoseToOdom.y, data->robotPoseToOdom.theta,
-            data->odomToField.x, data->odomToField.y, data->odomToField.theta,
-            data->robotPoseToField.x, data->robotPoseToField.y, data->robotPoseToField.theta);
+        updateFallLocalizationHoldState(isTrueFallRecoveryState(data->recoveryState));
+        if (isFallLocalizationHoldActive()) {
+            // 起身/倒地时底层 odom 可能跳变；保持最后可信的场地位姿，同时
+            // 每帧重锚定 odom->field，使恢复后不会把跳变一次性带入场地坐标。
+            reanchorFrozenPoseToCurrentOdom(fallLocalizationHoldPose_);
+            fallLocalizationHoldOdomToField_ = data->odomToField;
+        } else {
+            // 根据 Odom 信息, 更新机器人在 Field 坐标系中的位置
+            transCoord(
+                data->robotPoseToOdom.x, data->robotPoseToOdom.y, data->robotPoseToOdom.theta,
+                data->odomToField.x, data->odomToField.y, data->odomToField.theta,
+                data->robotPoseToField.x, data->robotPoseToField.y, data->robotPoseToField.theta);
+        }
     }
 
     // 发布tf变换
@@ -2482,7 +2529,9 @@ void Brain::odometerCallback(const booster_interface::msg::Odometer &msg)
     transform.transform.rotation.w = q.w();
 
     log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
     log->log("debug/odom_callback", rerun::TextLog(format("x: %.3f, y: %.3f, theta: %.3f update_count: %llu", data->robotPoseToOdom.x, data->robotPoseToOdom.y, data->robotPoseToOdom.theta, static_cast<unsigned long long>(data->odomUpdateCount))));
+#endif
     
     // 广播tf变换
     tf_broadcaster_->sendTransform(transform);
@@ -2497,13 +2546,37 @@ void Brain::odometerCallback(const booster_interface::msg::Odometer &msg)
     log->logRobot("field/robot", data->robotPoseToField, color, label, true);
 }
 
+void Brain::mujocoLocalizationCallback(const booster_interface::msg::Odometer &msg)
+{
+    if (!config->useMujocoLocalization)
+        return;
+
+    std::lock_guard<std::recursive_mutex> stateLock(brainStateMutex_);
+
+    const rclcpp::Time callbackTime = get_clock()->now();
+    mujocoLocalizationReceived_ = true;
+    data->lastSuccessfulLocalizeTime = callbackTime;
+    reanchorFrozenPoseToCurrentOdom(Pose2D{msg.x, msg.y, msg.theta});
+    tree->setEntry<bool>("odom_calibrated", true);
+    updateObjectsFieldPosLocked();
+
+#ifdef BRAIN_ENABLE_RERUN
+    log->setTimeNow();
+    log->log(
+        "debug/mujoco_localization",
+        rerun::TextLog(format("x: %.3f, y: %.3f, theta: %.3f", msg.x, msg.y, msg.theta)));
+#endif
+}
+
 void Brain::lowStateCallback(const booster_interface::msg::LowState &msg)
 {
     std::lock_guard<std::recursive_mutex> stateLock(brainStateMutex_);
 
     data->headYaw = msg.motor_state_serial[0].q;
     data->headPitch = msg.motor_state_serial[1].q;
+#ifdef BRAIN_ENABLE_RERUN
     log->log("debug/head_angles", rerun::TextLog(format("pitch: %.1f, yaw: %.1f", data->headYaw, data->headPitch)));
+#endif
 }
 
 void Brain::imageCallback(const sensor_msgs::msg::Image &msg)
@@ -2516,7 +2589,9 @@ void Brain::imageCallback(const sensor_msgs::msg::Image &msg)
         // 未防止摄像头连接不好时, 自动降低分辨率, 影响 CamTrackBall 的计算, 更新分辨率配置
         config->camPixX = msg.width;
         config->camPixY = msg.height;
+#ifdef BRAIN_ENABLE_RERUN
         log->log("debug/imageCallback", rerun::TextLog(format("img width: %.d, img height: %.d", msg.width, msg.height)));
+#endif
 
         cv::Mat image;
         // 根据图像编码格式进行处理
@@ -2549,6 +2624,7 @@ void Brain::imageCallback(const sensor_msgs::msg::Image &msg)
             return;
         }
 
+#ifdef BRAIN_ENABLE_RERUN
         // 压缩图像
         std::vector<uint8_t> compressed_image;
         std::vector<int> compression_params = {cv::IMWRITE_JPEG_QUALITY, 10}; // 10 表示压缩质量，可以根据需要调整
@@ -2559,6 +2635,7 @@ void Brain::imageCallback(const sensor_msgs::msg::Image &msg)
         // log->setTimeSeconds(time);
         log->setTimeSeconds(timePointFromHeader(msg.header).seconds());
         log->log("image/img", rerun::EncodedImage::from_bytes(compressed_image));
+#endif
     }
 }
 
@@ -3080,6 +3157,7 @@ void Brain::detectProcessMarkings(const vector<GameObject> &markingObjs)
     }
     data->setMarkings(markings);
 
+#ifdef BRAIN_ENABLE_RERUN
     // log identified markings
     log->setTimeNow();
     vector<rerun::LineStrip2D> circles = {};
@@ -3098,6 +3176,7 @@ void Brain::detectProcessMarkings(const vector<GameObject> &markingObjs)
        .with_radii(0.01)
        .with_labels(labels)
        .with_colors(0xFFFFFFFF));
+#endif
 }
 
 void Brain::detectProcessGoalposts(const vector<GameObject> &goalpostObjs)
@@ -3117,6 +3196,7 @@ void Brain::detectProcessGoalposts(const vector<GameObject> &goalpostObjs)
     }
     data->setGoalposts(goalposts);
 
+#ifdef BRAIN_ENABLE_RERUN
     // log identified goalposts
     log->setTimeNow();
     vector<rerun::LineStrip2D> circles = {};
@@ -3135,6 +3215,7 @@ void Brain::detectProcessGoalposts(const vector<GameObject> &goalpostObjs)
     //     .with_radii(0.01)
     //     .with_labels(labels)
     //     .with_colors(0xFFFFFFFF));
+#endif
 }
 
 
@@ -3227,6 +3308,7 @@ void Brain::detectProcessVisionBox(const vision_interface::msg::Detections &msg)
 }
 
 void Brain::logVisionBox(const rclcpp::Time &timePoint) {
+#ifdef BRAIN_ENABLE_RERUN
     if (data->visionBox.posToField.size() >= 10) {
         auto v = data->visionBox.posToField;
 
@@ -3239,9 +3321,14 @@ void Brain::logVisionBox(const rclcpp::Time &timePoint) {
             .with_radii(0.01)
         );
     }
+
+#else
+    (void)timePoint;
+#endif
 }
 
 void Brain::logDetection(const vector<GameObject> &gameObjects, bool logBoundingBox) {
+#ifdef BRAIN_ENABLE_RERUN
     if (gameObjects.size() == 0) {
         if (logBoundingBox) log->log("image/detection_boxes", rerun::Clear::FLAT);
         log->log("field/detection_points", rerun::Clear::FLAT);
@@ -3331,10 +3418,15 @@ void Brain::logDetection(const vector<GameObject> &gameObjects, bool logBounding
     //              .with_radii(radiis)
     //          // .with_labels(labels)
     // );
+
+#else
+    (void)gameObjects;
+    (void)logBoundingBox;
+#endif
 }
 
-
 void Brain::logMemRobots() {
+#ifdef BRAIN_ENABLE_RERUN
     auto rbts = data->getRobots();
     // prtDebug(format("logMemRobots called, robotsize = %d", rbts.size()), RED_CODE);
 
@@ -3369,9 +3461,12 @@ void Brain::logMemRobots() {
     //              .with_radii(0.5)
     //          // .with_labels(labels)
     // );
+
+#endif
 }
 
 void Brain::logObstacles() {
+#ifdef BRAIN_ENABLE_RERUN
     // log->setTimeNow();
     // time is set on the outside
     
@@ -3402,8 +3497,11 @@ void Brain::logObstacles() {
         .with_labels(labels)
         .with_radii(0.1)
     );
+
+#endif
 }
 
+#ifdef BRAIN_ENABLE_RERUN
 void Brain::logDepth(int grid_x_count, int grid_y_count, vector<vector<int>> &grid_occupied, vector<rerun::Vec3D> &points_robot) {
     // time is set on the outside
     const double grid_size = get_parameter("obstacle_avoidance.grid_size").as_double();  // 网格大小
@@ -3489,10 +3587,16 @@ void Brain::logDepth(int grid_x_count, int grid_y_count, vector<vector<int>> &gr
     );
 }
 
+#endif
+
 void Brain::logDebugInfo() {
     auto log_ = [=](string msg) {
         log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
         log->log("debug/brain_tick", rerun::TextLog(msg));
+#else
+        (void)msg;
+#endif
     };
     string gameState = tree->getEntry<string>("gc_game_state");
     string gameSubState = tree->getEntry<string>("gc_game_sub_state");
@@ -3508,8 +3612,12 @@ void Brain::logDebugInfo() {
         gameState.c_str(), gameSubState.c_str(), gameSubStateType.c_str(), isLead.c_str(), decision.c_str(), freeKickKickingOff.c_str(), directShoot.c_str(), primaryStriker.c_str()));
 
     log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
     log->log("debug/my_cost_scalar", rerun::Scalar(data->tmMyCost));
+#endif
+#ifdef BRAIN_ENABLE_RERUN
     log->log("debug/my_lead_scalar", rerun::Scalar(data->tmImLead));
+#endif
 }
 
 void Brain::updateRelativePos(GameObject &obj) {
@@ -3576,7 +3684,9 @@ void Brain::depthImageCallback(const sensor_msgs::msg::Image &msg)
             return;
         }
 
+#ifdef BRAIN_ENABLE_RERUN
         vector<rerun::Vec3D> points_robot;  // for log
+#endif
 
         const double fx = config->camfx;
         const double fy = config->camfy;
@@ -3617,8 +3727,10 @@ void Brain::depthImageCallback(const sensor_msgs::msg::Image &msg)
                     Eigen::Vector4d point_cam(x_cam, y_cam, z_cam, 1.0);
                     Eigen::Vector4d point_robot = data->camToRobot * point_cam;
                     
+#ifdef BRAIN_ENABLE_RERUN
                     // 记录点用于可视化
                     points_robot.push_back(rerun::Vec3D{point_robot(0), point_robot(1), point_robot(2)});
+#endif
                     
                     // 更新网格占用情况
                     const double Z_THRESHOLD = get_parameter("obstacle_avoidance.obstacle_min_height").as_double();
@@ -3708,7 +3820,9 @@ void Brain::depthImageCallback(const sensor_msgs::msg::Image &msg)
         
         data->setObstacles(obs_new); // note: 此处不清空超时的旧 obstacles, 而在 tick 中清理
         log->setTimeSeconds(timePointFromHeader(msg.header).seconds());
+#ifdef BRAIN_ENABLE_RERUN
         logDepth(grid_x_count, grid_y_count, grid_occupied, points_robot);
+#endif
         logObstacles();
 
     } catch (const std::exception& e) {
@@ -4020,7 +4134,9 @@ void Brain::logLowFrequencyDiagnostics(const rclcpp::Time &now)
 
         RCLCPP_INFO(get_logger(), "[low_frequency_status]\n%s", statusText.c_str());
         log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
         log->log("debug/low_frequency_status", rerun::TextLog(statusText));
+#endif
         lastLowFrequencyStatusLogTime_ = now;
     }
 
@@ -4028,7 +4144,9 @@ void Brain::logLowFrequencyDiagnostics(const rclcpp::Time &now)
         const string fieldText = makeLowFrequencyFieldAscii(robotPose, ballField, ballKnown);
         RCLCPP_INFO(get_logger(), "[field_ascii]\n%s", fieldText.c_str());
         log->setTimeNow();
+#ifdef BRAIN_ENABLE_RERUN
         log->log("debug/field_ascii", rerun::TextLog(fieldText));
+#endif
         lastFieldAsciiLogTime_ = now;
     }
 }
@@ -4180,6 +4298,7 @@ char Brain::headingChar(double theta) const
 
 // ------------------------------------------------------ 调试 log 相关 ------------------------------------------------------
 void Brain::logObstacleDistance() {
+#ifdef BRAIN_ENABLE_RERUN
     log->setTimeNow();
 
     // log obstacle distance for test
@@ -4202,9 +4321,12 @@ void Brain::logObstacleDistance() {
             .with_radii(0.01)
             .with_draw_order(-10)
     );
+
+#endif
 }
 
 void Brain::logLags() {
+#ifdef BRAIN_ENABLE_RERUN
     log->setTimeNow();
     auto color = 0x00FF00FF;
     
@@ -4263,6 +4385,8 @@ void Brain::logLags() {
         "performance/gamecontrol_lag_timeseries",
         rerun::Scalar(gcLag)
     );
+
+#endif
 }
 
 void Brain::statusReport() {

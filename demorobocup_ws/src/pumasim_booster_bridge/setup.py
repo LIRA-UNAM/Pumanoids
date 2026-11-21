@@ -24,6 +24,7 @@ setup(
     entry_points={
         "console_scripts": [
             "booster_bridge = pumasim_booster_bridge.bridge_node:main",
+            "match_supervisor = pumasim_booster_bridge.match_supervisor:main",
         ],
     },
 )

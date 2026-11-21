@@ -2,6 +2,9 @@
 
 ROS 2 translation bridge in `Pumanoids/demorobocup_ws` connecting PumaSim's generic per-robot ROS 2 interfaces to the Booster RoboCup demo (`vision`, `brain`, `game_controller`).
 
+See the [simulation guide](../../SIMULATION.md) for complete build and run
+commands, scenario pairings, localization and Rerun.
+
 ## Responsibility Split
 
 - **PumaSim (`full_ros2topic`)** exposes only generic simulator interfaces:
@@ -14,7 +17,7 @@ ROS 2 translation bridge in `Pumanoids/demorobocup_ws` connecting PumaSim's gene
   - `/<robot>/camera/image_raw`, `/<robot>/camera/camera_info`, optional `/<robot>/camera/depth/image_raw`, `/tf`
   - Subscriptions: `/<robot>/cmd_vel` (`geometry_msgs/msg/Twist`), `/<robot>/joint_targets` (`sensor_msgs/msg/JointState`)
 - **`pumasim_booster_bridge`** performs all Booster-specific protocol translation:
-  - `/<robot>/ground_truth/localization` (`booster_interface/msg/Odometer`): derived from `/<robot>/ground_truth/odom` (`x, y, theta` wrapped in `(-pi, pi]`), kept **separate** from `odometer_state`.
+  - `/<robot>/ground_truth/localization` (`booster_interface/msg/Odometer`): field pose as `x, y, theta`, with heading wrapped in `(-pi, pi]`. Uses `/<robot>/ground_truth/team_odom` once the first team-frame sample arrives and uses `/<robot>/ground_truth/odom` before that. The global topic remains the fixed-world reference. This pose is separate from `odometer_state`.
   - `odometer_state` (`booster_interface/msg/Odometer`): zero-origin / resettable (`ResetOdometry 2031`) relative pose derived from `/<robot>/odom`.
   - `low_state` (`booster_interface/msg/LowState`): IMU RPY/gyro/acc from `/<robot>/imu/data` + T1 (23 serial) / K1 (22 parallel crank + 22 serial w/ passive ankle pitch/roll) motor arrays from `/<robot>/joint_states`.
   - `head_pose` (`geometry_msgs/msg/Pose`): unstamped `T_base_head` converted from `/<robot>/head_pose` (`PoseStamped`).
@@ -144,34 +147,152 @@ ros2 launch pumasim_booster_bridge booster_bridge.launch.py \
   layout:=namespaced single_process:=true relay_rgb:=true
 ```
 
-## ROS 2 Jazzy Build Status & External Dependencies
+## Natural Workflow with `--sim` (`scripts/build.sh` and `scripts/start.sh`)
 
-- Compiles cleanly on Ubuntu 24.04 / ROS 2 Jazzy: `booster_msgs`, `booster_interface`, `game_controller_interface`, `vision_interface`, `game_controller`, `pumasim_booster_bridge`.
-- Blocked in `demorobocup_ws` without external vendor SDK / GPU toolchain:
-  - `vision`: `src/model/trt/CMakeLists.txt:4` invokes `enable_language(CUDA)` requiring `nvcc`, and `vision/src/CMakeLists.txt:9` links `booster_robotics_sdk.a`.
-  - `brain`: `CMakeLists.txt:15` requires `rerun_sdk`, and `brain/src/robot_client.cpp:3` includes `<booster_internal/robot/b1/b1_loco_internal_api.hpp>`.
-- Runtime tests were executed on ROS 2 Jazzy (Humble container/installation not present on this host).
-
-## Test the bridge from the PumaSim environment
-
-With ROS and the Pumanoids bridge overlay sourced, run from PumaSim. Use the
-path to your checkout of Pumanoids. These tests use ROS processes separately
-from the simulator. Add `game_controller_interface` to the overlay build for
-the GameController test.
+You can compile and launch directly using the native `demorobocup_ws` scripts with the simulation flag, leaving physical robot defaults unchanged when omitted:
 
 ```bash
-export PUMASIM_ROOT="$PWD"
-PUMASIM_TEST_ROS2=1 MUJOCO_GL=egl PYOPENGL_PLATFORM=egl \
-  uv run --locked --no-sync pytest -c pyproject.toml -q \
-  "$HOME/Pumanoids/demorobocup_ws/src/pumasim_booster_bridge/test/test_booster_protocol.py" \
-  "$HOME/Pumanoids/demorobocup_ws/src/pumasim_booster_bridge/test/test_booster_ros2_e2e.py"
+cd /mnt/d/Repositorios/Pumanoids/demorobocup_ws
+source /opt/ros/jazzy/setup.bash
+
+# Build (auto-detects ONNXRUNTIME_ROOT, BOOSTER_SDK_INCLUDE_DIR, behaviortree_cpp,
+# and /opt/rerun_sdk or ~/.local/rerun_sdk if installed)
+./scripts/build.sh --sim
+
+# Start simulation bridge + vision ONNX + brain + game_controller for one robot
+# (default: internal SelfLocate localization; add use_mujoco_localization:=true or
+#  localization:=mujoco to feed /<robot>/ground_truth/localization directly to brain)
+./scripts/start.sh --sim robot:=blue_1 robot_type:=t1 role:=striker number_of_players:=1 gc_ip:=127.0.0.1
+
+# Stop demo/bridge processes cleanly without root or killing PumaSim
+./scripts/stop.sh --sim
 ```
 
-The separate launch regression tests in `test_demo_launch_and_isolation.py`
-also require the ROS launch Python dependencies. Set
-`PUMASIM_UPSTREAM_DEMO_INSTALL` to opt into the test using an independently
-built official Booster `brain`. That test uses the official executable with
-vision disabled. Validation of the exact Pumanoids demo with vision is pending.
+Individual component scripts also accept `--sim` (`scripts/start_vision.sh --sim`, `scripts/start_brain.sh --sim ...`, `scripts/start_game_controller.sh --sim`), and native launch files accept `sim:=true` (`vision/launch/launch.py`, `brain/launch/launch.py`, `game_controller/launch/launch.py`). `brain/launch/launch.py` and `robocup_demo_robot.launch.py` expose `use_mujoco_localization:=false|true` (sets `locator.use_mujoco_localization` and `locator.mujoco_localization_topic`, defaulting to `/<robot_name>/ground_truth/localization`). `game_controller` defaults `enable_ip_white_list` to `false` when `sim:=true` (overridable via `gc_whitelist:=true gc_whitelist_ips:=...`).
+
+For multi-robot simulation on a single host, `scripts/start.sh --sim robots:=blue_1:70:1:goal_keeper:left,blue_2:70:2:striker:right,...` launches [robocup_demo_match.launch.py](launch/robocup_demo_match.launch.py) (1 shared `game_controller_node`, 1 `booster_bridge` with `single_process:=true layout:=namespaced`, 1 `match_supervisor` reading `/robocup/game_controller` to update PumaSim `/<robot>/set_field_flip` and sideline `/<robot>/set_pose`, and N isolated `vision`/`brain` instances communicating over UDP `SO_REUSEPORT`).
+
+## Building `vision`, `brain`, and `pumasim_booster_bridge` for PumaSim (Jazzy)
+
+From `demorobocup_ws`:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+rosdep install --from-paths src/pumasim_booster_bridge \
+  src/booster_msgs src/booster_ros2_interface src/vision src/brain --ignore-src -y
+
+# 1. Message packages + bridge
+colcon build --symlink-install \
+  --packages-select booster_msgs booster_interface vision_interface game_controller_interface pumasim_booster_bridge
+source install/local_setup.bash
+
+# 2. Vision (ONNX detection + segmentation, no CUDA/TensorRT required)
+ONNXRUNTIME_ROOT=/mnt/d/Repositorios/BoosterSoccerSim/.upstream/onnxruntime-linux-x64-1.23.2 \
+  colcon build --packages-select vision --symlink-install \
+  --cmake-args -DENABLE_ONNX=ON
+
+# 3. Brain (simulation profile: omits private booster_internal; keeps rerun_sdk enabled when installed)
+colcon build --packages-select brain --symlink-install \
+  --cmake-args \
+  -DPUMASIM_SIMULATION_PROFILE=ON \
+  -DENABLE_RERUN=ON \
+  -DCMAKE_PREFIX_PATH="$HOME/.local/rerun_sdk" \
+  -DBOOSTER_SDK_INCLUDE_DIR=/mnt/d/Repositorios/BoosterSoccerSim/.upstream/booster_robotics_sdk/include \
+  -Dbehaviortree_cpp_DIR=/mnt/d/Repositorios/BoosterSoccerSim/.upstream/robocup_demo/install_jazzy_full/behaviortree_cpp/share/behaviortree_cpp/cmake
+
+source install/setup.bash
+```
+
+Notes on build variants:
+
+- Physical robot builds keep defaults (`ENABLE_TENSORRT=ON` in `vision`, `ENABLE_RERUN=ON` and `ENABLE_BOOSTER_INTERNAL_SDK=ON` in `brain`).
+- In simulation builds, missing `ONNXRUNTIME_ROOT` / headers or missing `.onnx` files fail explicitly; `RobotClient::walkMode()` returns `-1` with an explicit error log instead of stubbing private internal APIs.
+- ONNX simulation models bundled in `src/vision/model/`:
+  - Detection: `model/sim_data_det_0126.onnx` (`sha256: 4410f041...`, `320x320` FP32 input, `CPUExecutionProvider`)
+  - Segmentation: `model/sim_data_seg_0126.onnx` (`sha256: fdcfa2cb...`, `320x320` FP32 input, `CPUExecutionProvider`)
+
+## Running Reproducible `single_t1` Modes
+
+In every terminal, source ROS 2 Jazzy + `demorobocup_ws/install/setup.bash` (for PumaSim use `uv sync --locked --python "$(command -v python3)"` inside PumaSim), and set the same `ROS_DOMAIN_ID` (and `ros2_local.py` SHM profile when running locally on the same host).
+
+1. **Terminal 1 — PumaSim (`single_t1`, fixed)**
+
+```bash
+cd /mnt/d/Repositorios/PumaSim
+ROS_DOMAIN_ID=121 MUJOCO_GL=egl PYOPENGL_PLATFORM=egl \
+  uv run --locked --no-sync python tools/ros2_local.py \
+  pumanoids-sim run --config single_t1 --headless --ros2
+```
+
+2. **Mode A (Control) — Bridge only**
+
+```bash
+cd /mnt/d/Repositorios/Pumanoids/demorobocup_ws
+source /opt/ros/jazzy/setup.bash && source install/setup.bash
+ROS_DOMAIN_ID=121 ros2 launch pumasim_booster_bridge robocup_demo_robot.launch.py \
+  robot_name:=blue_1 robot_type:=t1 namespaced:=false \
+  enable_vision:=false enable_brain:=false
+```
+
+3. **Mode B — Bridge + ONNX Vision**
+
+```bash
+ROS_DOMAIN_ID=121 ros2 launch pumasim_booster_bridge robocup_demo_robot.launch.py \
+  robot_name:=blue_1 robot_type:=t1 namespaced:=false \
+  enable_vision:=true enable_brain:=false \
+  detection_model_path:=model/sim_data_det_0126.onnx \
+  segmentation_model_path:=model/sim_data_seg_0126.onnx
+```
+
+4. **Mode C — Full Closed Loop (Bridge + ONNX Vision + Pumanoids `brain` + GameController)**
+
+```bash
+ROS_DOMAIN_ID=121 ros2 launch pumasim_booster_bridge robocup_demo_robot.launch.py \
+  robot_name:=blue_1 robot_type:=t1 namespaced:=false \
+  team_id:=70 player_id:=1 player_role:=striker number_of_players:=1 \
+  game_control_ip:=127.0.0.1 enable_vision:=true enable_brain:=true
+```
+
+Runtime notes:
+- Start `/robocup/game_controller` (or `ros2 run game_controller game_controller_node --ros-args -p port:=3838`) so `brain` enters `PLAY`.
+- `brain` prints high-volume console status in its startup burst; keep process logs directed to a terminal or file rather than an un-drained small pipe.
+- Runtime tests were executed on ROS 2 Jazzy (Humble container/installation not present on this host).
+
+## Running Python Scripts & Tests with `uv`
+
+`Pumanoids` / `pumasim_booster_bridge` does not define a separate `pyproject.toml` or `uv.lock`; ROS 2 package dependencies remain in `package.xml` and C++/ROS binaries build via `colcon` and `rosdep`. Run Python scripts and pytest suites with `uv run --no-project --python /usr/bin/python3` after sourcing ROS Jazzy and the workspace overlay:
+
+```bash
+cd /mnt/d/Repositorios/Pumanoids/demorobocup_ws
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+
+# Sanity check ROS + Booster Python imports under uv
+uv run --no-project --python /usr/bin/python3 python3 -c \
+  "import rclpy, booster_interface.msg, booster_msgs.msg; print('OK:', rclpy.__file__)"
+
+# Unit + launch regression tests (note: pytest>=7,<8 matches Jazzy's launch_testing plugin)
+uv run --no-project --python /usr/bin/python3 --with 'pytest>=7,<8' --with pyyaml pytest -q \
+  src/pumasim_booster_bridge/test/test_booster_protocol.py \
+  src/pumasim_booster_bridge/test/test_demo_launch_and_isolation.py
+
+# Full ROS 2 + MuJoCo E2E suite (including closed-loop Pumanoids vision + brain)
+PUMASIM_ROOT=/mnt/d/Repositorios/PumaSim \
+PUMASIM_TEST_ROS2=1 MUJOCO_GL=egl PYOPENGL_PLATFORM=egl \
+  uv run --no-project --python /usr/bin/python3 --with 'pytest>=7,<8' --with pyyaml pytest -q \
+  src/pumasim_booster_bridge/test/test_booster_protocol.py \
+  src/pumasim_booster_bridge/test/test_booster_ros2_e2e.py \
+  src/pumasim_booster_bridge/test/test_demo_launch_and_isolation.py
+```
+
+## Measured `single_t1` Load Comparison (Jazzy, 15s steady-state window)
+
+Measured sequentially against identical `PumaSim single_t1 --headless --ros2` (`640x480` calibrated RGB camera, `CPUExecutionProvider`):
+
+| Configuration | Wall (s) | Sim (s) | RTF | Raw Img Rx (Hz) | Booster RGB Rx (Hz) | Det Pub (Hz) / Inf (ms) | Seg Pub (Hz) / Inf (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Bridge only (`single_t1`) | 15.0 | 15.004 | 1.000 | 29.80 | 29.87 | — | — |
+| Full ONNX Vision + Brain (`single_t1`) | 15.0 | 15.010 | 1.001 | 18.93 | 19.00 | 11.13 Hz / 53.97 ms | 11.93 Hz / 71.65 ms |
 
 ## Historical 5v5 measurements (Jazzy, Windows GPU backend)
 

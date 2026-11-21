@@ -1,4 +1,6 @@
-add_library(yolov8_onnx SHARED detection_impl.cpp)
+add_library(yolov8_onnx SHARED detection_impl.cpp
+                               segmentation_impl.cpp)
+target_include_directories(yolov8_onnx PUBLIC ${ONNXRUNTIME_INCLUDE_DIRS})
 target_link_libraries(yolov8_onnx PUBLIC ${OpenCV_LIBRARIES}
-                                  PRIVATE onnxruntime)
+                                  PRIVATE ${ONNXRUNTIME_LIBRARIES})
 install(TARGETS yolov8_onnx DESTINATION lib)

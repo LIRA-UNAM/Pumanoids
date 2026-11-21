@@ -4,6 +4,8 @@
 #include "utils/print.h"
 #include "utils/misc.h"
 
+#ifdef BRAIN_ENABLE_RERUN
+
 BrainLog::BrainLog(Brain *argBrain) : brain(argBrain), log_tcp("robocup"), log_file("robocup")
 {
     enable_log_tcp = brain->config->rerunLogEnableTCP;
@@ -227,3 +229,43 @@ void BrainLog::logBall(string logPath, Point pos, u_int32_t color, bool detected
        .with_radii({0.01, 0.01, 0.01})
        .with_colors(color));
 }
+
+#else
+
+BrainLog::BrainLog(Brain *argBrain) : brain(argBrain)
+{
+}
+
+void BrainLog::prepare()
+{
+}
+
+void BrainLog::logStatics()
+{
+}
+
+void BrainLog::setTimeNow()
+{
+}
+
+void BrainLog::setTimeSeconds(double)
+{
+}
+
+void BrainLog::logToScreen(string, string, u_int32_t, double)
+{
+}
+
+void BrainLog::logRobot(string, Pose2D, u_int32_t, string, bool)
+{
+}
+
+void BrainLog::logBall(string, Point, u_int32_t, bool, bool)
+{
+}
+
+void BrainLog::updateLogFilePath()
+{
+}
+
+#endif

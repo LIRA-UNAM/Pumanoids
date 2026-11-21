@@ -152,15 +152,29 @@ def _dump_ros_params_yaml(path: Path, node_name_key: str, params: dict[str, obje
 
 
 def _ros2_param_get(node_name: str, param_name: str, env: dict[str, str]) -> str:
-    res = subprocess.run(
-        ["ros2", "param", "get", "--no-daemon", node_name, param_name],
-        env=env,
-        capture_output=True,
-        text=True,
-        timeout=15,
-        check=False,
-    )
-    return res.stdout.strip() if res.returncode == 0 else ""
+    for _ in range(3):
+        res = subprocess.run(
+            [
+                "ros2",
+                "param",
+                "get",
+                "--no-daemon",
+                "--spin-time",
+                "2",
+                "--timeout",
+                "3",
+                node_name,
+                param_name,
+            ],
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+        )
+        if res.returncode == 0 and res.stdout.strip():
+            return res.stdout.strip()
+    return ""
 
 
 def _terminate_tree(proc: subprocess.Popen) -> None:
@@ -199,6 +213,8 @@ def test_launch_utils_flatten_and_precedence() -> None:
     merged_k1 = {**base, **k1, "game.team_id": 71, "game.player_id": 3}
 
     assert merged_t1["game.field_type"] == "adult_size"
+    assert merged_t1["game.number_of_players"] == 1
+    assert merged_t1["game_control_ip"] == "127.0.0.1"
     assert merged_t1["robot.robot_height"] == pytest.approx(0.665)
     assert merged_k1["robot.robot_height"] == pytest.approx(0.5125)
     assert merged_t1["vision.cam_pixel_width"] == pytest.approx(640.0)
@@ -875,3 +891,555 @@ def test_real_robocup_demo_brain_node_launch_and_command(monkeypatch) -> None:
         rclpy.shutdown()
         _terminate_tree(demo)
         _terminate_tree(sim)
+
+
+def _has_pumanoids_sim_demo_binaries() -> bool:
+    try:
+        from ament_index_python.packages import PackageNotFoundError, get_package_prefix
+    except ImportError:
+        return False
+    for pkg, exe in (("vision", "vision_node"), ("brain", "brain_node")):
+        try:
+            prefix = Path(get_package_prefix(pkg))
+        except PackageNotFoundError:
+            return False
+        if not (prefix / "lib" / pkg / exe).is_file():
+            return False
+    return True
+
+
+@pytest.mark.skipif(
+    not (_RUN_E2E and _has_pumanoids_sim_demo_binaries()),
+    reason="opt-in ROS 2 E2E requiring built Pumanoids vision_node and brain_node",
+)
+def test_pumanoids_single_t1_onnx_vision_and_brain_closed_loop(
+    monkeypatch, tmp_path: Path
+) -> None:
+    import json
+    import math
+
+    import rclpy
+    from booster_msgs.msg import RpcReqMsg, RpcRespMsg
+    from game_controller_interface.msg import GameControlData, RobotInfo, TeamInfo
+    from geometry_msgs.msg import Pose, Twist
+    from nav_msgs.msg import Odometry
+    from rclpy.executors import SingleThreadedExecutor
+    from sensor_msgs.msg import JointState
+    from vision_interface.msg import Detections, LineSegments
+
+    env = _local_ros_env(monkeypatch, str(164 + (os.getpid() % 15)))
+    sim_log = tmp_path / "sim.log"
+    demo_log = tmp_path / "demo.log"
+    sim_fh = open(sim_log, "w", encoding="utf-8")
+    demo_fh = open(demo_log, "w", encoding="utf-8")
+
+    sim = subprocess.Popen(
+        [
+            "uv",
+            "run",
+            "--locked",
+            "--no-sync",
+            "--project",
+            str(_PUMASIM_ROOT),
+            "pumanoids-sim",
+            "run",
+            "--config",
+            "single_t1",
+            "--headless",
+            "--ros2",
+            "--duration",
+            "45",
+        ],
+        cwd=str(_PUMASIM_ROOT),
+        env=env,
+        stdout=sim_fh,
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
+    )
+    demo = subprocess.Popen(
+        [
+            "ros2",
+            "launch",
+            "pumasim_booster_bridge",
+            "robocup_demo_robot.launch.py",
+            "robot_name:=blue_1",
+            "robot_type:=t1",
+            "namespaced:=false",
+            "enable_vision:=true",
+            "enable_brain:=true",
+            "team_id:=70",
+            "player_id:=1",
+            "player_role:=striker",
+        ],
+        env=env,
+        stdout=demo_fh,
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
+    )
+
+    rclpy.init()
+    obs = rclpy.create_node("pumanoids_closed_loop_observer")
+    executor = SingleThreadedExecutor()
+    executor.add_node(obs)
+    gc_pub = obs.create_publisher(GameControlData, "/robocup/game_controller", 10)
+
+    det_counts: list[int] = []
+    line_counts: list[int] = []
+    req_apis: list[int] = []
+    resp_statuses: list[int] = []
+    cmd_vels: list[tuple[float, float, float]] = []
+    jt_count = [0]
+    gt_xy: list[tuple[float, float]] = []
+    head_quats: list[tuple[float, float, float, float]] = []
+
+    obs.create_subscription(
+        Detections,
+        "/booster_vision/detection",
+        lambda m: det_counts.append(len(m.detected_objects)),
+        10,
+    )
+    obs.create_subscription(
+        LineSegments,
+        "/booster_vision/line_segments",
+        lambda m: line_counts.append(len(m.coordinates) // 4),
+        10,
+    )
+    obs.create_subscription(
+        RpcReqMsg,
+        "/LocoApiTopicReq",
+        lambda m: req_apis.append(int(json.loads(m.header)["api_id"])),
+        10,
+    )
+    obs.create_subscription(
+        RpcRespMsg,
+        "/LocoApiTopicResp",
+        lambda m: resp_statuses.append(int(json.loads(m.header)["status"])),
+        10,
+    )
+    obs.create_subscription(
+        Twist,
+        "/blue_1/cmd_vel",
+        lambda m: cmd_vels.append((m.linear.x, m.linear.y, m.angular.z)),
+        10,
+    )
+    obs.create_subscription(
+        JointState,
+        "/blue_1/joint_targets",
+        lambda _: jt_count.__setitem__(0, jt_count[0] + 1),
+        10,
+    )
+    obs.create_subscription(
+        Odometry,
+        "/blue_1/ground_truth/odom",
+        lambda m: gt_xy.append((m.pose.pose.position.x, m.pose.pose.position.y)),
+        10,
+    )
+    obs.create_subscription(
+        Pose,
+        "/head_pose",
+        lambda m: head_quats.append(
+            (m.orientation.x, m.orientation.y, m.orientation.z, m.orientation.w)
+        ),
+        10,
+    )
+
+    gc_msg = GameControlData()
+    gc_msg.version = 20
+    gc_msg.players_per_team = 11
+    gc_msg.state = 3
+    gc_msg.first_half = 1
+    gc_msg.kick_off_team = 70
+    gc_msg.teams = [
+        TeamInfo(
+            team_number=70, goalkeeper=1, players=[RobotInfo() for _ in range(11)]
+        ),
+        TeamInfo(
+            team_number=71, goalkeeper=1, players=[RobotInfo() for _ in range(11)]
+        ),
+    ]
+
+    def _poll_step() -> bool:
+        gc_pub.publish(gc_msg)
+        executor.spin_once(timeout_sec=0.05)
+        xy_disp = (
+            math.hypot(gt_xy[-1][0] - gt_xy[0][0], gt_xy[-1][1] - gt_xy[0][1])
+            if len(gt_xy) >= 2
+            else 0.0
+        )
+        head_delta = (
+            math.sqrt(sum((a - b) ** 2 for a, b in zip(head_quats[-1], head_quats[0])))
+            if len(head_quats) >= 2
+            else 0.0
+        )
+        return (
+            len(det_counts) >= 2
+            and max(det_counts, default=0) >= 1
+            and len(line_counts) >= 2
+            and max(line_counts, default=0) >= 1
+            and any(api in (2001, 2004) for api in req_apis)
+            and any(st == 0 for st in resp_statuses)
+            and (len(cmd_vels) >= 1 or jt_count[0] >= 1)
+            and (xy_disp > 0.05 or head_delta > 0.05)
+        )
+
+    try:
+        _poll_until(
+            _poll_step,
+            timeout=35.0,
+            step=0.02,
+            detail=lambda: (
+                f"dets={len(det_counts)} lines={len(line_counts)} "
+                f"apis={sorted(set(req_apis))} cmd_vels={len(cmd_vels)} jts={jt_count[0]}"
+            ),
+        )
+        assert _ros2_param_get("/brain_blue_1", "game.field_type", env) == "String value is: adult_size"
+        assert _ros2_param_get("/brain_blue_1", "game.player_role", env) == "String value is: striker"
+        assert _ros2_param_get("/brain_blue_1", "game.number_of_players", env) == "Integer value is: 1"
+    except Exception:
+        for proc in (demo, sim):
+            _terminate_tree(proc)
+        for label, p in (("demo", demo_log), ("sim", sim_log)):
+            txt = p.read_text(encoding="utf-8", errors="replace") if p.is_file() else ""
+            print(f"\n=== {label} ===\n{txt[-1500:]}")
+        raise
+    finally:
+        executor.shutdown()
+        obs.destroy_node()
+        rclpy.shutdown()
+        _terminate_tree(demo)
+        _terminate_tree(sim)
+        sim_fh.close()
+        demo_fh.close()
+
+
+def _eval_launch_node(launch_path: Path, args: dict[str, str]):
+    import importlib.util
+    import yaml
+
+    from launch import LaunchContext
+    from launch.actions import DeclareLaunchArgument, OpaqueFunction
+    from launch_ros.actions import Node
+
+    spec = importlib.util.spec_from_file_location(launch_path.stem, launch_path)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    ld = mod.generate_launch_description()
+    ctx = LaunchContext()
+    nodes = []
+    for entity in ld.entities:
+        if isinstance(entity, DeclareLaunchArgument):
+            entity.visit(ctx)
+        elif isinstance(entity, OpaqueFunction):
+            ctx.launch_configurations.update(args)
+            res = entity.visit(ctx)
+            if res:
+                for n in res:
+                    if isinstance(n, Node):
+                        n._perform_substitutions(ctx)
+                        param_files: list[str] = []
+                        param_dicts: list[dict] = []
+                        for p_path, _ in getattr(n, "_Node__expanded_parameter_arguments", []) or []:
+                            p_str = str(p_path)
+                            if Path(p_str).name.startswith("launch_params_"):
+                                loaded = yaml.unsafe_load(Path(p_str).read_text(encoding="utf-8"))
+                                if isinstance(loaded, dict):
+                                    # Extract inner ros__parameters regardless of /** or node key
+                                    for v in loaded.values():
+                                        if isinstance(v, dict) and "ros__parameters" in v:
+                                            param_dicts.append(v["ros__parameters"])
+                            else:
+                                param_files.append(p_str)
+                        nodes.append(
+                            {
+                                "param_files": param_files,
+                                "param_dicts": param_dicts,
+                                "remappings": list(n.expanded_remapping_rules or []),
+                                "arguments": [str(a) for a in (getattr(n, "_Node__arguments", None) or [])],
+                            }
+                        )
+    return nodes, ctx
+
+
+def test_native_launches_sim_flag_and_physical_defaults() -> None:
+    # 1. game_controller/launch/launch.py
+    gc_launch = _WS_SRC / "game_controller" / "launch" / "launch.py"
+    gc_phys, _ = _eval_launch_node(gc_launch, {"sim": "false"})
+    assert gc_phys[0]["param_dicts"][0]["enable_ip_white_list"] is True
+    assert list(gc_phys[0]["param_dicts"][0]["ip_white_list"]) == ["172.169.80.24"]
+
+    gc_sim, _ = _eval_launch_node(gc_launch, {"sim": "true"})
+    assert gc_sim[0]["param_dicts"][0]["enable_ip_white_list"] is False
+    assert list(gc_sim[0]["param_dicts"][0]["ip_white_list"]) == ["127.0.0.1"]
+
+    # 2. vision/launch/launch.py
+    vis_launch = _WS_SRC / "vision" / "launch" / "launch.py"
+    vis_phys, _ = _eval_launch_node(vis_launch, {"sim": "false"})
+    assert not vis_phys[0]["remappings"]
+
+    vis_sim, _ = _eval_launch_node(
+        vis_launch, {"sim": "true", "robot_name": "blue_1", "robot_type": "t1"}
+    )
+    vis_params = vis_sim[0]["param_dicts"][0]
+    assert vis_params["detection_model_path"] == "model/sim_data_det_0126.onnx"
+    assert vis_params["segmentation_model_path"] == "model/sim_data_seg_0126.onnx"
+    assert vis_params["use_sim_time"] is True
+    assert vis_params["camera_info_topic"] == "/blue_1/camera/camera_info"
+    assert ("/boostercamera/head/rgb/camera_info", "/blue_1/camera/camera_info") in vis_sim[0]["remappings"]
+    assert vis_sim[0]["arguments"][1].endswith("vision_t1.yaml")
+
+    # 3. brain/launch/launch.py
+    brain_launch = _WS_SRC / "brain" / "launch" / "launch.py"
+    brain_sim, _ = _eval_launch_node(
+        brain_launch,
+        {
+            "sim": "true",
+            "robot_type": "t1",
+            "role": "striker",
+            "team_id": "70",
+            "player_id": "1",
+            "number_of_players": "1",
+            "game_control_ip": "127.0.0.1",
+        },
+    )
+    assert any(p.endswith("brain_t1.yaml") for p in brain_sim[0]["param_files"])
+    override_dict = brain_sim[0]["param_dicts"][-1]
+    assert override_dict["use_sim_time"] is True
+    assert override_dict["game.player_role"] == "striker"
+    assert override_dict["game.team_id"] == 70
+    assert override_dict["game.player_id"] == 1
+    assert override_dict["game.number_of_players"] == 1
+    assert override_dict["game_control_ip"] == "127.0.0.1"
+    assert override_dict["vision_config_local_path"].endswith("vision_t1.yaml")
+    assert override_dict["locator.use_mujoco_localization"] is False
+
+    brain_mujoco, _ = _eval_launch_node(
+        brain_launch,
+        {
+            "sim": "true",
+            "robot_name": "red_2",
+            "robot_type": "t1",
+            "use_mujoco_localization": "true",
+        },
+    )
+    mj_override = brain_mujoco[0]["param_dicts"][-1]
+    assert mj_override["locator.use_mujoco_localization"] is True
+    assert mj_override["locator.mujoco_localization_topic"] == "/red_2/ground_truth/localization"
+
+    demo_launch = _PKG_ROOT / "launch" / "robocup_demo_robot.launch.py"
+    demo_nodes, _ = _eval_launch_node(
+        demo_launch,
+        {
+            "robot_name": "blue_2",
+            "enable_brain": "true",
+            "use_mujoco_localization": "true",
+        },
+    )
+    brain_demo_params = demo_nodes[-1]["param_dicts"][-1]
+    assert brain_demo_params["locator.use_mujoco_localization"] is True
+    assert brain_demo_params["locator.mujoco_localization_topic"] == "/blue_2/ground_truth/localization"
+
+
+def test_match_supervisor_roster_sides_and_sidelines() -> None:
+    import importlib.util
+    import math
+    from launch import LaunchContext
+    from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
+    from pumasim_booster_bridge.match_supervisor import (
+        compute_sideline_pose,
+        parse_roster,
+        resolve_team_defends_positive_x,
+    )
+
+    roster = parse_roster(
+        robots_csv="blue_1,blue_2,red_1:71:1:goal_keeper:left:t1,red_2:71:2:striker:right:k1"
+    )
+    assert [(r.robot_name, r.team_id, r.player_id, r.player_role, r.start_pos, r.robot_type) for r in roster] == [
+        ("blue_1", 70, 1, "goal_keeper", "left", "t1"),
+        ("blue_2", 70, 2, "striker", "right", "t1"),
+        ("red_1", 71, 1, "goal_keeper", "left", "t1"),
+        ("red_2", 71, 2, "striker", "right", "k1"),
+    ]
+
+    assert resolve_team_defends_positive_x(70, (70, 71), 1) is False
+    assert resolve_team_defends_positive_x(71, (70, 71), 1) is True
+    # Swapping teams[] slots switches sides automatically
+    assert resolve_team_defends_positive_x(70, (71, 70), 0) is True
+    assert resolve_team_defends_positive_x(71, (71, 70), 0) is False
+    # Optional legacy mode where teams[] stay fixed and only first_half=0 flips
+    assert resolve_team_defends_positive_x(70, (70, 71), 0, second_half_swaps_teams=True) is True
+
+    bx, by, byaw = compute_sideline_pose(roster[0], defends_positive_x=False)
+    assert bx < -4.0 and by > 4.5 and byaw == pytest.approx(-math.pi / 2.0)
+    rx, ry, ryaw = compute_sideline_pose(roster[2], defends_positive_x=True)
+    assert rx > 4.0 and ry < -4.5 and ryaw == pytest.approx(math.pi / 2.0)
+
+    # Evaluate robocup_demo_match.launch.py structure
+    match_launch = _PKG_ROOT / "launch" / "robocup_demo_match.launch.py"
+    spec = importlib.util.spec_from_file_location(match_launch.stem, match_launch)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    ld = mod.generate_launch_description()
+    ctx = LaunchContext()
+    emitted = []
+    for e in ld.entities:
+        if isinstance(e, DeclareLaunchArgument):
+            e.visit(ctx)
+        elif isinstance(e, OpaqueFunction):
+            ctx.launch_configurations.update({
+                "robots": "blue_1,blue_2,red_1:71:1:striker:left:t1",
+                "robot_type": "k1",
+            })
+            emitted = e.visit(ctx) or []
+    includes = [a for a in emitted if isinstance(a, IncludeLaunchDescription)]
+    assert len(includes) == 4  # 1 multi bridge + 3 robot stacks
+    assert dict(includes[0].launch_arguments)["robot_type"] == "auto"
+    robot_launches = [dict(include.launch_arguments) for include in includes[1:]]
+    assert [args["robot_type"] for args in robot_launches] == ["k1", "k1", "t1"]
+    assert all(args["enable_bridge"] == "false" for args in robot_launches)
+
+
+@pytest.mark.skipif(not _RUN_E2E, reason="opt-in real separate-process ROS 2 test")
+def test_multi_brain_udp_reuseport_and_gamecontrol_side_switch_e2e(
+    monkeypatch, tmp_path: Path
+) -> None:
+    import math
+    import rclpy
+    from booster_interface.msg import Odometer
+    from game_controller_interface.msg import GameControlData, RobotInfo, TeamInfo
+    from rclpy.executors import SingleThreadedExecutor
+    from rclpy.qos import QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
+
+    env = _local_ros_env(monkeypatch, str(166 + (os.getpid() % 12)))
+    sim_log = tmp_path / "sim.log"
+    sup_log = tmp_path / "sup.log"
+    bridge_log = tmp_path / "bridge.log"
+    b1_log = tmp_path / "b1.log"
+    b2_log = tmp_path / "b2.log"
+    fhs = [open(p, "w", encoding="utf-8") for p in (sim_log, sup_log, bridge_log, b1_log, b2_log)]
+    sim_fh, sup_fh, bridge_fh, b1_fh, b2_fh = fhs
+
+    sim = subprocess.Popen(
+        [
+            "uv", "run", "--locked", "--no-sync", "--project", str(_PUMASIM_ROOT),
+            "pumanoids-sim", "run", "--config", "single_t1", "--headless", "--ros2", "--duration", "35",
+        ],
+        cwd=str(_PUMASIM_ROOT), env=env, stdout=sim_fh, stderr=subprocess.STDOUT, start_new_session=True,
+    )
+    bridge = subprocess.Popen(
+        [
+            "ros2", "launch", "pumasim_booster_bridge", "booster_bridge.launch.py",
+            "robots:=blue_1", "robot_type:=t1", "layout:=root", "relay_rgb:=false",
+        ],
+        env=env, stdout=bridge_fh, stderr=subprocess.STDOUT, start_new_session=True,
+    )
+    sup = subprocess.Popen(
+        [
+            "ros2", "run", "pumasim_booster_bridge", "match_supervisor", "--ros-args",
+            "-p", "robots_csv:=blue_1:70:1:goal_keeper:left:t1",
+        ],
+        env=env, stdout=sup_fh, stderr=subprocess.STDOUT, start_new_session=True,
+    )
+    b1 = subprocess.Popen(
+        [
+            "ros2", "launch", "pumasim_booster_bridge", "robocup_demo_robot.launch.py",
+            "robot_name:=blue_1", "namespaced:=true", "enable_vision:=false", "enable_brain:=true",
+            "enable_com:=true", "team_id:=70", "player_id:=1", "player_role:=goal_keeper",
+            "player_start_pos:=left", "number_of_players:=2",
+        ],
+        env=env, stdout=b1_fh, stderr=subprocess.STDOUT, start_new_session=True,
+    )
+    b2 = subprocess.Popen(
+        [
+            "ros2", "launch", "pumasim_booster_bridge", "robocup_demo_robot.launch.py",
+            "robot_name:=blue_2", "namespaced:=true", "enable_vision:=false", "enable_brain:=true",
+            "enable_com:=true", "team_id:=70", "player_id:=2", "player_role:=striker",
+            "player_start_pos:=right", "number_of_players:=2",
+        ],
+        env=env, stdout=b2_fh, stderr=subprocess.STDOUT, start_new_session=True,
+    )
+
+    rclpy.init()
+    obs = rclpy.create_node("multi_brain_gc_observer")
+    executor = SingleThreadedExecutor()
+    executor.add_node(obs)
+    gc_pub = obs.create_publisher(GameControlData, "/robocup/game_controller", 10)
+    locs: list[tuple[float, float, float]] = []
+    world_locs: list[tuple[float, float]] = []
+    rel_10 = QoSProfile(
+        history=QoSHistoryPolicy.KEEP_LAST, depth=10, reliability=QoSReliabilityPolicy.RELIABLE
+    )
+    from nav_msgs.msg import Odometry
+    obs.create_subscription(
+        Odometer,
+        "/blue_1/ground_truth/localization",
+        lambda m: locs.append((m.x, m.y, m.theta)),
+        rel_10,
+    )
+    obs.create_subscription(
+        Odometry,
+        "/blue_1/ground_truth/odom",
+        lambda m: world_locs.append((m.pose.pose.position.x, m.pose.pose.position.y)),
+        rel_10,
+    )
+
+    def _make_gc(slot0_team: int, slot1_team: int, first_half: int, state: int) -> GameControlData:
+        m = GameControlData()
+        m.version = 20
+        m.players_per_team = 11
+        m.state = state
+        m.first_half = first_half
+        m.kick_off_team = slot0_team
+        m.teams = [
+            TeamInfo(team_number=slot0_team, goalkeeper=1, players=[RobotInfo() for _ in range(11)]),
+            TeamInfo(team_number=slot1_team, goalkeeper=1, players=[RobotInfo() for _ in range(11)]),
+        ]
+        return m
+
+    try:
+        # 1) Verify both same-team brains bound UDP 10070 via SO_REUSEPORT without bind failed
+        def _both_udp_bound() -> bool:
+            executor.spin_once(timeout_sec=0.05)
+            t1 = b1_log.read_text(encoding="utf-8", errors="ignore")
+            t2 = b2_log.read_text(encoding="utf-8", errors="ignore")
+            assert "bind failed" not in t1 and "bind failed" not in t2
+            assert "team broadcast failed" not in t1 and "team broadcast failed" not in t2
+            return (
+                "Team communication broadcast/listen on UDP port 10070" in t1
+                and "Team communication broadcast/listen on UDP port 10070" in t2
+            )
+
+        _poll_until(_both_udp_bound, timeout=20.0, step=0.1)
+
+        # 2) GameController INITIAL with team 70 on slot 0 (left half, -X) -> places blue_1 on -X sideline
+        def _placed_left_half() -> bool:
+            gc_pub.publish(_make_gc(70, 71, 1, 0))
+            executor.spin_once(timeout_sec=0.05)
+            return (
+                bool(world_locs) and world_locs[-1][0] < -4.0 and world_locs[-1][1] > 4.5
+                and bool(locs) and locs[-1][0] < -4.0 and locs[-1][1] > 4.5
+            )
+
+        _poll_until(_placed_left_half, timeout=15.0, step=0.1)
+
+        # 3) GameController switches team 70 to slot 1 (right half, +X) -> PumaSim places blue_1 on +X
+        #    half's own-left sideline (world x > +4, y < -4.5) AND flips team_odom 180° so team_loc stays x < -4, y > 4.5!
+        locs.clear()
+        world_locs.clear()
+        def _switched_half_and_flipped() -> bool:
+            gc_pub.publish(_make_gc(71, 70, 0, 0))
+            executor.spin_once(timeout_sec=0.05)
+            return (
+                bool(world_locs) and world_locs[-1][0] > 4.0 and world_locs[-1][1] < -4.5
+                and bool(locs) and locs[-1][0] < -4.0 and locs[-1][1] > 4.5 and locs[-1][2] < -1.0
+            )
+
+        _poll_until(_switched_half_and_flipped, timeout=15.0, step=0.1)
+    finally:
+        obs.destroy_node()
+        rclpy.shutdown()
+        for proc in (b1, b2, sup, bridge, sim):
+            _terminate_tree(proc)
+        for fh in fhs:
+            fh.close()

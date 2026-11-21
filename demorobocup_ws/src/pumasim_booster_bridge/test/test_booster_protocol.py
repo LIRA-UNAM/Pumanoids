@@ -155,3 +155,22 @@ def test_recovery_state_and_rpc_contract_including_honest_refusals() -> None:
     # Bad JSON / invalid values -> 400
     assert core.handle_rpc("not-json", "{}").response.status == RPC_STATUS_BAD_REQUEST
     assert core.handle_api_call(DAMPING_MODE * 0 + CHANGE_MODE_API, '{"mode":99}').response.status == RPC_STATUS_BAD_REQUEST
+
+    # All Booster frames 0..5 (hands, feet, head, body) compose cleanly via GetFrameTransform (2011)
+    core.update_frame_pose(2, (0.1, 0.25, 0.05), (0.0, 0.0, 0.0, 1.0))  # left hand
+    core.update_frame_pose(3, (0.1, -0.25, 0.05), (0.0, 0.0, 0.0, 1.0))  # right hand
+    lh_to_rh = core.handle_api_call(GET_FRAME_TRANSFORM_API, '{"src":2,"dst":3}')
+    assert lh_to_rh.response.status == 0
+    assert json.loads(lh_to_rh.response.body)["position"]["y"] == pytest.approx(-0.5)
+    assert core.handle_api_call(GET_FRAME_TRANSFORM_API, '{"src":0,"dst":4}').response.status == 502
+    assert core.handle_api_call(GET_FRAME_TRANSFORM_API, '{"src":0,"dst":9}').response.status == RPC_STATUS_BAD_REQUEST
+
+    # Skill framework hook: once PumaSim advertises available_skills, Booster RPC dispatches them
+    assert core.is_recovery_available == 0
+    core.update_skill_status({"available_skills": ["get_up", "kick"], "active_skill": "kick", "state": "running"})
+    assert core.is_recovery_available == 1
+    kick_ok = core.handle_api_call(RL_KICK_BALL_API, '{"kick_speed":1.2,"kick_dir":0.1}')
+    assert kick_ok.response.status == RPC_STATUS_SUCCESS
+    assert kick_ok.skill_command == ("kick", {"kick_speed": 1.2, "kick_dir": 0.1})
+    assert core.handle_api_call(GET_UP_API, "{}").response.status == RPC_STATUS_SUCCESS
+    assert core.handle_api_call(VISUAL_KICK_API, '{"start":true}').response.status == RPC_STATUS_SERVER_REFUSED

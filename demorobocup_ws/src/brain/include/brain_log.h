@@ -1,7 +1,9 @@
 #pragma once
 
 #include <string>
+#ifdef BRAIN_ENABLE_RERUN
 #include <rerun.hpp>
+#endif
 #include "types.h"
 
 
@@ -37,6 +39,7 @@ public:
     template <typename... Ts>
     inline void log(string_view entity_path, const Ts &...archetypes_or_collections) const
     {
+#ifdef BRAIN_ENABLE_RERUN
         if (enable_log_tcp) {
             log_tcp.log(entity_path, archetypes_or_collections...);
         }
@@ -44,6 +47,10 @@ public:
         if (enable_log_file) {
             log_file.log(entity_path, archetypes_or_collections...);
         }
+#else
+        (void)entity_path;
+        ((void)archetypes_or_collections, ...);
+#endif
     }
 
     // 在 img log 上直观地展示信息. 会在 img 外 padding 像素外画一个 color 颜色的框, 并在下方标注 text 文字
@@ -53,8 +60,10 @@ public:
 
     void logBall(string logPath, Point pos, u_int32_t color, bool detected, bool known);
 
+#ifdef BRAIN_ENABLE_RERUN
     rerun::LineStrip2D circle (float x, float y, float r, int nSeg = 36);
     rerun::LineStrip2D crosshair(float x, float y, float r);
+#endif
 
     // 调用后, 会将 log stream 到新的文件, 以防止 log 文件过大, 无法读取.
     void updateLogFilePath();
@@ -63,6 +72,8 @@ private:
     Brain *brain;
     bool enable_log_tcp = false;
     bool enable_log_file = false;
+#ifdef BRAIN_ENABLE_RERUN
     rerun::RecordingStream log_tcp;
     rerun::RecordingStream log_file;
+#endif
 };

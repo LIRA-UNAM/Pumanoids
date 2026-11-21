@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any
 
@@ -22,8 +23,11 @@ from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
 from rclpy.qos import QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from sensor_msgs.msg import CameraInfo, Image, Imu, JointState
+from std_msgs.msg import String
 
 from pumasim_booster_bridge.booster_protocol import (
+    FRAME_HEAD,
+    FRAME_TOPIC_SUFFIX_BY_ID,
     BoosterTranslatorCore,
     ground_truth_odom_to_localization,
     recovery_state_from_imu,
@@ -74,6 +78,7 @@ class _RobotBridgeEndpoint:
         self._latest_stamp: Time | None = None
         self._last_odom_stamp_ns: int | None = None
         self._low_state_msg: LowState | None = None
+        self._has_team_odom: bool = False
 
         sensor_best_effort = QoSProfile(
             history=QoSHistoryPolicy.KEEP_LAST,
@@ -99,6 +104,9 @@ class _RobotBridgeEndpoint:
         )
         self._joint_targets_pub = node.create_publisher(
             JointState, f"/{robot_name}/joint_targets", reliable_10
+        )
+        self._skill_cmd_pub = node.create_publisher(
+            String, f"/{robot_name}/skill_command", reliable_10
         )
 
         # Publishers toward Pumanoids Booster demo & localization
@@ -134,6 +142,7 @@ class _RobotBridgeEndpoint:
         self._recovery_msg = RawBytesMsg()
         self._twist_msg = Twist()
         self._joint_target_msg = JointState()
+        self._skill_cmd_msg = String()
 
         # Subscriptions from PumaSim generic topics
         node.create_subscription(
@@ -155,7 +164,23 @@ class _RobotBridgeEndpoint:
             reliable_10,
         )
         node.create_subscription(
-            PoseStamped, f"/{robot_name}/head_pose", self._on_head_pose, reliable_10
+            Odometry,
+            f"/{robot_name}/ground_truth/team_odom",
+            self._on_team_odom,
+            reliable_10,
+        )
+        for frame_id, topic_suffix in FRAME_TOPIC_SUFFIX_BY_ID.items():
+            node.create_subscription(
+                PoseStamped,
+                f"/{robot_name}/{topic_suffix}",
+                lambda msg, fid=frame_id: self._on_relative_pose(fid, msg),
+                reliable_10,
+            )
+        node.create_subscription(
+            String,
+            f"/{robot_name}/skill_status",
+            self._on_skill_status,
+            reliable_10,
         )
 
         # Optional RGB / Depth QoS+topic bridge when consumer cannot subscribe BEST_EFFORT.
@@ -234,7 +259,7 @@ class _RobotBridgeEndpoint:
         # RawBytesMsg.msg is sequence<uint8> in Python rclpy.
         self._recovery_msg.msg = [
             rec.state,
-            rec.is_recovery_available,
+            self._core.is_recovery_available,
             rec.current_planner_index,
         ]
         self._recovery_pub.publish(self._recovery_msg)
@@ -318,7 +343,7 @@ class _RobotBridgeEndpoint:
         self._odom_msg.theta = float(sample.theta)
         self._odometer_pub.publish(self._odom_msg)
 
-    def _on_ground_truth_odom(self, msg: Odometry) -> None:
+    def _publish_gt_localization(self, msg: Odometry) -> None:
         pos = msg.pose.pose.position
         ori = msg.pose.pose.orientation
         sample = ground_truth_odom_to_localization(
@@ -329,20 +354,37 @@ class _RobotBridgeEndpoint:
         self._gt_loc_msg.theta = float(sample.theta)
         self._gt_loc_pub.publish(self._gt_loc_msg)
 
-    def _on_head_pose(self, msg: PoseStamped) -> None:
+    def _on_team_odom(self, msg: Odometry) -> None:
+        self._has_team_odom = True
+        self._publish_gt_localization(msg)
+
+    def _on_ground_truth_odom(self, msg: Odometry) -> None:
+        if not self._has_team_odom:
+            self._publish_gt_localization(msg)
+
+    def _on_relative_pose(self, frame_id: int, msg: PoseStamped) -> None:
         pos = msg.pose.position
         ori = msg.pose.orientation
-        self._core.update_head_pose(
-            (pos.x, pos.y, pos.z), (ori.x, ori.y, ori.z, ori.w)
+        self._core.update_frame_pose(
+            frame_id, (pos.x, pos.y, pos.z), (ori.x, ori.y, ori.z, ori.w)
         )
-        self._head_pose_msg.position.x = float(pos.x)
-        self._head_pose_msg.position.y = float(pos.y)
-        self._head_pose_msg.position.z = float(pos.z)
-        self._head_pose_msg.orientation.x = float(ori.x)
-        self._head_pose_msg.orientation.y = float(ori.y)
-        self._head_pose_msg.orientation.z = float(ori.z)
-        self._head_pose_msg.orientation.w = float(ori.w)
-        self._head_pose_pub.publish(self._head_pose_msg)
+        if frame_id == FRAME_HEAD:
+            self._head_pose_msg.position.x = float(pos.x)
+            self._head_pose_msg.position.y = float(pos.y)
+            self._head_pose_msg.position.z = float(pos.z)
+            self._head_pose_msg.orientation.x = float(ori.x)
+            self._head_pose_msg.orientation.y = float(ori.y)
+            self._head_pose_msg.orientation.z = float(ori.z)
+            self._head_pose_msg.orientation.w = float(ori.w)
+            self._head_pose_pub.publish(self._head_pose_msg)
+
+    def _on_skill_status(self, msg: String) -> None:
+        try:
+            payload = json.loads(msg.data)
+        except (TypeError, json.JSONDecodeError):
+            return
+        if isinstance(payload, dict):
+            self._core.update_skill_status(payload)
 
     def _emit_actions(self, result) -> None:
         if result.cmd_vel is not None:
@@ -361,6 +403,13 @@ class _RobotBridgeEndpoint:
             self._joint_target_msg.name = list(names)
             self._joint_target_msg.position = [float(v) for v in positions]
             self._joint_targets_pub.publish(self._joint_target_msg)
+        if result.skill_command is not None:
+            skill_name, skill_params = result.skill_command
+            self._skill_cmd_msg.data = json.dumps(
+                {"skill": skill_name, "params": skill_params},
+                separators=(",", ":"),
+            )
+            self._skill_cmd_pub.publish(self._skill_cmd_msg)
         if result.reset_odometry:
             self._odom_msg.x = 0.0
             self._odom_msg.y = 0.0

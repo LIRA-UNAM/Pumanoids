@@ -11,12 +11,14 @@ void Locator::init(FieldDimensions fd, int minMarkerCntParam, double residualTol
     muOffset = muOffestParam;
     enableLog = enableLogParam;
     logIP = logIPParam;
+#ifdef BRAIN_ENABLE_RERUN
     if (enableLog) {
         auto connectError = log.connect(logIP);
         if (connectError.is_err()) prtErr(format("Rerun log connect Error: %s", connectError.description.c_str()));
         auto saveError = log.save("/home/booster/log.rrd");
         if (saveError.is_err()) prtErr(format("Rerun log save Error: %s", saveError.description.c_str()));
     }
+#endif
     
 }
 
@@ -360,6 +362,7 @@ LocateResult Locator::locateRobot(vector<FieldMarker> markers_r, PoseBox2D const
 
 void Locator::logParticles()
 {
+#ifdef BRAIN_ENABLE_RERUN
     vector<rerun::Position2D> points;
     for (int i = 0; i < hypos.rows(); i++)
     {
@@ -369,4 +372,5 @@ void Locator::logParticles()
     log.log(
         "field/hypos",
         rerun::Points2D(points).with_draw_order(20.0).with_colors({rerun::Color{255, 0, 0, 255}}).with_radii({0.05}).with_draw_order(20));
+#endif
 }

@@ -12,7 +12,63 @@ find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(rerun_sdk REQUIRED)
+option(PUMASIM_SIMULATION_PROFILE "Configure brain_node for PumaSim simulation (disables private booster_internal SDK)" OFF)
+option(ENABLE_RERUN "Enable rerun_sdk logging" ON)
+if(PUMASIM_SIMULATION_PROFILE)
+  set(ENABLE_BOOSTER_INTERNAL_SDK OFF CACHE BOOL "Enable private booster_internal SDK features" FORCE)
+else()
+  option(ENABLE_BOOSTER_INTERNAL_SDK "Enable private booster_internal SDK features" ON)
+endif()
+
+if(ENABLE_RERUN)
+  set(_rerun_candidates "")
+  if(DEFINED ENV{RERUN_SDK_PREFIX} AND NOT "$ENV{RERUN_SDK_PREFIX}" STREQUAL "")
+    list(APPEND _rerun_candidates "$ENV{RERUN_SDK_PREFIX}")
+  endif()
+  if(DEFINED ENV{HOME} AND NOT "$ENV{HOME}" STREQUAL "")
+    list(APPEND _rerun_candidates "$ENV{HOME}/.local/rerun_sdk")
+  endif()
+  list(APPEND _rerun_candidates /opt/rerun_sdk /usr/local)
+  foreach(_rerun_prefix IN LISTS _rerun_candidates)
+    if(EXISTS "${_rerun_prefix}/lib/cmake/rerun_sdk/rerun_sdkConfig.cmake")
+      list(PREPEND CMAKE_PREFIX_PATH "${_rerun_prefix}")
+    endif()
+  endforeach()
+  find_package(rerun_sdk REQUIRED)
+  add_definitions(-DBRAIN_ENABLE_RERUN)
+endif()
+
+find_path(BOOSTER_SDK_INCLUDE_DIR
+  NAMES booster/robot/b1/b1_api_const.hpp
+  HINTS
+    ENV BOOSTER_SDK_INCLUDE_DIR
+    /usr/local/include
+    /usr/include
+)
+if(NOT BOOSTER_SDK_INCLUDE_DIR)
+  message(FATAL_ERROR
+    "Missing public Booster SDK header booster/robot/b1/b1_api_const.hpp. "
+    "Install booster_robotics_sdk headers in /usr/local/include or pass -DBOOSTER_SDK_INCLUDE_DIR=/path/to/include")
+endif()
+include_directories(${BOOSTER_SDK_INCLUDE_DIR})
+
+if(ENABLE_BOOSTER_INTERNAL_SDK)
+  find_path(BOOSTER_INTERNAL_SDK_INCLUDE_DIR
+    NAMES booster_internal/robot/b1/b1_loco_internal_api.hpp
+    HINTS
+      ENV BOOSTER_INTERNAL_SDK_INCLUDE_DIR
+      ${BOOSTER_SDK_INCLUDE_DIR}
+      /usr/local/include
+      /usr/include
+  )
+  if(NOT BOOSTER_INTERNAL_SDK_INCLUDE_DIR)
+    message(FATAL_ERROR
+      "ENABLE_BOOSTER_INTERNAL_SDK=ON requires booster_internal/robot/b1/b1_loco_internal_api.hpp. "
+      "Pass -DENABLE_BOOSTER_INTERNAL_SDK=OFF or -DPUMASIM_SIMULATION_PROFILE=ON for simulation builds.")
+  endif()
+  include_directories(${BOOSTER_INTERNAL_SDK_INCLUDE_DIR})
+  add_definitions(-DBRAIN_ENABLE_BOOSTER_INTERNAL_SDK)
+endif()
 find_package(Eigen3 REQUIRED)
 find_package(booster_interface REQUIRED)
 find_package(game_controller_interface REQUIRED)
@@ -50,7 +106,10 @@ target_link_libraries(brain_node ${typesupport_target})
 
 set_property(TARGET brain_node PROPERTY CXX_STANDARD 17)
 
-target_link_libraries(brain_node rerun_sdk ${OpenCV_LIBS} yaml-cpp) 
+target_link_libraries(brain_node
+  $<$<BOOL:${ENABLE_RERUN}>:rerun_sdk>
+  ${OpenCV_LIBS}
+  yaml-cpp)
 include_directories(${geometry_msgs_INCLUDE_DIRS})
 include_directories(${std_msgs_INCLUDE_DIRS})
 include_directories(${sensor_msgs_INCLUDE_DIRS})

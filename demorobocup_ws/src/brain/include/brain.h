@@ -4,7 +4,9 @@
 #include <deque>
 #include <mutex>
 #include <rclcpp/rclcpp.hpp>
+#ifdef BRAIN_ENABLE_RERUN
 #include <rerun.hpp>
+#endif
 #include <opencv2/opencv.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <sensor_msgs/msg/joy.hpp>
@@ -200,6 +202,9 @@ public:
     // 处理里程计消息
     void odometerCallback(const booster_interface::msg::Odometer &msg);
 
+    // 处理 MuJoCo 发布的场地位姿真值消息
+    void mujocoLocalizationCallback(const booster_interface::msg::Odometer &msg);
+
     // 处理底层状态信息, 如 imu 以及头部关节状态消息 (用以计算摄像头角度)
     void lowStateCallback(const booster_interface::msg::LowState &msg);
 
@@ -272,6 +277,7 @@ private:
     bool isFallLocalizationHoldActive() const;
     bool isTrueFallRecoveryState(RobotRecoveryState state) const;
     void reanchorFrozenPoseToCurrentOdom(const Pose2D &targetPose);
+    void updateObjectsFieldPosLocked();
     void storeRobotPoseToOdomSample(const rclcpp::Time &stamp, const Pose2D &pose);
     bool lookupRobotPoseToOdomAt(const rclcpp::Time &stamp, Pose2D &pose, double *ageMs = nullptr) const;
 
@@ -329,7 +335,9 @@ private:
 
     void logObstacles();
     
+#ifdef BRAIN_ENABLE_RERUN
     void logDepth(int grid_x_count, int grid_y_count, vector<vector<int>> &grid, vector<rerun::Vec3D> &points);
+#endif
 
     // 输出重要的调试信息到 rerun log
     void logDebugInfo();
@@ -351,6 +359,7 @@ private:
     rclcpp::Subscription<vision_interface::msg::Detections>::SharedPtr detectionsSubscription;
     rclcpp::Subscription<vision_interface::msg::LineSegments>::SharedPtr subFieldLine;
     rclcpp::Subscription<booster_interface::msg::Odometer>::SharedPtr odometerSubscription;
+    rclcpp::Subscription<booster_interface::msg::Odometer>::SharedPtr mujocoLocalizationSubscription;
     rclcpp::Subscription<booster_interface::msg::LowState>::SharedPtr lowStateSubscription;
     rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr imageSubscription;
     rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr depthImageSubscription;
@@ -378,6 +387,7 @@ private:
     bool fallLocalizationHoldActive_ = false;
     Pose2D fallLocalizationHoldPose_ = {};
     Pose2D fallLocalizationHoldOdomToField_ = {};
+    bool mujocoLocalizationReceived_ = false;
 
     bool lowFrequencyStatusEnable_ = false;
     bool lowFrequencyStatusModeEnable_ = true;

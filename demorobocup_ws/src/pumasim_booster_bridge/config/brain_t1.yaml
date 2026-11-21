@@ -1,7 +1,9 @@
 brain_node:
   ros__parameters:
+    game_control_ip: "127.0.0.1"
     game:
       field_type: "adult_size"
+      number_of_players: 1
     robot:
       robot_height: 0.665
       odom_factor: 1.0

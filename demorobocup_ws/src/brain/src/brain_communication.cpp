@@ -125,6 +125,11 @@ void BrainCommunication::initTeamCommunication()
         int reuse = 1;
         if (setsockopt(_team_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
             throw std::runtime_error(format("Failed to set SO_REUSEADDR: %s", strerror(errno)));
+#ifdef SO_REUSEPORT
+        // Permite múltiples procesos brain del mismo equipo escuchando el mismo puerto UDP en un solo host.
+        if (setsockopt(_team_socket, SOL_SOCKET, SO_REUSEPORT, &reuse, sizeof(reuse)) < 0)
+            throw std::runtime_error(format("Failed to set SO_REUSEPORT: %s", strerror(errno)));
+#endif
         int broadcast = 1;
         if (setsockopt(_team_socket, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0)
             throw std::runtime_error(format("Failed to set SO_BROADCAST: %s", strerror(errno)));
@@ -159,8 +164,10 @@ void BrainCommunication::initTeamCommunication()
         if (_team_receive_thread.joinable())
             _team_receive_thread.join();
         std::cerr << e.what() << '\n';
+#ifdef BRAIN_ENABLE_RERUN
         brain->log->log("error/communication",
                         rerun::TextLog(format("Failed to initialize team communication: %s", e.what())));
+#endif
         if (_team_socket >= 0)
         {
             close(_team_socket);
@@ -171,10 +178,14 @@ void BrainCommunication::initTeamCommunication()
 
 void BrainCommunication::broadcastTeamCommunication()
 {
+#ifdef BRAIN_ENABLE_RERUN
     auto log = [=](string msg) {
         brain->log->setTimeNow();
         brain->log->log("debug/sendMsg", rerun::TextLog(msg));
     };
+#else
+    auto log = [=](string) {};
+#endif
     while (_team_communication_flag.load())
     {
         TeamCommunicationMsg msg{};
@@ -201,9 +212,19 @@ void BrainCommunication::broadcastTeamCommunication()
         log(format("ImAlive: %d, ImLead: %d, myCost: %.1f, myCmdId: %d, myCmd: %d",
                     msg.isAlive, msg.isLead, msg.cost, msg.cmdId, msg.cmd));
 
-        const int ret = sendto(_team_socket, &msg, sizeof(msg), 0,
-                               reinterpret_cast<sockaddr *>(&_team_broadcast_addr),
-                               sizeof(_team_broadcast_addr));
+        int ret = sendto(_team_socket, &msg, sizeof(msg), 0,
+                         reinterpret_cast<sockaddr *>(&_team_broadcast_addr),
+                         sizeof(_team_broadcast_addr));
+        if (ret < 0 && (errno == ENETUNREACH || errno == ENETDOWN) &&
+            _team_broadcast_addr.sin_addr.s_addr == htonl(INADDR_BROADCAST) &&
+            brain->get_parameter("use_sim_time").as_bool())
+        {
+            // Sin interfaz externa activa en simulación: usar broadcast de loopback (127.255.255.255).
+            _team_broadcast_addr.sin_addr.s_addr = htonl(0x7FFFFFFF);
+            ret = sendto(_team_socket, &msg, sizeof(msg), 0,
+                         reinterpret_cast<sockaddr *>(&_team_broadcast_addr),
+                         sizeof(_team_broadcast_addr));
+        }
         if (ret < 0)
             cout << RED_CODE << format("team broadcast failed: %s", strerror(errno)) << RESET_CODE << endl;
         else
@@ -217,10 +238,14 @@ void BrainCommunication::broadcastTeamCommunication()
 
 void BrainCommunication::spinTeamCommunicationReceiver()
 {
+#ifdef BRAIN_ENABLE_RERUN
     auto log = [=](string msg) {
         brain->log->setTimeNow();
         brain->log->log("debug/receiveMsg", rerun::TextLog(msg));
     };
+#else
+    auto log = [=](string) {};
+#endif
     sockaddr_in addr{};
     socklen_t addrLen = sizeof(addr);
     TeamCommunicationMsg msg{};

@@ -6,7 +6,11 @@ if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
   add_subdirectory(calibration)
 endif()
 
-set(BOOSTER_ROBOTICS_SDK_DEPENDENCIES booster_robotics_sdk.a fastrtps fastcdr)
+if(ENABLE_TENSORRT)
+  set(BOOSTER_ROBOTICS_SDK_DEPENDENCIES booster_robotics_sdk.a fastrtps fastcdr)
+else()
+  set(BOOSTER_ROBOTICS_SDK_DEPENDENCIES)
+endif()
 
 add_executable(vision_node main.cpp 
                            img_bridge.cpp
@@ -21,6 +25,7 @@ target_link_libraries(vision_node ${BOOSTER_ROBOTICS_SDK_DEPENDENCIES}
                                      )
 
 ament_target_dependencies(vision_node
+  ament_index_cpp
   rclcpp
   std_msgs
   sensor_msgs

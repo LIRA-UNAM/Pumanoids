@@ -154,9 +154,16 @@ def _launch_robot_stack(context):
     enable_com = _as_bool(
         LaunchConfiguration("enable_com").perform(context), "enable_com"
     )
+    use_mujoco_localization = _as_bool(
+        LaunchConfiguration("use_mujoco_localization").perform(context),
+        "use_mujoco_localization",
+    )
     team_id = int(LaunchConfiguration("team_id").perform(context))
     player_id = int(LaunchConfiguration("player_id").perform(context))
     player_role = LaunchConfiguration("player_role").perform(context)
+    player_start_pos = LaunchConfiguration("player_start_pos").perform(context).strip()
+    number_of_players = int(LaunchConfiguration("number_of_players").perform(context))
+    game_control_ip = LaunchConfiguration("game_control_ip").perform(context).strip()
     tree = LaunchConfiguration("tree").perform(context)
     det_model = LaunchConfiguration("detection_model_path").perform(context).strip()
     seg_model = LaunchConfiguration("segmentation_model_path").perform(context).strip()
@@ -192,8 +199,9 @@ def _launch_robot_stack(context):
         else f"/{robot_name}/camera/depth/image_raw"
     )
 
-    actions = [
-        Node(
+    actions = []
+    if _as_bool(LaunchConfiguration("enable_bridge").perform(context), "enable_bridge"):
+        actions.append(Node(
             package="pumasim_booster_bridge",
             executable="booster_bridge",
             name=f"pumasim_booster_bridge_{robot_name}",
@@ -209,8 +217,7 @@ def _launch_robot_stack(context):
                     "relay_camera_info": relay_camera_info,
                 }
             ],
-        )
-    ]
+        ))
 
     remappings = build_demo_remappings(
         robot_name=robot_name,
@@ -234,6 +241,7 @@ def _launch_robot_stack(context):
             vision_params["detection_model_path"] = det_model
         if seg_model:
             vision_params["segmentation_model_path"] = seg_model
+
         actions.append(
             Node(
                 package="vision",
@@ -267,25 +275,37 @@ def _launch_robot_stack(context):
             "game.team_id": team_id,
             "game.player_id": player_id,
             "game.player_role": player_role,
+            "game.number_of_players": number_of_players,
+            "game_control_ip": game_control_ip,
             "enable_com": enable_com,
+            "locator.use_mujoco_localization": use_mujoco_localization,
+            "locator.mujoco_localization_topic": f"/{robot_name}/ground_truth/localization",
             "rerunLog.enable_file": False,
             "rerunLog.enable_tcp": False,
             "vision.image_topic": rgb_target,
             "vision.depth_image_topic": depth_target,
         }
 
+        if player_start_pos:
+            instance_brain_params["game.player_start_pos"] = player_start_pos
+
         actions.append(
             Node(
                 package="brain",
                 executable="brain_node",
-                name=f"brain_{robot_name}",
                 output="screen",
                 parameters=[
                     base_brain_params,
                     overlay_brain_params,
                     instance_brain_params,
                 ],
-                remappings=remappings,
+                # The executable also creates brain_node_ext for GameController.
+                # Scope each rename so both nodes have distinct parameter services.
+                remappings=[
+                    ("brain_node:__node", f"brain_{robot_name}"),
+                    ("brain_node_ext:__node", f"brain_{robot_name}_ext"),
+                    *remappings,
+                ],
             )
         )
 
@@ -305,17 +325,32 @@ def generate_launch_description() -> LaunchDescription:
             DeclareLaunchArgument("relay_rgb", default_value="true"),
             DeclareLaunchArgument("relay_depth", default_value="false"),
             DeclareLaunchArgument("relay_camera_info", default_value="false"),
+            DeclareLaunchArgument("enable_bridge", default_value="true"),
             DeclareLaunchArgument("enable_vision", default_value="false"),
             DeclareLaunchArgument("enable_brain", default_value="false"),
             DeclareLaunchArgument("enable_com", default_value="false"),
+            DeclareLaunchArgument(
+                "use_mujoco_localization",
+                default_value="false",
+                description="True to use MuJoCo ground-truth localization topic instead of internal demo SelfLocate.",
+            ),
             DeclareLaunchArgument("team_id", default_value="70"),
             DeclareLaunchArgument("player_id", default_value="1"),
             DeclareLaunchArgument("player_role", default_value="goal_keeper"),
+            DeclareLaunchArgument("player_start_pos", default_value=""),
+            DeclareLaunchArgument("number_of_players", default_value="1"),
+            DeclareLaunchArgument("game_control_ip", default_value="127.0.0.1"),
             DeclareLaunchArgument("tree", default_value="game.xml"),
             DeclareLaunchArgument("brain_config_file", default_value=""),
             DeclareLaunchArgument("vision_config_file", default_value=""),
-            DeclareLaunchArgument("detection_model_path", default_value=""),
-            DeclareLaunchArgument("segmentation_model_path", default_value=""),
+            DeclareLaunchArgument(
+                "detection_model_path",
+                default_value="model/sim_data_det_0126.onnx",
+            ),
+            DeclareLaunchArgument(
+                "segmentation_model_path",
+                default_value="model/sim_data_seg_0126.onnx",
+            ),
             OpaqueFunction(function=_launch_robot_stack),
         ]
     )

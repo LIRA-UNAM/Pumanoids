@@ -6,13 +6,21 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration
-from ament_index_python.packages import get_package_share_directory
+from ament_index_python.packages import PackageNotFoundError, get_package_share_directory
+
+
+def _as_bool(value: str) -> bool:
+    return value.strip().lower() in ['1', 'true', 'True', 'yes', 'on']
 
 
 def handle_configuration(context, *args, **kwargs):
-    vision_config_dir = context.perform_substitution(LaunchConfiguration('vision_config_path')).strip()
+    sim = _as_bool(context.perform_substitution(LaunchConfiguration('sim')))
+    robot_name = (context.perform_substitution(LaunchConfiguration('robot_name')).strip().strip('/') or 'blue_1')
+    robot_type = (context.perform_substitution(LaunchConfiguration('robot_type')).strip().lower() or 't1')
+    user_vision_dir = context.perform_substitution(LaunchConfiguration('vision_config_path')).strip()
     default_vision_dir = os.path.join(get_package_share_directory('vision'), 'config')
 
+    vision_config_dir = user_vision_dir
     user_main_file = os.path.join(vision_config_dir, 'vision.yaml')
     reason = ""
     if not vision_config_dir:
@@ -28,6 +36,18 @@ def handle_configuration(context, *args, **kwargs):
 
     vision_config_file = os.path.join(vision_config_dir, 'vision.yaml')
     vision_config_local_file = os.path.join(vision_config_dir, 'vision_local.yaml')
+
+    bridge_share = None
+    if sim:
+        try:
+            bridge_share = get_package_share_directory('pumasim_booster_bridge')
+        except PackageNotFoundError:
+            bridge_share = None
+        if bridge_share and vision_config_dir == default_vision_dir and not os.path.isfile(vision_config_local_file):
+            sim_vision_yaml = os.path.join(bridge_share, 'config', f'vision_{robot_type}.yaml')
+            if os.path.isfile(sim_vision_yaml):
+                vision_config_local_file = sim_vision_yaml
+
     if not os.path.isfile(vision_config_local_file):
         print(f"[brain launch] optional local override '{vision_config_local_file}' not present")
 
@@ -58,30 +78,54 @@ def handle_configuration(context, *args, **kwargs):
     role = context.perform_substitution(LaunchConfiguration('role'))
     if role:
         config['game.player_role'] = role
+    team_id = context.perform_substitution(LaunchConfiguration('team_id')).strip()
+    if team_id:
+        config['game.team_id'] = int(team_id)
+    player_id = context.perform_substitution(LaunchConfiguration('player_id')).strip()
+    if player_id:
+        config['game.player_id'] = int(player_id)
+    num_players = context.perform_substitution(LaunchConfiguration('number_of_players')).strip()
+    if num_players:
+        config['game.number_of_players'] = int(num_players)
+    gc_ip = context.perform_substitution(LaunchConfiguration('game_control_ip')).strip()
+    if gc_ip:
+        config['game_control_ip'] = gc_ip
 
-    sim = context.perform_substitution(LaunchConfiguration('sim'))
-    if sim in ['true', 'True', '1']:
+    if sim:
         config['use_sim_time'] = True
 
+    use_mujoco_loc = _as_bool(context.perform_substitution(LaunchConfiguration('use_mujoco_localization')))
+    mujoco_loc_topic = context.perform_substitution(LaunchConfiguration('mujoco_localization_topic')).strip()
+    if sim or use_mujoco_loc or mujoco_loc_topic:
+        config['locator.use_mujoco_localization'] = use_mujoco_loc
+        config['locator.mujoco_localization_topic'] = (
+            mujoco_loc_topic or f'/{robot_name}/ground_truth/localization'
+        )
+
     disableLog = context.perform_substitution(LaunchConfiguration('disable_log'))
-    if disableLog in ['true', 'True', '1']:
+    if _as_bool(disableLog):
         config['rerunLog.enable_file'] = False
         config['rerunLog.enable_tcp'] = False
 
     disableCom = context.perform_substitution(LaunchConfiguration('disable_com'))
-    if disableCom in ['true', 'True', '1']:
+    if _as_bool(disableCom):
         config['enable_com'] = False
+
+    params = [config_file]
+    if os.path.isfile(config_local_file):
+        params.append(config_local_file)
+    if sim and bridge_share:
+        sim_brain_yaml = os.path.join(bridge_share, 'config', f'brain_{robot_type}.yaml')
+        if os.path.isfile(sim_brain_yaml):
+            params.append(sim_brain_yaml)
+    params.append(config)
 
     return [
         Node(
             package ='brain',
             executable='brain_node',
             output='screen',
-            parameters=[
-                config_file,
-                config_local_file,
-                config
-            ]
+            parameters=params
         )
     ]
 
@@ -113,6 +157,46 @@ def generate_launch_description():
             'sim', 
             default_value='false',
             description='是否在仿真中'
+        ),
+        DeclareLaunchArgument(
+            'robot_name',
+            default_value='blue_1',
+            description='Nombre del robot en simulacion para topicos por robot (p.ej. blue_1)'
+        ),
+        DeclareLaunchArgument(
+            'robot_type',
+            default_value='t1',
+            description='仿真机型覆盖 (t1 | k1), 仅在 sim:=true 时生效'
+        ),
+        DeclareLaunchArgument(
+            'use_mujoco_localization',
+            default_value='false',
+            description='true para usar la localizacion exacta de MuJoCo; false para usar SelfLocate interno del demo'
+        ),
+        DeclareLaunchArgument(
+            'mujoco_localization_topic',
+            default_value='',
+            description='Topico Odometer de localizacion MuJoCo (por defecto /<robot_name>/ground_truth/localization)'
+        ),
+        DeclareLaunchArgument(
+            'team_id',
+            default_value='',
+            description='可选覆盖 game.team_id'
+        ),
+        DeclareLaunchArgument(
+            'player_id',
+            default_value='',
+            description='可选覆盖 game.player_id'
+        ),
+        DeclareLaunchArgument(
+            'number_of_players',
+            default_value='',
+            description='可选覆盖 game.number_of_players'
+        ),
+        DeclareLaunchArgument(
+            'game_control_ip',
+            default_value='',
+            description='可选覆盖 game_control_ip'
         ),
         DeclareLaunchArgument(
             'disable_log', 

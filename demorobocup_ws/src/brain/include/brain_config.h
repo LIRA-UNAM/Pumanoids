@@ -108,6 +108,8 @@ public:
     // locator 参数
     int pfMinMarkerCnt = 5; // 最少看到多少到 marker, 才可以进行粒子滤波定位
     double pfMaxResidual = 0.3; // 粒子滤波定位时, 最终每个粒子的加权偏差大于此值时, 认为定位不成功
+    bool useMujocoLocalization = false; // True para usar la pose absoluta de MuJoCo en lugar de SelfLocate interno
+    string mujocoLocalizationTopic = "/blue_1/ground_truth/localization";
 
     // sound 参数
     bool soundEnable = false;

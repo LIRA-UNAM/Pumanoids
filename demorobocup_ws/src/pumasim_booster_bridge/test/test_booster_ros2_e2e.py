@@ -239,6 +239,16 @@ def test_single_robot_full_pipeline_via_external_bridge(
         st, _ = call_loco(2038, {"start": True})
         assert st == 501
 
+        # GetFrameTransform across head, hands, and feet (0..5) backed by live PumaSim poses
+        st, body = call_loco(2011, {"src": 0, "dst": 2})  # kBody -> kLeftHand
+        assert st == 0 and json.loads(body)["position"]["y"] > 0.05
+        st, body = call_loco(2011, {"src": 0, "dst": 4})  # kBody -> kLeftFoot
+        assert st == 0 and json.loads(body)["position"]["z"] < -0.2
+        st, body = call_loco(2011, {"src": 2, "dst": 3})  # kLeftHand -> kRightHand
+        assert st == 0
+        lh_rh_pos = json.loads(body)["position"]
+        assert math.hypot(lh_rh_pos["x"], lh_rh_pos["y"], lh_rh_pos["z"]) > 0.2
+
         # Topic service equivalent on /booster_rpc_req
         api_req = BoosterApiReqMsg()
         api_req.api_id = 2018
@@ -303,6 +313,7 @@ def test_multi_robot_t1_k1_isolation_via_external_bridge(monkeypatch) -> None:
     import rclpy
     from booster_interface.msg import LowState, Odometer
     from booster_msgs.msg import RpcReqMsg, RpcRespMsg
+    from nav_msgs.msg import Odometry
     from rclpy.executors import SingleThreadedExecutor
     from rclpy.qos import QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 
@@ -361,6 +372,7 @@ def test_multi_robot_t1_k1_isolation_via_external_bridge(monkeypatch) -> None:
     rclpy.init()
     node = rclpy.create_node("multi_booster_observer")
     locs: dict[str, Odometer] = {}
+    world_odom: dict[str, Odometry] = {}
     low_states: dict[str, LowState] = {}
     resps: dict[str, dict[str, tuple[int, str]]] = {"blue_1": {}, "red_1": {}}
     reliable_10 = QoSProfile(history=QoSHistoryPolicy.KEEP_LAST, depth=10, reliability=QoSReliabilityPolicy.RELIABLE)
@@ -368,6 +380,8 @@ def test_multi_robot_t1_k1_isolation_via_external_bridge(monkeypatch) -> None:
     try:
         node.create_subscription(Odometer, "/blue_1/ground_truth/localization", lambda m: locs.__setitem__("blue_1", m), reliable_10)
         node.create_subscription(Odometer, "/red_1/ground_truth/localization", lambda m: locs.__setitem__("red_1", m), reliable_10)
+        node.create_subscription(Odometry, "/blue_1/ground_truth/odom", lambda m: world_odom.__setitem__("blue_1", m), reliable_10)
+        node.create_subscription(Odometry, "/red_1/ground_truth/odom", lambda m: world_odom.__setitem__("red_1", m), reliable_10)
         node.create_subscription(LowState, "/blue_1/booster/low_state", lambda m: low_states.__setitem__("blue_1", m), reliable_10)
         node.create_subscription(LowState, "/red_1/booster/low_state", lambda m: low_states.__setitem__("red_1", m), reliable_10)
         node.create_subscription(
@@ -396,11 +410,21 @@ def test_multi_robot_t1_k1_isolation_via_external_bridge(monkeypatch) -> None:
                     return
             raise AssertionError("timed out waiting for multi-robot bridge condition")
 
-        spin_until(lambda: "blue_1" in locs and "red_1" in locs and "blue_1" in low_states and "red_1" in low_states)
-        # mixed_t1_k1 spawns blue_1 at (-1.0, 0, yaw=0) and red_1 at (+1.0, 0, yaw=pi)
+        spin_until(
+            lambda: "blue_1" in locs
+            and "red_1" in locs
+            and "blue_1" in world_odom
+            and "red_1" in world_odom
+            and "blue_1" in low_states
+            and "red_1" in low_states
+        )
+        # Global /odom keeps mixed_t1_k1 world coords: blue_1 at (-1.0, 0, yaw=0), red_1 at (+1.0, 0, yaw=pi).
+        assert world_odom["blue_1"].pose.pose.position.x == pytest.approx(-1.0, abs=0.1)
+        assert world_odom["red_1"].pose.pose.position.x == pytest.approx(1.0, abs=0.1)
+        # Team-canonical /ground_truth/localization (backed by /team_odom) flips red (+X -> -X) so both attack +X.
         assert locs["blue_1"].x == pytest.approx(-1.0, abs=0.1)
-        assert locs["red_1"].x == pytest.approx(1.0, abs=0.1)
-        assert abs(locs["red_1"].theta) == pytest.approx(math.pi, abs=0.15)
+        assert locs["red_1"].x == pytest.approx(-1.0, abs=0.1)
+        assert abs(locs["red_1"].theta) == pytest.approx(0.0, abs=0.15)
 
         uid_b = str(uuid.uuid4())
         req_b = RpcReqMsg(uuid=uid_b, header='{"api_id":2022}', body="{}")

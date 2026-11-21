@@ -2,12 +2,16 @@
 
 #include <iostream>
 #include <string>
+#ifdef BRAIN_ENABLE_RERUN
 #include <rerun.hpp>
+#endif
 
 #include "booster_interface/srv/rpc_service.hpp"
 #include "booster_interface/msg/booster_api_req_msg.hpp"
 #include "booster_msgs/msg/rpc_req_msg.hpp"
+#ifdef BRAIN_ENABLE_BOOSTER_INTERNAL_SDK
 #include "booster_internal/robot/b1/b1_loco_internal_api.hpp"
+#endif
 
 using namespace std;
 

@@ -46,6 +46,32 @@ _BODY_CONTROL_BY_MODE = {
     SOCCER_MODE: 5,  # kSoccerGait
 }
 
+FRAME_BODY = 0
+FRAME_HEAD = 1
+FRAME_LEFT_HAND = 2
+FRAME_RIGHT_HAND = 3
+FRAME_LEFT_FOOT = 4
+FRAME_RIGHT_FOOT = 5
+
+FRAME_TOPIC_SUFFIX_BY_ID: dict[int, str] = {
+    FRAME_HEAD: "head_pose",
+    FRAME_LEFT_HAND: "left_hand_pose",
+    FRAME_RIGHT_HAND: "right_hand_pose",
+    FRAME_LEFT_FOOT: "left_foot_pose",
+    FRAME_RIGHT_FOOT: "right_foot_pose",
+}
+
+SKILL_NAME_BY_API: dict[int, str] = {
+    WAVE_HAND_API: "wave_hand",
+    LIE_DOWN_API: "lie_down",
+    GET_UP_API: "get_up",
+    SHOOT_API: "shoot",
+    GET_UP_WITH_MODE_API: "get_up_with_mode",
+    VISUAL_KICK_API: "visual_kick",
+    RL_KICK_BALL_API: "kick",
+    RL_FANCY_KICK_BALL_API: "fancy_kick",
+}
+
 # RPC status codes from booster_robotics_sdk/include/booster/robot/rpc/error.hpp
 RPC_STATUS_INVALID = -1
 RPC_STATUS_SUCCESS = 0
@@ -179,6 +205,7 @@ class BoosterRpcResult:
     cmd_vel: tuple[float, float, float] | None = None
     joint_targets: tuple[tuple[str, ...], tuple[float, ...]] | None = None
     reset_odometry: bool = False
+    skill_command: tuple[str, dict[str, Any]] | None = None
 
 
 @dataclass(frozen=True)
@@ -312,21 +339,55 @@ def detect_robot_type(joint_names: Sequence[str]) -> str | None:
     return None
 
 
+def _rotate_vec(
+    quat_xyzw: tuple[float, float, float, float],
+    vec: tuple[float, float, float],
+) -> tuple[float, float, float]:
+    qx, qy, qz, qw = quat_xyzw
+    vx, vy, vz = vec
+    tx = 2.0 * (qy * vz - qz * vy)
+    ty = 2.0 * (qz * vx - qx * vz)
+    tz = 2.0 * (qx * vy - qy * vx)
+    return (
+        vx + qw * tx + qy * tz - qz * ty,
+        vy + qw * ty + qz * tx - qx * tz,
+        vz + qw * tz + qx * ty - qy * tx,
+    )
+
+
+def _quat_mul(
+    q1: tuple[float, float, float, float],
+    q2: tuple[float, float, float, float],
+) -> tuple[float, float, float, float]:
+    x1, y1, z1, w1 = q1
+    x2, y2, z2, w2 = q2
+    return normalize_quaternion_xyzw(
+        w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2,
+        w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2,
+        w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2,
+        w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2,
+    )
+
+
 def _invert_pose(
     pos: tuple[float, float, float], quat_xyzw: tuple[float, float, float, float]
 ) -> tuple[tuple[float, float, float], tuple[float, float, float, float]]:
     qx, qy, qz, qw = normalize_quaternion_xyzw(*quat_xyzw)
-    iqx, iqy, iqz, iqw = -qx, -qy, -qz, qw
-    px, py, pz = pos
-    # Rotate -pos by conjugate quaternion q^-1
-    vx, vy, vz = -px, -py, -pz
-    tx = 2.0 * (iqy * vz - iqz * vy)
-    ty = 2.0 * (iqz * vx - iqx * vz)
-    tz = 2.0 * (iqx * vy - iqy * vx)
-    rx = vx + iqw * tx + iqy * tz - iqz * ty
-    ry = vy + iqw * ty + iqz * tx - iqx * tz
-    rz = vz + iqw * tz + iqx * ty - iqy * tx
-    return (rx, ry, rz), (iqx, iqy, iqz, iqw)
+    inv_q = (-qx, -qy, -qz, qw)
+    inv_p = _rotate_vec(inv_q, (-pos[0], -pos[1], -pos[2]))
+    return inv_p, inv_q
+
+
+def _compose_pose(
+    pose_ab: tuple[tuple[float, float, float], tuple[float, float, float, float]],
+    pose_bc: tuple[tuple[float, float, float], tuple[float, float, float, float]],
+) -> tuple[tuple[float, float, float], tuple[float, float, float, float]]:
+    p_ab, q_ab = pose_ab
+    p_bc, q_bc = pose_bc
+    rot_p = _rotate_vec(q_ab, p_bc)
+    return (p_ab[0] + rot_p[0], p_ab[1] + rot_p[1], p_ab[2] + rot_p[2]), _quat_mul(
+        q_ab, q_bc
+    )
 
 
 def _finite_number(value: Any, field: str) -> float:
@@ -381,14 +442,25 @@ class BoosterTranslatorCore:
         self._head_target: tuple[float, float] = (0.0, 0.0)
         self._odom_origin: tuple[float, float, float] | None = None
         self._last_nav_odom_pose: tuple[float, float, float] | None = None
-        self._latest_head_pose: tuple[
-            tuple[float, float, float], tuple[float, float, float, float]
-        ] | None = None
+        self._frame_poses: dict[
+            int, tuple[tuple[float, float, float], tuple[float, float, float, float]]
+        ] = {}
+        self._available_skills: tuple[str, ...] = ()
+        self._active_skill: str = ""
+        self._skill_state: str = "idle"
         self._latest_kick_reference: BoosterKickReference | None = None
 
     @property
     def robot_type(self) -> str | None:
         return self._robot_type
+
+    @property
+    def available_skills(self) -> tuple[str, ...]:
+        return self._available_skills
+
+    @property
+    def is_recovery_available(self) -> int:
+        return 1 if "get_up" in self._available_skills else 0
 
     def ensure_robot_type(self, joint_names: Sequence[str]) -> str | None:
         if self._robot_type is None:
@@ -402,7 +474,18 @@ class BoosterTranslatorCore:
         self._head_target = (0.0, 0.0)
         self._odom_origin = None
         self._last_nav_odom_pose = None
+        self._active_skill = ""
+        self._skill_state = "idle"
         self._latest_kick_reference = None
+
+    def update_skill_status(self, payload: Mapping[str, Any]) -> None:
+        raw_avail = payload.get("available_skills")
+        if isinstance(raw_avail, Sequence) and not isinstance(raw_avail, (str, bytes)):
+            self._available_skills = tuple(str(item) for item in raw_avail)
+        if isinstance(payload.get("active_skill"), str):
+            self._active_skill = payload["active_skill"]
+        if isinstance(payload.get("state"), str):
+            self._skill_state = payload["state"]
 
     def anchor_odometry_origin(self) -> None:
         if self._last_nav_odom_pose is not None:
@@ -419,12 +502,23 @@ class BoosterTranslatorCore:
             self._odom_origin = self._last_nav_odom_pose
         return relative_odom_from_nav(x, y, qx, qy, qz, qw, self._odom_origin)
 
+    def update_frame_pose(
+        self,
+        frame_id: int,
+        pos: tuple[float, float, float],
+        quat_xyzw: tuple[float, float, float, float],
+    ) -> None:
+        self._frame_poses[int(frame_id)] = (
+            (float(pos[0]), float(pos[1]), float(pos[2])),
+            normalize_quaternion_xyzw(*quat_xyzw),
+        )
+
     def update_head_pose(
         self,
         pos: tuple[float, float, float],
         quat_xyzw: tuple[float, float, float, float],
     ) -> None:
-        self._latest_head_pose = (pos, normalize_quaternion_xyzw(*quat_xyzw))
+        self.update_frame_pose(FRAME_HEAD, pos, quat_xyzw)
 
     def update_kick_reference(
         self,
@@ -533,7 +627,9 @@ class BoosterTranslatorCore:
                                 "current_body_control": _BODY_CONTROL_BY_MODE.get(
                                     self.mode, 0
                                 ),
-                                "current_actions": [],
+                                "current_actions": (
+                                    [self._active_skill] if self._active_skill else []
+                                ),
                             },
                             separators=(",", ":"),
                         ),
@@ -565,11 +661,27 @@ class BoosterTranslatorCore:
                 return BoosterRpcResult(
                     BoosterRpcResponse(RPC_STATUS_SUCCESS), reset_odometry=True
                 )
+            skill_name = SKILL_NAME_BY_API.get(api_id)
+            if skill_name is not None:
+                return self._dispatch_skill(skill_name, body_data)
         except BoosterProtocolError:
             return BoosterRpcResult(BoosterRpcResponse(RPC_STATUS_BAD_REQUEST))
 
         # Explicit refusal (501) for unimplemented policies/actions; never fabricate success.
         return BoosterRpcResult(BoosterRpcResponse(RPC_STATUS_SERVER_REFUSED))
+
+    def _dispatch_skill(
+        self, skill_name: str, body_data: dict[str, Any]
+    ) -> BoosterRpcResult:
+        # TODO(pumasim-policies): Cuando PumaSim publique ``skill_name`` dentro
+        # de ``available_skills`` en ``/<robot>/skill_status``, esta rama lo
+        # reenviará automáticamente a ``/<robot>/skill_command`` con status 0.
+        if skill_name not in self._available_skills:
+            return BoosterRpcResult(BoosterRpcResponse(RPC_STATUS_SERVER_REFUSED))
+        return BoosterRpcResult(
+            BoosterRpcResponse(RPC_STATUS_SUCCESS),
+            skill_command=(skill_name, dict(body_data)),
+        )
 
     def _change_mode(self, body: dict[str, Any]) -> BoosterRpcResult:
         mode_value = body.get("mode")
@@ -652,21 +764,20 @@ class BoosterTranslatorCore:
             or not isinstance(dst, int)
         ):
             raise BoosterProtocolError("GetFrameTransform requires integer src and dst")
-        if src == dst and 0 <= src <= 5:
-            pos = (0.0, 0.0, 0.0)
-            quat = (0.0, 0.0, 0.0, 1.0)
-        elif {src, dst} == {0, 1}:
-            if self._latest_head_pose is None:
+        if not (FRAME_BODY <= src <= FRAME_RIGHT_FOOT and FRAME_BODY <= dst <= FRAME_RIGHT_FOOT):
+            return BoosterRpcResult(BoosterRpcResponse(RPC_STATUS_BAD_REQUEST))
+
+        identity = ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0, 1.0))
+        if src == dst:
+            pos, quat = identity
+        else:
+            src_pose = identity if src == FRAME_BODY else self._frame_poses.get(src)
+            dst_pose = identity if dst == FRAME_BODY else self._frame_poses.get(dst)
+            if src_pose is None or dst_pose is None:
                 return BoosterRpcResult(
                     BoosterRpcResponse(RPC_STATUS_STATE_TRANSITION_FAILED)
                 )
-            pos, quat = self._latest_head_pose
-            if src == 1 and dst == 0:
-                pos, quat = _invert_pose(pos, quat)
-        elif 0 <= src <= 5 and 0 <= dst <= 5:
-            return BoosterRpcResult(BoosterRpcResponse(RPC_STATUS_SERVER_REFUSED))
-        else:
-            return BoosterRpcResult(BoosterRpcResponse(RPC_STATUS_BAD_REQUEST))
+            pos, quat = _compose_pose(_invert_pose(*src_pose), dst_pose)
 
         payload = {
             "position": {"x": pos[0], "y": pos[1], "z": pos[2]},

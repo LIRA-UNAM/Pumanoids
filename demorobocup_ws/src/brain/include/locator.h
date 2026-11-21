@@ -10,7 +10,9 @@
 #include <limits>
 #include <cmath>
 #include <chrono>
+#ifdef BRAIN_ENABLE_RERUN
 #include <rerun.hpp>
+#endif
 
 #include "types.h"
 
@@ -68,7 +70,9 @@ public:
 	string logIP = "127.0.0.1:9876"; // 接收日志的服务器地址
 
 	// 数据存储
+#ifdef BRAIN_ENABLE_RERUN
 	const rerun::RecordingStream log = rerun::RecordingStream("locator", "locator");
+#endif
 	vector<FieldMarker> fieldMarkers;
 	FieldDimensions fieldDimensions;
 	Eigen::ArrayXXd hypos;				  // 用于存储计算结果的 n * 5 矩阵, 其中 n 为假设的数量, 列0,1,2是假设的 Pose(x,y,theta), 列3为残差, 列4为归一化的概率, 列5为归一化概率的累计(从第0行到本行的和)
